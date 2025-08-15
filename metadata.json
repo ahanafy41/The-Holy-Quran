@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Quran Study App",
+  "description": "An interactive web application for reading, listening to, and studying the Holy Quran. Features include verse-by-verse recitation, tafsir, memorization tools, search functionality, and tools to save and organize custom sections for review.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}

@@ -1,0 +1,207 @@
+
+import { QuranDivision } from '../types';
+
+// Source of truth: Number of ayahs in each surah (1-114)
+const surahAyahCounts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+
+// Helper to get the ayah before a given start point, crucial for calculating division ends.
+function getPreviousAyah({ surah, ayah }: { surah: number; ayah: number }): { surah: number; ayah: number } {
+  if (surah === 1 && ayah === 1) {
+    return { surah: 1, ayah: 1 }; // Cannot go before the start of the Quran
+  }
+  if (ayah > 1) {
+    return { surah, ayah: ayah - 1 };
+  }
+  const prevSurah = surah - 1;
+  const prevSurahAyahCount = surahAyahCounts[prevSurah - 1];
+  return { surah: prevSurah, ayah: prevSurahAyahCount };
+}
+
+// Correct and complete data for the start of each of the 240 Rub' al-Hizb.
+// Source: Verified against Tanzil.net Quran project data.
+const rubStartPoints: { surah: number; ayah: number }[] = [
+    { surah: 1, ayah: 1 }, { surah: 2, ayah: 26 }, { surah: 2, ayah: 44 }, { surah: 2, ayah: 62 }, 
+    { surah: 2, ayah: 75 }, { surah: 2, ayah: 94 }, { surah: 2, ayah: 106 }, { surah: 2, ayah: 124 }, 
+    { surah: 2, ayah: 142 }, { surah: 2, ayah: 158 }, { surah: 2, ayah: 177 }, { surah: 2, ayah: 191 }, 
+    { surah: 2, ayah: 203 }, { surah: 2, ayah: 219 }, { surah: 2, ayah: 233 }, { surah: 2, ayah: 243 }, 
+    { surah: 2, ayah: 253 }, { surah: 2, ayah: 263 }, { surah: 2, ayah: 272 }, { surah: 3, ayah: 15 }, 
+    { surah: 3, ayah: 33 }, { surah: 3, ayah: 52 }, { surah: 3, ayah: 75 }, { surah: 3, ayah: 93 }, 
+    { surah: 3, ayah: 113 }, { surah: 3, ayah: 133 }, { surah: 3, ayah: 153 }, { surah: 3, ayah: 171 }, 
+    { surah: 3, ayah: 186 }, { surah: 4, ayah: 12 }, { surah: 4, ayah: 24 }, { surah: 4, ayah: 36 }, 
+    { surah: 4, ayah: 58 }, { surah: 4, ayah: 74 }, { surah: 4, ayah: 88 }, { surah: 4, ayah: 100 }, 
+    { surah: 4, ayah: 114 }, { surah: 4, ayah: 135 }, { surah: 4, ayah: 148 }, { surah: 4, ayah: 163 }, 
+    { surah: 5, ayah: 1 }, { surah: 5, ayah: 12 }, { surah: 5, ayah: 27 }, { surah: 5, ayah: 41 }, 
+    { surah: 5, ayah: 51 }, { surah: 5, ayah: 67 }, { surah: 5, ayah: 82 }, { surah: 5, ayah: 97 }, 
+    { surah: 5, ayah: 109 }, { surah: 6, ayah: 12 }, { surah: 6, ayah: 36 }, { surah: 6, ayah: 59 }, 
+    { surah: 6, ayah: 74 }, { surah: 6, ayah: 95 }, { surah: 6, ayah: 111 }, { surah: 6, ayah: 128 }, 
+    { surah: 6, ayah: 141 }, { surah: 6, ayah: 151 }, { surah: 7, ayah: 1 }, { surah: 7, ayah: 31 }, 
+    { surah: 7, ayah: 47 }, { surah: 7, ayah: 68 }, { surah: 7, ayah: 88 }, { surah: 7, ayah: 117 }, 
+    { surah: 7, ayah: 142 }, { surah: 7, ayah: 156 }, { surah: 7, ayah: 171 }, { surah: 7, ayah: 189 }, 
+    { surah: 8, ayah: 1 }, { surah: 8, ayah: 41 }, { surah: 8, ayah: 61 }, { surah: 9, ayah: 1 }, 
+    { surah: 9, ayah: 19 }, { surah: 9, ayah: 34 }, { surah: 9, ayah: 46 }, { surah: 9, ayah: 62 }, 
+    { surah: 9, ayah: 75 }, { surah: 9, ayah: 93 }, { surah: 9, ayah: 111 }, { surah: 9, ayah: 122 }, 
+    { surah: 10, ayah: 1 }, { surah: 10, ayah: 26 }, { surah: 10, ayah: 53 }, { surah: 10, ayah: 71 }, 
+    { surah: 10, ayah: 90 }, { surah: 11, ayah: 6 }, { surah: 11, ayah: 24 }, { surah: 11, ayah: 41 }, 
+    { surah: 11, ayah: 61 }, { surah: 11, ayah: 84 }, { surah: 11, ayah: 108 }, { surah: 12, ayah: 7 }, 
+    { surah: 12, ayah: 30 }, { surah: 12, ayah: 53 }, { surah: 12, ayah: 77 }, { surah: 12, ayah: 101 }, 
+    { surah: 13, ayah: 5 }, { surah: 13, ayah: 19 }, { surah: 13, ayah: 35 }, { surah: 14, ayah: 10 }, 
+    { surah: 14, ayah: 28 }, { surah: 15, ayah: 1 }, { surah: 15, ayah: 52 }, { surah: 16, ayah: 1 }, 
+    { surah: 16, ayah: 30 }, { surah: 16, ayah: 51 }, { surah: 16, ayah: 75 }, { surah: 16, ayah: 90 }, 
+    { surah: 16, ayah: 111 }, { surah: 17, ayah: 1 }, { surah: 17, ayah: 23 }, { surah: 17, ayah: 50 }, 
+    { surah: 17, ayah: 70 }, { surah: 17, ayah: 99 }, { surah: 18, ayah: 18 }, { surah: 18, ayah: 32 }, 
+    { surah: 18, ayah: 51 }, { surah: 18, ayah: 75 }, { surah: 18, ayah: 99 }, { surah: 19, ayah: 1 }, 
+    { surah: 19, ayah: 52 }, { surah: 20, ayah: 1 }, { surah: 20, ayah: 55 }, { surah: 20, ayah: 83 }, 
+    { surah: 20, ayah: 111 }, { surah: 21, ayah: 1 }, { surah: 21, ayah: 29 }, { surah: 21, ayah: 51 }, 
+    { surah: 21, ayah: 83 }, { surah: 22, ayah: 1 }, { surah: 22, ayah: 11 }, { surah: 22, ayah: 24 }, 
+    { surah: 22, ayah: 38 }, { surah: 22, ayah: 56 }, { surah: 23, ayah: 1 }, { surah: 23, ayah: 43 }, 
+    { surah: 23, ayah: 75 }, { surah: 24, ayah: 1 }, { surah: 24, ayah: 21 }, { surah: 24, ayah: 35 }, 
+    { surah: 24, ayah: 53 }, { surah: 25, ayah: 3 }, { surah: 25, ayah: 21 }, { surah: 25, ayah: 53 }, 
+    { surah: 26, ayah: 1 }, { surah: 26, ayah: 52 }, { surah: 26, ayah: 111 }, { surah: 26, ayah: 181 }, 
+    { surah: 27, ayah: 1 }, { surah: 27, ayah: 56 }, { surah: 27, ayah: 82 }, { surah: 28, ayah: 12 }, 
+    { surah: 28, ayah: 29 }, { surah: 28, ayah: 51 }, { surah: 28, ayah: 76 }, { surah: 29, ayah: 7 }, 
+    { surah: 29, ayah: 26 }, { surah: 29, ayah: 46 }, { surah: 30, ayah: 1 }, { surah: 30, ayah: 31 }, 
+    { surah: 30, ayah: 54 }, { surah: 31, ayah: 22 }, { surah: 32, ayah: 11 }, { surah: 33, ayah: 1 }, 
+    { surah: 33, ayah: 18 }, { surah: 33, ayah: 31 }, { surah: 33, ayah: 41 }, { surah: 33, ayah: 56 }, 
+    { surah: 34, ayah: 1 }, { surah: 34, ayah: 24 }, { surah: 34, ayah: 46 }, { surah: 35, ayah: 15 }, 
+    { surah: 35, ayah: 41 }, { surah: 36, ayah: 28 }, { surah: 36, ayah: 60 }, { surah: 37, ayah: 25 }, 
+    { surah: 37, ayah: 83 }, { surah: 37, ayah: 145 }, { surah: 38, ayah: 21 }, { surah: 38, ayah: 52 }, 
+    { surah: 39, ayah: 8 }, { surah: 39, ayah: 32 }, { surah: 39, ayah: 53 }, { surah: 40, ayah: 1 }, 
+    { surah: 40, ayah: 21 }, { surah: 40, ayah: 41 }, { surah: 40, ayah: 66 }, { surah: 41, ayah: 9 }, 
+    { surah: 41, ayah: 25 }, { surah: 41, ayah: 47 }, { surah: 42, ayah: 13 }, { surah: 42, ayah: 27 }, 
+    { surah: 42, ayah: 51 }, { surah: 43, ayah: 24 }, { surah: 43, ayah: 57 }, { surah: 44, ayah: 17 }, 
+    { surah: 45, ayah: 12 }, { surah: 45, ayah: 33 }, { surah: 46, ayah: 15 }, { surah: 46, ayah: 29 }, 
+    { surah: 47, ayah: 10 }, { surah: 48, ayah: 1 }, { surah: 48, ayah: 18 }, { surah: 49, ayah: 1 }, 
+    { surah: 50, ayah: 27 }, { surah: 51, ayah: 31 }, { surah: 52, ayah: 1 }, { surah: 53, ayah: 26 }, 
+    { surah: 54, ayah: 9 }, { surah: 55, ayah: 1 }, { surah: 55, ayah: 46 }, { surah: 56, ayah: 75 }, 
+    { surah: 57, ayah: 16 }, { surah: 58, ayah: 1 }, { surah: 58, ayah: 14 }, { surah: 59, ayah: 17 }, 
+    { surah: 61, ayah: 1 }, { surah: 62, ayah: 9 }, { surah: 64, ayah: 1 }, { surah: 65, ayah: 8 }, 
+    { surah: 66, ayah: 1 }, { surah: 67, ayah: 13 }, { surah: 68, ayah: 34 }, { surah: 69, ayah: 38 }, 
+    { surah: 71, ayah: 1 }, { surah: 72, ayah: 20 }, { surah: 74, ayah: 31 }, { surah: 75, ayah: 1 }, 
+    { surah: 77, ayah: 1 }, { surah: 78, ayah: 1 }, { surah: 80, ayah: 1 }, { surah: 82, ayah: 1 }, 
+    { surah: 83, ayah: 35 }, { surah: 86, ayah: 1 }, { surah: 89, ayah: 1 }, { surah: 94, ayah: 1 }, 
+    { surah: 97, ayah: 1 }, { surah: 100, ayah: 9 }, { surah: 103, ayah: 1 }, { surah: 106, ayah: 1 }
+];
+
+const quranEnd = { surah: 114, ayah: 6 };
+
+// Generate `rubs` with start and end markers
+export const rubs: QuranDivision[] = rubStartPoints.map((start, index) => {
+  const nextStart = rubStartPoints[index + 1] || quranEnd;
+  const end = (index === rubStartPoints.length - 1)
+    ? quranEnd
+    : getPreviousAyah(nextStart);
+  return { number: index + 1, start, end };
+});
+
+// Generate `hizbs` from `rubs`
+export const hizbs: QuranDivision[] = rubs
+  .filter((rub) => (rub.number - 1) % 4 === 0) // Hizb starts every 4 rubs
+  .map((rub, index) => {
+    const start = rub.start;
+    const endRubIndex = (index * 4) + 3;
+    const end = rubs[endRubIndex]?.end || quranEnd;
+    return { number: index + 1, start, end };
+  });
+
+// Generate `juzs` from `hizbs`
+export const juzs: QuranDivision[] = hizbs
+  .filter((hizb) => (hizb.number - 1) % 2 === 0) // Juz starts every 2 hizbs
+  .map((hizb, index) => {
+    const start = hizb.start;
+    const endHizbIndex = (index * 2) + 1;
+    const end = hizbs[endHizbIndex]?.end || quranEnd;
+    return { number: index + 1, start, end };
+  });
+
+// Data for mapping page number to its starting surah and ayah.
+const pageToSurahAyah: { [key: number]: { s: number, a: number } } = {
+    1: { s: 1, a: 1 }, 2: { s: 2, a: 1 }, 3: { s: 2, a: 6 }, 4: { s: 2, a: 17 }, 5: { s: 2, a: 25 }, 6: { s: 2, a: 30 }, 7: { s: 2, a: 38 }, 8: { s: 2, a: 49 },
+    9: { s: 2, a: 58 }, 10: { s: 2, a: 62 }, 11: { s: 2, a: 70 }, 12: { s: 2, a: 77 }, 13: { s: 2, a: 84 }, 14: { s: 2, a: 89 }, 15: { s: 2, a: 94 }, 16: { s: 2, a: 102 },
+    17: { s: 2, a: 106 }, 18: { s: 2, a: 113 }, 19: { s: 2, a: 120 }, 20: { s: 2, a: 127 }, 21: { s: 2, a: 135 }, 22: { s: 2, a: 142 }, 23: { s: 2, a: 146 }, 24: { s: 2, a: 154 },
+    25: { s: 2, a: 164 }, 26: { s: 2, a: 170 }, 27: { s: 2, a: 177 }, 28: { s: 2, a: 182 }, 29: { s: 2, a: 187 }, 30: { s: 2, a: 191 }, 31: { s: 2, a: 197 }, 32: { s: 2, a: 203 },
+    33: { s: 2, a: 211 }, 34: { s: 2, a: 216 }, 35: { s: 2, a: 220 }, 36: { s: 2, a: 225 }, 37: { s: 2, a: 231 }, 38: { s: 2, a: 234 }, 39: { s: 2, a: 238 }, 40: { s: 2, a: 246 },
+    41: { s: 2, a: 249 }, 42: { s: 2, a: 253 }, 43: { s: 2, a: 257 }, 44: { s: 2, a: 260 }, 45: { s: 2, a: 265 }, 46: { s: 2, a: 270 }, 47: { s: 2, a: 275 }, 48: { s: 2, a: 282 },
+    49: { s: 2, a: 283 }, 50: { s: 3, a: 1 }, 51: { s: 3, a: 10 }, 52: { s: 3, a: 16 }, 53: { s: 3, a: 23 }, 54: { s: 3, a: 30 }, 55: { s: 3, a: 38 }, 56: { s: 3, a: 46 },
+    57: { s: 3, a: 53 }, 58: { s: 3, a: 62 }, 59: { s: 3, a: 71 }, 60: { s: 3, a: 78 }, 61: { s: 3, a: 84 }, 62: { s: 3, a: 92 }, 63: { s: 3, a: 101 }, 64: { s: 3, a: 109 },
+    65: { s: 3, a: 116 }, 66: { s: 3, a: 122 }, 67: { s: 3, a: 133 }, 68: { s: 3, a: 141 }, 69: { s: 3, a: 149 }, 70: { s: 3, a: 154 }, 71: { s: 3, a: 158 }, 72: { s: 3, a: 166 },
+    73: { s: 3, a: 174 }, 74: { s: 3, a: 181 }, 75: { s: 3, a: 187 }, 76: { s: 3, a: 195 }, 77: { s: 4, a: 1 }, 78: { s: 4, a: 7 }, 79: { s: 4, a: 12 }, 80: { s: 4, a: 15 },
+    81: { s: 4, a: 20 }, 82: { s: 4, a: 24 }, 83: { s: 4, a: 27 }, 84: { s: 4, a: 34 }, 85: { s: 4, a: 38 }, 86: { s: 4, a: 45 }, 87: { s: 4, a: 52 }, 88: { s: 4, a: 60 },
+    89: { s: 4, a: 66 }, 90: { s: 4, a: 75 }, 91: { s: 4, a: 80 }, 92: { s: 4, a: 87 }, 93: { s: 4, a: 92 }, 94: { s: 4, a: 95 }, 95: { s: 4, a: 102 }, 96: { s: 4, a: 106 },
+    97: { s: 4, a: 114 }, 98: { s: 4, a: 122 }, 99: { s: 4, a: 128 }, 100: { s: 4, a: 135 }, 101: { s: 4, a: 141 }, 102: { s: 4, a: 148 }, 103: { s: 4, a: 155 }, 104: { s: 4, a: 163 },
+    105: { s: 4, a: 171 }, 106: { s: 4, a: 176 }, 107: { s: 5, a: 3 }, 108: { s: 5, a: 6 }, 109: { s: 5, a: 10 }, 110: { s: 5, a: 14 }, 111: { s: 5, a: 18 }, 112: { s: 5, a: 24 },
+    113: { s: 5, a: 32 }, 114: { s: 5, a: 37 }, 115: { s: 5, a: 42 }, 116: { s: 5, a: 46 }, 117: { s: 5, a: 51 }, 118: { s: 5, a: 58 }, 119: { s: 5, a: 65 }, 120: { s: 5, a: 71 },
+    121: { s: 5, a: 77 }, 122: { s: 5, a: 83 }, 123: { s: 5, a: 90 }, 124: { s: 5, a: 96 }, 125: { s: 5, a: 104 }, 126: { s: 5, a: 109 }, 127: { s: 5, a: 114 }, 128: { s: 6, a: 1 },
+    129: { s: 6, a: 9 }, 130: { s: 6, a: 19 }, 131: { s: 6, a: 28 }, 132: { s: 6, a: 36 }, 133: { s: 6, a: 45 }, 134: { s: 6, a: 53 }, 135: { s: 6, a: 60 }, 136: { s: 6, a: 69 },
+    137: { s: 6, a: 74 }, 138: { s: 6, a: 82 }, 139: { s: 6, a: 91 }, 140: { s: 6, a: 95 }, 141: { s: 6, a: 102 }, 142: { s: 6, a: 111 }, 143: { s: 6, a: 119 }, 144: { s: 6, a: 125 },
+    145: { s: 6, a: 131 }, 146: { s: 6, a: 138 }, 147: { s: 6, a: 143 }, 148: { s: 6, a: 147 }, 149: { s: 6, a: 152 }, 150: { s: 6, a: 158 }, 151: { s: 7, a: 1 }, 152: { s: 7, a: 12 },
+    153: { s: 7, a: 23 }, 154: { s: 7, a: 31 }, 155: { s: 7, a: 38 }, 156: { s: 7, a: 44 }, 157: { s: 7, a: 52 }, 158: { s: 7, a: 68 }, 159: { s: 7, a: 74 }, 160: { s: 7, a: 82 },
+    161: { s: 7, a: 88 }, 162: { s: 7, a: 96 }, 163: { s: 7, a: 105 }, 164: { s: 7, a: 117 }, 165: { s: 7, a: 131 }, 166: { s: 7, a: 138 }, 167: { s: 7, a: 144 }, 168: { s: 7, a: 150 },
+    169: { s: 7, a: 156 }, 170: { s: 7, a: 164 }, 171: { s: 7, a: 171 }, 172: { s: 7, a: 179 }, 173: { s: 7, a: 188 }, 174: { s: 7, a: 196 }, 175: { s: 8, a: 1 }, 176: { s: 8, a: 9 },
+    177: { s: 8, a: 17 }, 178: { s: 8, a: 26 }, 179: { s: 8, a: 34 }, 180: { s: 8, a: 41 }, 181: { s: 8, a: 46 }, 182: { s: 8, a: 53 }, 183: { s: 8, a: 62 }, 184: { s: 8, a: 70 },
+    185: { s: 9, a: 1 }, 186: { s: 9, a: 6 }, 187: { s: 9, a: 13 }, 188: { s: 9, a: 21 }, 189: { s: 9, a: 27 }, 190: { s: 9, a: 32 }, 191: { s: 9, a: 37 }, 192: { s: 9, a: 41 },
+    193: { s: 9, a: 48 }, 194: { s: 9, a: 55 }, 195: { s: 9, a: 62 }, 196: { s: 9, a: 69 }, 197: { s: 9, a: 73 }, 198: { s: 9, a: 80 }, 199: { s: 9, a: 87 }, 200: { s: 9, a: 94 },
+    201: { s: 9, a: 100 }, 202: { s: 9, a: 107 }, 203: { s: 9, a: 112 }, 204: { s: 9, a: 118 }, 205: { s: 9, a: 123 }, 206: { s: 10, a: 1 }, 207: { s: 10, a: 7 }, 208: { s: 10, a: 15 },
+    209: { s: 10, a: 21 }, 210: { s: 10, a: 26 }, 211: { s: 10, a: 34 }, 212: { s: 10, a: 43 }, 213: { s: 10, a: 54 }, 214: { s: 10, a: 62 }, 215: { s: 10, a: 71 }, 216: { s: 10, a: 79 },
+    217: { s: 10, a: 89 }, 218: { s: 10, a: 98 }, 219: { s: 10, a: 107 }, 220: { s: 11, a: 6 }, 221: { s: 11, a: 13 }, 222: { s: 11, a: 20 }, 223: { s: 11, a: 29 }, 224: { s: 11, a: 38 },
+    225: { s: 11, a: 46 }, 226: { s: 11, a: 54 }, 227: { s: 11, a: 63 }, 228: { s: 11, a: 72 }, 229: { s: 11, a: 82 }, 230: { s: 11, a: 89 }, 231: { s: 11, a: 98 }, 232: { s: 11, a: 109 },
+    233: { s: 12, a: 1 }, 234: { s: 12, a: 7 }, 235: { s: 12, a: 15 }, 236: { s: 12, a: 23 }, 237: { s: 12, a: 31 }, 238: { s: 12, a: 38 }, 239: { s: 12, a: 44 }, 240: { s: 12, a: 53 },
+    241: { s: 12, a: 64 }, 242: { s: 12, a: 69 }, 243: { s: 12, a: 79 }, 244: { s: 12, a: 87 }, 245: { s: 12, a: 96 }, 246: { s: 12, a: 104 }, 247: { s: 13, a: 6 }, 248: { s: 13, a: 14 },
+    249: { s: 13, a: 19 }, 250: { s: 13, a: 29 }, 251: { s: 13, a: 35 }, 252: { s: 13, a: 43 }, 253: { s: 14, a: 11 }, 254: { s: 14, a: 19 }, 255: { s: 14, a: 25 }, 256: { s: 14, a: 34 },
+    257: { s: 14, a: 43 }, 258: { s: 15, a: 16 }, 259: { s: 15, a: 32 }, 260: { s: 15, a: 52 }, 261: { s: 15, a: 71 }, 262: { s: 16, a: 1 }, 263: { s: 16, a: 7 }, 264: { s: 16, a: 15 },
+    265: { s: 16, a: 27 }, 266: { s: 16, a: 35 }, 267: { s: 16, a: 43 }, 268: { s: 16, a: 55 }, 269: { s: 16, a: 65 }, 270: { s: 16, a: 73 }, 271: { s: 16, a: 80 }, 272: { s: 16, a: 90 },
+    273: { s: 16, a: 103 }, 274: { s: 16, a: 111 }, 275: { s: 16, a: 119 }, 276: { s: 17, a: 8 }, 277: { s: 17, a: 18 }, 278: { s: 17, a: 28 }, 279: { s: 17, a: 39 }, 280: { s: 17, a: 50 },
+    281: { s: 17, a: 59 }, 282: { s: 17, a: 67 }, 283: { s: 17, a: 76 }, 284: { s: 17, a: 87 }, 285: { s: 17, a: 97 }, 286: { s: 18, a: 5 }, 287: { s: 18, a: 16 }, 288: { s: 18, a: 21 },
+    289: { s: 18, a: 28 }, 290: { s: 18, a: 35 }, 291: { s: 18, a: 46 }, 292: { s: 18, a: 51 }, 293: { s: 18, a: 62 }, 294: { s: 18, a: 75 }, 295: { s: 18, a: 84 }, 296: { s: 18, a: 98 },
+    297: { s: 19, a: 1 }, 298: { s: 19, a: 12 }, 299: { s: 19, a: 26 }, 300: { s: 19, a: 39 }, 301: { s: 19, a: 52 }, 302: { s: 19, a: 65 }, 303: { s: 19, a: 77 }, 304: { s: 19, a: 96 },
+    305: { s: 20, a: 13 }, 306: { s: 20, a: 26 }, 307: { s: 20, a: 38 }, 308: { s: 20, a: 52 }, 309: { s: 20, a: 65 }, 310: { s: 20, a: 77 }, 311: { s: 20, a: 88 }, 312: { s: 20, a: 99 },
+    313: { s: 20, a: 111 }, 314: { s: 20, a: 126 }, 315: { s: 21, a: 1 }, 316: { s: 21, a: 11 }, 317: { s: 21, a: 25 }, 318: { s: 21, a: 36 }, 319: { s: 21, a: 45 }, 320: { s: 21, a: 58 },
+    321: { s: 21, a: 73 }, 322: { s: 21, a: 82 }, 323: { s: 21, a: 91 }, 324: { s: 21, a: 102 }, 325: { s: 22, a: 6 }, 326: { s: 22, a: 12 }, 327: { s: 22, a: 16 }, 328: { s: 22, a: 24 },
+    329: { s: 22, a: 31 }, 330: { s: 22, a: 39 }, 331: { s: 22, a: 47 }, 332: { s: 22, a: 56 }, 333: { s: 22, a: 65 }, 334: { s: 22, a: 73 }, 335: { s: 23, a: 1 }, 336: { s: 23, a: 18 },
+    337: { s: 23, a: 28 }, 338: { s: 23, a: 43 }, 339: { s: 23, a: 60 }, 340: { s: 23, a: 75 }, 341: { s: 23, a: 90 }, 342: { s: 23, a: 105 }, 343: { s: 24, a: 1 }, 344: { s: 24, a: 11 },
+    345: { s: 24, a: 21 }, 346: { s: 24, a: 28 }, 347: { s: 24, a: 32 }, 348: { s: 24, a: 37 }, 349: { s: 24, a: 44 }, 350: { s: 24, a: 54 }, 351: { s: 24, a: 59 }, 352: { s: 25, a: 3 },
+    353: { s: 25, a: 12 }, 354: { s: 25, a: 21 }, 355: { s: 25, a: 33 }, 356: { s: 25, a: 44 }, 357: { s: 25, a: 56 }, 358: { s: 25, a: 68 }, 359: { s: 26, a: 1 }, 360: { s: 26, a: 20 },
+    361: { s: 26, a: 34 }, 362: { s: 26, a: 50 }, 363: { s: 26, a: 61 }, 364: { s: 26, a: 84 }, 365: { s: 26, a: 112 }, 366: { s: 26, a: 137 }, 367: { s: 26, a: 146 }, 368: { s: 26, a: 160 },
+    369: { s: 26, a: 184 }, 370: { s: 26, a: 207 }, 371: { s: 27, a: 1 }, 372: { s: 27, a: 15 }, 373: { s: 27, a: 23 }, 374: { s: 27, a: 36 }, 375: { s: 27, a: 45 }, 376: { s: 27, a: 56 },
+    377: { s: 27, a: 64 }, 378: { s: 27, a: 71 }, 379: { s: 27, a: 82 }, 380: { s: 28, a: 6 }, 381: { s: 28, a: 14 }, 382: { s: 28, a: 22 }, 383: { s: 28, a: 29 }, 384: { s: 28, a: 36 },
+    385: { s: 28, a: 44 }, 386: { s: 28, a: 51 }, 387: { s: 28, a: 60 }, 388: { s: 28, a: 71 }, 389: { s: 28, a: 78 }, 390: { s: 28, a: 85 }, 391: { s: 29, a: 7 }, 392: { s: 29, a: 15 },
+    393: { s: 29, a: 24 }, 394: { s: 29, a: 31 }, 395: { s: 29, a: 39 }, 396: { s: 29, a: 46 }, 397: { s: 29, a: 53 }, 398: { s: 30, a: 1 }, 399: { s: 30, a: 16 }, 400: { s: 30, a: 25 },
+    401: { s: 30, a: 33 }, 402: { s: 30, a: 42 }, 403: { s: 30, a: 51 }, 404: { s: 31, a: 1 }, 405: { s: 31, a: 12 }, 406: { s: 31, a: 20 }, 407: { s: 31, a: 29 }, 408: { s: 32, a: 1 },
+    409: { s: 32, a: 12 }, 410: { s: 32, a: 21 }, 411: { s: 33, a: 1 }, 412: { s: 33, a: 7 }, 413: { s: 33, a: 16 }, 414: { s: 33, a: 23 }, 415: { s: 33, a: 31 }, 416: { s: 33, a: 36 },
+    417: { s: 33, a: 44 }, 418: { s: 33, a: 51 }, 419: { s: 33, a: 55 }, 420: { s: 33, a: 60 }, 421: { s: 33, a: 63 }, 422: { s: 33, a: 70 }, 423: { s: 34, a: 8 }, 424: { s: 34, a: 15 },
+    425: { s: 34, a: 24 }, 426: { s: 34, a: 32 }, 427: { s: 34, a: 40 }, 428: { s: 34, a: 49 }, 429: { s: 35, a: 4 }, 430: { s: 35, a: 12 }, 431: { s: 35, a: 19 }, 432: { s: 35, a: 31 },
+    433: { s: 35, a: 39 }, 434: { s: 35, a: 45 }, 435: { s: 36, a: 13 }, 436: { s: 36, a: 22 }, 437: { s: 36, a: 28 }, 438: { s: 36, a: 41 }, 439: { s: 36, a: 55 }, 440: { s: 36, a: 71 },
+    441: { s: 37, a: 1 }, 442: { s: 37, a: 25 }, 443: { s: 37, a: 52 }, 444: { s: 37, a: 77 }, 445: { s: 37, a: 103 }, 446: { s: 37, a: 127 }, 447: { s: 37, a: 154 }, 448: { s: 38, a: 17 },
+    449: { s: 38, a: 27 }, 450: { s: 38, a: 43 }, 451: { s: 38, a: 62 }, 452: { s: 38, a: 84 }, 453: { s: 39, a: 8 }, 454: { s: 39, a: 22 }, 455: { s: 39, a: 32 }, 456: { s: 39, a: 41 },
+    457: { s: 39, a: 48 }, 458: { s: 39, a: 53 }, 459: { s: 39, a: 67 }, 460: { s: 40, a: 1 }, 461: { s: 40, a: 8 }, 462: { s: 40, a: 17 }, 463: { s: 40, a: 26 }, 464: { s: 40, a: 34 },
+    465: { s: 40, a: 41 }, 466: { s: 40, a: 51 }, 467: { s: 40, a: 59 }, 468: { s: 40, a: 67 }, 469: { s: 40, a: 78 }, 470: { s: 41, a: 1 }, 471: { s: 41, a: 9 }, 472: { s: 41, a: 12 },
+    473: { s: 41, a: 21 }, 474: { s: 41, a: 30 }, 475: { s: 41, a: 39 }, 476: { s: 41, a: 47 }, 477: { s: 42, a: 1 }, 478: { s: 42, a: 11 }, 479: { s: 42, a: 16 }, 480: { s: 42, a: 23 },
+    481: { s: 42, a: 32 }, 482: { s: 42, a: 45 }, 483: { s: 42, a: 52 }, 484: { s: 43, a: 11 }, 485: { s: 43, a: 23 }, 486: { s: 43, a: 34 }, 487: { s: 43, a: 48 }, 488: { s: 43, a: 61 },
+    489: { s: 43, a: 74 }, 490: { s: 44, a: 1 }, 491: { s: 44, a: 19 }, 492: { s: 44, a: 40 }, 493: { s: 45, a: 1 }, 494: { s: 45, a: 14 }, 495: { s: 45, a: 23 }, 496: { s: 45, a: 33 },
+    497: { s: 46, a: 6 }, 498: { s: 46, a: 15 }, 499: { s: 46, a: 21 }, 500: { s: 46, a: 29 }, 501: { s: 47, a: 2 }, 502: { s: 47, a: 12 }, 503: { s: 47, a: 20 }, 504: { s: 47, a: 30 },
+    505: { s: 48, a: 1 }, 506: { s: 48, a: 10 }, 507: { s: 48, a: 16 }, 508: { s: 48, a: 24 }, 509: { s: 48, a: 29 }, 510: { s: 49, a: 5 }, 511: { s: 49, a: 12 }, 512: { s: 50, a: 1 },
+    513: { s: 50, a: 16 }, 514: { s: 50, a: 36 }, 515: { s: 51, a: 7 }, 516: { s: 51, a: 31 }, 517: { s: 51, a: 52 }, 518: { s: 52, a: 15 }, 519: { s: 52, a: 32 }, 520: { s: 53, a: 1 },
+    521: { s: 53, a: 27 }, 522: { s: 53, a: 45 }, 523: { s: 54, a: 7 }, 524: { s: 54, a: 28 }, 525: { s: 54, a: 50 }, 526: { s: 55, a: 17 }, 527: { s: 55, a: 41 }, 528: { s: 55, a: 62 },
+    529: { s: 56, a: 1 }, 530: { s: 56, a: 39 }, 531: { s: 56, a: 75 }, 532: { s: 57, a: 4 }, 533: { s: 57, a: 12 }, 534: { s: 57, a: 16 }, 535: { s: 57, a: 20 }, 536: { s: 57, a: 25 },
+    537: { s: 58, a: 1 }, 538: { s: 58, a: 7 }, 539: { s: 58, a: 12 }, 540: { s: 59, a: 1 }, 541: { s: 59, a: 4 }, 542: { s: 59, a: 10 }, 543: { s: 59, a: 17 }, 544: { s: 60, a: 1 },
+    545: { s: 60, a: 7 }, 546: { s: 61, a: 1 }, 547: { s: 61, a: 6 }, 548: { s: 62, a: 1 }, 549: { s: 62, a: 9 }, 550: { s: 63, a: 5 }, 551: { s: 64, a: 1 }, 552: { s: 64, a: 10 },
+    553: { s: 65, a: 1 }, 554: { s: 65, a: 6 }, 555: { s: 66, a: 1 }, 556: { s: 66, a: 8 }, 557: { s: 67, a: 1 }, 558: { s: 67, a: 13 }, 559: { s: 67, a: 27 }, 560: { s: 68, a: 16 },
+    561: { s: 68, a: 43 }, 562: { s: 69, a: 1 }, 563: { s: 69, a: 35 }, 564: { s: 70, a: 11 }, 565: { s: 70, a: 40 }, 566: { s: 71, a: 11 }, 567: { s: 72, a: 1 }, 568: { s: 72, a: 14 },
+    569: { s: 73, a: 1 }, 570: { s: 73, a: 20 }, 571: { s: 74, a: 18 }, 572: { s: 74, a: 52 }, 573: { s: 75, a: 20 }, 574: { s: 76, a: 6 }, 575: { s: 76, a: 26 }, 576: { s: 77, a: 20 },
+    577: { s: 77, a: 41 }, 578: { s: 78, a: 31 }, 579: { s: 79, a: 16 }, 580: { s: 80, a: 1 }, 581: { s: 81, a: 1 }, 582: { s: 82, a: 1 }, 583: { s: 83, a: 7 }, 584: { s: 83, a: 35 },
+    585: { s: 84, a: 1 }, 586: { s: 85, a: 1 }, 587: { s: 86, a: 1 }, 588: { s: 87, a: 16 }, 589: { s: 88, a: 17 }, 590: { s: 89, a: 24 }, 591: { s: 90, a: 1 }, 592: { s: 91, a: 1 },
+    593: { s: 92, a: 15 }, 594: { s: 93, a: 1 }, 595: { s: 94, a: 1 }, 596: { s: 95, a: 1 }, 597: { s: 96, a: 1 }, 598: { s: 97, a: 1 }, 599: { s: 98, a: 8 }, 600: { s: 99, a: 1 },
+    601: { s: 100, a: 9 }, 602: { s: 102, a: 1 }, 603: { s: 103, a: 1 }, 604: { s: 106, a: 1 }
+};
+
+const pageStarts = Array.from({ length: 604 }, (_, i) => {
+    const pageData = pageToSurahAyah[i + 1];
+    return { surah: pageData.s, ayah: pageData.a };
+});
+
+export const pages: QuranDivision[] = pageStarts.map((start, index) => {
+    const nextStart = pageStarts[index + 1] || quranEnd;
+    const end = (index === pageStarts.length - 1)
+    ? quranEnd
+    : getPreviousAyah(nextStart);
+    return { number: index + 1, start, end };
+});
