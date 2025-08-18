@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Howl, Howler } from 'howler';
 import { Ayah, Surah, SurahSimple, QuranDivision } from '../types';
@@ -300,8 +299,8 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
     }, [currentAyahIndex]);
 
     const updateProgress = useCallback(() => {
-        if (howlRef.current && howlRef.current.playing() && soundIdRef.current) {
-            const seek = howlRef.current.seek();
+        if (howlRef.current && soundIdRef.current && howlRef.current.playing(soundIdRef.current)) {
+            const seek = howlRef.current.seek(soundIdRef.current);
             if (typeof seek === 'number') {
                 setProgress(seek);
             }

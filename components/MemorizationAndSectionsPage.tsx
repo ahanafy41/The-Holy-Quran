@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Howl } from 'howler';
 import { Ayah, SavedSection, SurahSimple } from '../types';
@@ -247,9 +246,9 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         newHowl.on('end', (id) => {
             if (repetitionCount < settings.memorization.repetitions) {
                 timeoutRef.current = window.setTimeout(() => {
-                    if (typeof id === 'number') {
-                        newHowl.stop(id);
-                        newHowl.play(id);
+                    if (typeof id === 'number' && howlRef.current) {
+                        howlRef.current.stop(id);
+                        howlRef.current.play(id);
                     }
                 }, 500);
                 setRepetitionCount(prev => prev + 1);
