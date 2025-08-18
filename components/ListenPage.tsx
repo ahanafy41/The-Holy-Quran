@@ -324,8 +324,8 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         if (isPlaying) {
             h?.pause(soundIdRef.current!);
         } else {
-             if(h?.state() === 'loaded') {
-                h?.play(soundIdRef.current!);
+             if(h && h.state() === 'loaded') {
+                h.play(soundIdRef.current!);
              } else {
                 playAyah(currentAyahIndex);
              }
