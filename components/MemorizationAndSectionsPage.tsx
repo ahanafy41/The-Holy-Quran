@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SamiaSessionModal } from './SamiaSessionModal';
 
 
+const MotionDiv = motion('div');
 
 type PlayerPlaylist = {
     section: SavedSection;
@@ -112,7 +113,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
                 )}
             </AnimatePresence>
             <AnimatePresence mode="wait">
-                <motion.div
+                <MotionDiv
                     key={playlist ? 'player' : samiaPlaylist ? 'samia' : 'selection'}
                     initial={{ opacity: 0, x: (playlist || samiaPlaylist) ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -120,7 +121,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
                     transition={{ duration: 0.25 }}
                 >
                     {renderContent()}
-                </motion.div>
+                </MotionDiv>
             </AnimatePresence>
         </div>
     );
@@ -247,7 +248,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             if (repetitionCount < settings.memorization.repetitions) {
                 timeoutRef.current = window.setTimeout(() => {
                     if (typeof id === 'number') {
-                        newHowl.seek(0, id);
+                        newHowl.stop(id);
                         newHowl.play(id);
                     }
                 }, 500);
@@ -275,10 +276,12 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
     }, [playAyah]);
     
     useEffect(() => {
-        playAyah(0);
+        if (ayahs.length > 0) {
+            playAyah(0);
+        }
         return cleanupPlayer;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cleanupPlayer]);
+    }, [ayahs]);
     
     const handlePlayPause = () => {
         if (isPlaying) {
@@ -358,7 +361,7 @@ const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section: Omit<
     
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div ref={modalRef} initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}}
+            <MotionDiv ref={modalRef} initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}}
                 onClick={e => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg flex flex-col" role="dialog" aria-modal="true" aria-labelledby="create-section-title">
                 <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="create-section-title" className="font-bold text-lg">إضافة مقطع جديد</h3>
@@ -405,7 +408,7 @@ const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section: Omit<
                     <button onClick={onClose} className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 font-semibold">إلغاء</button>
                     <button onClick={handleSaveClick} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">حفظ المقطع</button>
                 </footer>
-            </motion.div>
+            </MotionDiv>
         </div>
     );
 };

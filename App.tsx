@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef } from 'react';
 import { Howl } from 'howler';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SearchResult, SavedSection } from './types';
@@ -112,6 +107,8 @@ const App: React.FC = () => {
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [aiAssistantAyah, setAIAssistantAyah] = useState<Ayah | null>(null);
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -142,9 +139,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
+        console.log('`beforeinstallprompt` event fired, offering PWA installation.');
         event.preventDefault();
         setInstallPromptEvent(event);
     };
+
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
+    
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -318,7 +319,7 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={appContextValue}>
       <AnimatePresence>
-        {installPromptEvent && <InstallPWAButton promptEvent={installPromptEvent} onInstall={() => setInstallPromptEvent(null)} />}
+        {installPromptEvent && !isStandalone && <InstallPWAButton promptEvent={installPromptEvent} onInstall={() => setInstallPromptEvent(null)} />}
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </AnimatePresence>
@@ -339,18 +340,21 @@ const App: React.FC = () => {
 };
 
 // ======== PWA INSTALL BUTTON ======== //
+const MotionDiv = motion('div');
+
 const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = ({ promptEvent, onInstall }) => {
     const handleInstallClick = async () => {
         if (!promptEvent) return;
         promptEvent.prompt();
         // userChoice is a promise that resolves with the user's decision
-        await promptEvent.userChoice;
+        const { outcome } = await promptEvent.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
         // The prompt can only be used once, so we clear it
         onInstall();
     };
 
     return (
-        <motion.div
+        <MotionDiv
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
@@ -366,7 +370,7 @@ const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = 
                 <ArrowDownTrayIcon className="w-6 h-6" />
                 <span className="font-semibold">تثبيت التطبيق</span>
             </button>
-        </motion.div>
+        </MotionDiv>
     );
 };
 
@@ -392,7 +396,7 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <MotionDiv ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
              onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="settings-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="settings-title" className="font-bold text-lg">الإعدادات</h3>
@@ -478,7 +482,7 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
                     <button onClick={handleSaveAndClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">تم</button>
                 </div>
-            </motion.div>
+            </MotionDiv>
         </div>
     );
 };
@@ -489,7 +493,7 @@ const TafsirModal: React.FC<{content: any, onClose: () => void}> = ({ content, o
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <MotionDiv ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
               onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="tafsir-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="tafsir-title" className="font-bold text-lg">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>
@@ -504,7 +508,7 @@ const TafsirModal: React.FC<{content: any, onClose: () => void}> = ({ content, o
                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
                     <button onClick={onClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">إغلاق</button>
                 </div>
-            </motion.div>
+            </MotionDiv>
         </div>
     );
 };

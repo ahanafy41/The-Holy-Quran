@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Ayah, Surah, QuranDivision } from '../types';
 import * as api from '../services/quranApi';
@@ -133,6 +132,8 @@ interface AyahItemProps {
     onSelect: (event: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
+const MotionDiv = motion('div');
+
 const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, onSelect }, ref) => {
     const { activeAyah } = useApp();
     const isPlaying = activeAyah?.number === ayah.number;
@@ -159,7 +160,7 @@ const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSele
             }`}>
             <AnimatePresence>
             {(isSelected || isPlaying) && (
-                <motion.div 
+                <MotionDiv 
                     layout
                     layoutId={`outline-div-${ayah.number}`}
                     className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"

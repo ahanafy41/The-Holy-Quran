@@ -1,5 +1,4 @@
 
-
 import React, { useEffect } from 'react';
 import { XMarkIcon } from './Icons';
 import { motion } from 'framer-motion';
@@ -11,6 +10,8 @@ interface ErrorToastProps {
     duration?: number;
 }
 
+const MotionDiv = motion("div");
+
 export const ErrorToast: React.FC<ErrorToastProps> = ({ message, onClose, duration = 6000 }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -20,7 +21,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({ message, onClose, durati
     }, [onClose, duration]);
 
     return (
-        <motion.div
+        <MotionDiv
             layout
             initial={{ opacity: 0, y: 50, scale: 0.3 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -37,6 +38,6 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({ message, onClose, durati
             >
                 <XMarkIcon className="w-5 h-5" />
             </button>
-        </motion.div>
+        </MotionDiv>
     );
 };

@@ -26,6 +26,8 @@ type Playlist = {
     ayahs: Ayah[];
 };
 
+const MotionDiv = motion('div');
+
 export const ListenPage: React.FC = () => {
     const { settings, setError, navigateTo } = useApp();
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
@@ -90,7 +92,7 @@ export const ListenPage: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto">
             <AnimatePresence mode="wait">
-                <motion.div
+                <MotionDiv
                     key={playlist ? 'player' : 'selection'}
                     initial={{ opacity: 0, x: playlist ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -98,7 +100,7 @@ export const ListenPage: React.FC = () => {
                     transition={{ duration: 0.25 }}
                 >
                     {renderContent()}
-                </motion.div>
+                </MotionDiv>
             </AnimatePresence>
         </div>
     );
@@ -120,14 +122,14 @@ const SelectionView: React.FC<{onPlayRequest: (item: DivisionItem, config: Divis
     return (
          <AnimatePresence mode="wait">
             {activeList ? (
-                <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <MotionDiv key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <ListView list={activeList} onBack={() => setActiveList(null)} onSelect={(item) => onPlayRequest(item, activeList)} surahMap={surahMap} />
-                </motion.div>
+                </MotionDiv>
             ) : (
-                 <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <MotionDiv key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <p className="text-slate-600 dark:text-slate-400 mb-6">اختر ما تود الاستماع إليه من الفهارس التالية.</p>
                     <IndexGrid divisions={divisions} onSelect={setActiveList} />
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
     );
@@ -245,7 +247,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         newHowl.on('play', () => setIsPlaying(true));
         newHowl.on('pause', () => setIsPlaying(false));
         newHowl.on('stop', () => setIsPlaying(false));
-        newHowl.on('end', (soundId) => {
+        newHowl.on('end', (soundId: number) => {
              setTimeout(() => {
                 setCurrentAyahIndex(prevIndex => {
                     const { repeatMode, ayahs: currentAyahs } = playerStateRef.current;
@@ -280,10 +282,12 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
     }, [playAyah]);
 
     useEffect(() => {
-        playAyah(0); // Autoplay first ayah on load
+        if (ayahs.length > 0) {
+            playAyah(0); // Autoplay first ayah on load
+        }
         return cleanupPlayer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cleanupPlayer]);
+    }, [ayahs]);
 
     useEffect(() => {
         howlRef.current?.rate(playbackRate);
@@ -345,6 +349,15 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
     };
 
     const currentAyah = ayahs[currentAyahIndex];
+    
+    if (!currentAyah) {
+        return (
+            <div className="text-center p-8">
+                <p>لا يوجد آيات في قائمة التشغيل هذه.</p>
+                <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg">الرجوع</button>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)]">

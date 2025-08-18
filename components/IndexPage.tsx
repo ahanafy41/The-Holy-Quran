@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../App';
 import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
@@ -17,6 +16,8 @@ interface DivisionConfig {
     itemLabel: string;
     icon: React.FC<{ className?: string }>;
 }
+
+const MotionDiv = motion('div');
 
 export const IndexPage: React.FC = () => {
     const { surahList, navigateTo, savedSections } = useApp();
@@ -57,13 +58,13 @@ export const IndexPage: React.FC = () => {
             </header>
             <AnimatePresence mode="wait">
                 {activeList ? (
-                    <motion.div key="list" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                    <MotionDiv key="list" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
                         <ListView list={activeList} onBack={() => setActiveList(null)} navigateTo={navigateTo as any} surahMap={surahMap} />
-                    </motion.div>
+                    </MotionDiv>
                 ) : (
-                    <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <MotionDiv key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <IndexGrid divisions={divisions} onSelect={handleDivisionSelect} />
-                    </motion.div>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
         </div>

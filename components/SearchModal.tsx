@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as searchService from '../services/searchService';
@@ -5,6 +6,7 @@ import { useApp, useDebounce, useFocusTrap, Spinner } from '../App';
 import { SearchResult } from '../types';
 import { XMarkIcon, SearchIcon } from './Icons';
 
+const MotionDiv = motion('div');
 
 export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { navigateTo, surahList } = useApp();
@@ -53,7 +55,7 @@ export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[10vh]" onClick={onClose}>
-            <motion.div
+            <MotionDiv
                 ref={modalRef}
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -104,7 +106,7 @@ export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         </div>
                     )}
                 </div>
-            </motion.div>
+            </MotionDiv>
         </div>
     );
 };
