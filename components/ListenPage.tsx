@@ -294,7 +294,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
 
     const updateProgress = useCallback(() => {
         if (howlRef.current && howlRef.current.playing() && soundIdRef.current) {
-            const seek = howlRef.current.seek();
+            const seek = howlRef.current.seek(soundIdRef.current);
             if (typeof seek === 'number') {
                 setProgress(seek);
             }

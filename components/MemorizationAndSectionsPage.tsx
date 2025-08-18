@@ -243,8 +243,10 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         newHowl.on('end', (id) => {
             if (repetitionCount < settings.memorization.repetitions) {
                 timeoutRef.current = window.setTimeout(() => {
-                    newHowl.seek(0, id);
-                    newHowl.play(id);
+                    if (typeof id === 'number') {
+                        newHowl.seek(0, id);
+                        newHowl.play(id);
+                    }
                 }, 500);
                 setRepetitionCount(prev => prev + 1);
             } else {
