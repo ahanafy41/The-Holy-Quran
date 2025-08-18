@@ -1,12 +1,10 @@
-const CACHE_NAME = 'quran-study-app-v3';
+const CACHE_NAME = 'quran-study-app-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon-maskable-192.png',
-  '/icon-maskable-512.png',
+  '/icon.svg',
+  '/icon-maskable.svg',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js',
   'https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap',

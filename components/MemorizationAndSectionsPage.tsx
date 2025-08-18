@@ -263,8 +263,8 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
                 }
             }
         });
-        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`));
-        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`));
+        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
+        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
         
         soundIdRef.current = newHowl.play('_play');
         howlRef.current = newHowl;

@@ -269,8 +269,8 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
                 });
             }, settings.memorization.delay * 1000 || 500);
         });
-        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت: ${err}`));
-        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت: ${err}`));
+        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت: ${String(err)}`));
+        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت: ${String(err)}`));
         
         soundIdRef.current = newHowl.play('_play');
         howlRef.current = newHowl;
