@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef } from 'react';
 import { Howl } from 'howler';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SearchResult, SavedSection } from './types';
@@ -49,6 +50,8 @@ interface AppContextType {
   showAIAssistant: (ayah: Ayah) => void;
   showSearch: () => void;
   showSettings: () => void;
+  apiKey: string | null;
+  updateApiKey: (key: string) => void;
   view: View;
   savedSections: SavedSection[];
   addSavedSection: (section: Omit<SavedSection, 'id'>) => void;
@@ -78,6 +81,7 @@ const App: React.FC = () => {
     return defaultSettings;
   });
   
+  const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem('quranUserApiKey'));
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [tafsirInfoList, setTafsirInfoList] = useState<TafsirInfo[]>([]);
   const [surahList, setSurahList] = useState<SurahSimple[]>([]);
@@ -121,6 +125,20 @@ const App: React.FC = () => {
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings, memorization: {...prev.memorization, ...newSettings.memorization} }));
   };
+
+  const updateApiKey = useCallback((key: string) => {
+    const trimmedKey = key.trim();
+    if (apiKey === trimmedKey) return; 
+
+    if (trimmedKey) {
+        setApiKey(trimmedKey);
+        localStorage.setItem('quranUserApiKey', trimmedKey);
+        setSuccessMessage('تم حفظ مفتاح API بنجاح.');
+    } else {
+        setApiKey(null);
+        localStorage.removeItem('quranUserApiKey');
+    }
+  }, [apiKey]);
 
   const addSavedSection = useCallback((section: Omit<SavedSection, 'id'>) => {
     const newSection: SavedSection = {
@@ -235,9 +253,12 @@ const App: React.FC = () => {
       }
   };
 
+  const showSettings = () => setIsSettingsOpen(true);
+
   const showAIAssistant = (ayah: Ayah) => {
-      if (!process.env.API_KEY) {
-          setError("ميزة مساعد الذكاء الاصطناعي تتطلب مفتاح API.");
+      if (!apiKey) {
+          setError("مفتاح API مطلوب لاستخدام مساعد الذكاء الاصطناعي. يرجى إضافته في الإعدادات.");
+          showSettings();
           return;
       }
       setAIAssistantAyah(ayah);
@@ -245,14 +266,13 @@ const App: React.FC = () => {
   };
 
   const showSearch = () => setIsSearchOpen(true);
-  const showSettings = () => setIsSettingsOpen(true);
 
   const appContextValue = useMemo(() => ({
     settings, updateSettings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah,
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view,
-    savedSections, addSavedSection, removeSavedSection,
-  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, navigateTo, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, showTafsir, showAIAssistant, view, savedSections, addSavedSection, removeSavedSection]);
+    savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
+  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey]);
 
   const renderView = () => {
     switch (view) {
@@ -291,10 +311,16 @@ const App: React.FC = () => {
 // ======== MODAL COMPONENTS ======== //
 
 const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const { settings, updateSettings, reciters, tafsirInfoList } = useApp();
+    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey } = useApp();
     const modalRef = useRef<HTMLDivElement>(null);
+    const [localApiKey, setLocalApiKey] = useState(apiKey || '');
 
-    useFocusTrap(modalRef, onClose);
+    const handleSaveAndClose = () => {
+        updateApiKey(localApiKey);
+        onClose();
+    };
+    
+    useFocusTrap(modalRef, handleSaveAndClose);
     
     const handlePlaybackRateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         updateSettings({
@@ -303,12 +329,12 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
             <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
              onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="settings-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="settings-title" className="font-bold text-lg">الإعدادات</h3>
-                    <button onClick={onClose} aria-label="Close settings" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
+                    <button onClick={handleSaveAndClose} aria-label="Close settings" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto text-right">
                      <SettingSelect id="reciter" label="القارئ" value={settings.reciter} onChange={(e) => updateSettings({ reciter: e.target.value })}>
@@ -365,9 +391,30 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                             </SettingSelect>
                         </div>
                     </div>
+                     <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+                        <h4 className="font-medium mb-3">إعدادات الذكاء الاصطناعي</h4>
+                        <div className="space-y-2">
+                            <label htmlFor="apiKey" className="block text-sm font-medium">مفتاح Gemini API</label>
+                            <input
+                                type="password"
+                                id="apiKey"
+                                value={localApiKey}
+                                onChange={(e) => setLocalApiKey(e.target.value)}
+                                placeholder="أدخل مفتاحك هنا"
+                                className="w-full p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500 ltr-input"
+                                dir="ltr"
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                مفتاح API الخاص بك يُحفظ محلياً في متصفحك فقط.
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-500 hover:underline">
+                                    {' '}الحصول على مفتاح
+                                </a>
+                            </p>
+                        </div>
+                    </div>
                 </div>
                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
-                    <button onClick={onClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">تم</button>
+                    <button onClick={handleSaveAndClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">تم</button>
                 </div>
             </motion.div>
         </div>

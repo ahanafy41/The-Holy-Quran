@@ -269,7 +269,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
             onplayerror: (id, err) => setError(`فشل تشغيل الصوت: ${err}`),
         });
         
-        soundIdRef.current = newHowl.play();
+        soundIdRef.current = newHowl.play(undefined);
         howlRef.current = newHowl;
     }, [ayahs, playbackRate, setError, cleanupPlayer, settings.memorization.delay]);
 

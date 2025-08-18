@@ -16,7 +16,7 @@ type PlayerPlaylist = {
 };
 
 export const MemorizationAndSectionsPage: React.FC = () => {
-    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList } = useApp();
+    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings } = useApp();
     const [playlist, setPlaylist] = useState<PlayerPlaylist | null>(null);
     const [samiaPlaylist, setSamiaPlaylist] = useState<PlayerPlaylist | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +40,11 @@ export const MemorizationAndSectionsPage: React.FC = () => {
     };
     
     const handleStartSamia = async (section: SavedSection) => {
+        if (!apiKey) {
+            setError('يرجى إدخال مفتاح API الخاص بك في الإعدادات لاستخدام ميزة التسميع.');
+            showSettings();
+            return;
+        }
         setIsLoading(true);
         setError(null);
         try {
@@ -234,7 +239,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             onend: (id) => {
                 if (repetitionCount < settings.memorization.repetitions) {
                     timeoutRef.current = window.setTimeout(() => {
-                        soundIdRef.current = newHowl.play();
+                        soundIdRef.current = newHowl.play(undefined);
                     }, 500);
                     setRepetitionCount(prev => prev + 1);
                 } else {
@@ -252,7 +257,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             onplayerror: (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`)
         });
         
-        soundIdRef.current = newHowl.play();
+        soundIdRef.current = newHowl.play(undefined);
         howlRef.current = newHowl;
     }, [ayahs, cleanupPlayer, settings, setError, currentAyahIndex, repetitionCount]);
     

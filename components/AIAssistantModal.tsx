@@ -5,6 +5,7 @@ import { GoogleGenAI, Chat } from '@google/genai';
 import { Ayah } from '../types';
 import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useApp } from '../App';
 
 
 interface AIAssistantModalProps {
@@ -18,6 +19,7 @@ type Message = {
 };
 
 export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClose }) => {
+    const { apiKey } = useApp();
     const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
     const [isResponding, setIsResponding] = useState(false);
@@ -32,15 +34,15 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
     }, [messages, isResponding]);
     
     useEffect(() => {
-        if (!process.env.API_KEY) {
+        if (!apiKey) {
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         const systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: Surah ${ayah.surah?.englishName} (${ayah.surah?.number}:${ayah.numberInSurah}), which reads: "${ayah.text}". Frame your answers based on this context. Respond in Arabic.`;
         const newChat = ai.chats.create({ model: 'gemini-2.5-flash', config: { systemInstruction } });
         setChat(newChat);
-    }, [ayah]);
+    }, [ayah, apiKey]);
 
     const handleSend = useCallback(async (prompt: string) => {
         if (!prompt.trim() || isResponding || !chat) return;

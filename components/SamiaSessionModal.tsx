@@ -28,7 +28,7 @@ const mimeType = 'audio/webm';
 
 export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, onClose }) => {
     const { ayahs, section } = playlist;
-    const { setSuccessMessage, setError: setGlobalError } = useApp();
+    const { setSuccessMessage, setError: setGlobalError, apiKey } = useApp();
 
     const [status, setStatus] = useState<SessionStatus>('idle');
     const [isFirstAyah, setIsFirstAyah] = useState(true);
@@ -42,12 +42,12 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
     const aiRef = useRef<GoogleGenAI | null>(null);
 
     const init = useCallback(async () => {
-        if (!process.env.API_KEY) {
+        if (!apiKey) {
             setError("مفتاح API غير متاح لهذه الميزة.");
             setStatus('error');
             return;
         }
-        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        aiRef.current = new GoogleGenAI({ apiKey });
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -57,7 +57,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             setError('يرجى السماح بالوصول إلى الميكروفون للمتابعة.');
             setStatus('error');
         }
-    }, []);
+    }, [apiKey]);
     
     useEffect(() => {
         init();
