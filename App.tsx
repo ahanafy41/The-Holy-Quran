@@ -2,11 +2,13 @@
 
 
 
+
+
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef } from 'react';
 import { Howl } from 'howler';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SearchResult, SavedSection } from './types';
 import * as api from './services/quranApi';
-import { XMarkIcon } from './components/Icons';
+import { XMarkIcon, ArrowDownTrayIcon } from './components/Icons';
 import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
@@ -109,6 +111,7 @@ const App: React.FC = () => {
   const [tafsirContent, setTafsirContent] = useState<{ayah: Ayah, tafsir: Tafsir | null, surahNumber: number, surahName: string, tafsirName?: string, isLoading: boolean, error?: string} | null>(null);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [aiAssistantAyah, setAIAssistantAyah] = useState<Ayah | null>(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +138,17 @@ const App: React.FC = () => {
           });
       });
     }
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+        event.preventDefault();
+        setInstallPromptEvent(event);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
@@ -304,6 +318,7 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={appContextValue}>
       <AnimatePresence>
+        {installPromptEvent && <InstallPWAButton promptEvent={installPromptEvent} onInstall={() => setInstallPromptEvent(null)} />}
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </AnimatePresence>
@@ -321,6 +336,38 @@ const App: React.FC = () => {
       </div>
     </AppContext.Provider>
   );
+};
+
+// ======== PWA INSTALL BUTTON ======== //
+const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = ({ promptEvent, onInstall }) => {
+    const handleInstallClick = async () => {
+        if (!promptEvent) return;
+        promptEvent.prompt();
+        // userChoice is a promise that resolves with the user's decision
+        await promptEvent.userChoice;
+        // The prompt can only be used once, so we clear it
+        onInstall();
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            className="fixed bottom-4 left-4 z-[99]"
+        >
+            <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-900 transition-transform transform hover:scale-105"
+                title="تثبيت التطبيق على جهازك"
+                aria-label="تثبيت التطبيق"
+            >
+                <ArrowDownTrayIcon className="w-6 h-6" />
+                <span className="font-semibold">تثبيت التطبيق</span>
+            </button>
+        </motion.div>
+    );
 };
 
 // ======== MODAL COMPONENTS ======== //

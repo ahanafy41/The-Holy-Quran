@@ -234,7 +234,10 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         const newHowl = new Howl({
             src: sources,
             html5: true,
-            rate: settings.memorization.playbackRate
+            rate: settings.memorization.playbackRate,
+            sprite: {
+                _play: [0, 300000] // 5 minutes, should be enough for any ayah
+            }
         });
 
         newHowl.on('play', () => setIsPlaying(true));
@@ -263,7 +266,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`));
         newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`));
         
-        soundIdRef.current = (newHowl.play as any)();
+        soundIdRef.current = newHowl.play('_play');
         howlRef.current = newHowl;
     }, [ayahs, cleanupPlayer, settings, setError, currentAyahIndex, repetitionCount]);
     

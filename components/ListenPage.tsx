@@ -234,6 +234,9 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
             src: sources,
             html5: true,
             rate: playbackRate,
+            sprite: {
+                _play: [0, 300000] // 5 minutes, should be enough for any ayah
+            }
         });
 
         newHowl.on('load', () => {
@@ -242,7 +245,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         newHowl.on('play', () => setIsPlaying(true));
         newHowl.on('pause', () => setIsPlaying(false));
         newHowl.on('stop', () => setIsPlaying(false));
-        newHowl.on('end', () => {
+        newHowl.on('end', (soundId) => {
              setTimeout(() => {
                 setCurrentAyahIndex(prevIndex => {
                     const { repeatMode, ayahs: currentAyahs } = playerStateRef.current;
@@ -268,7 +271,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت: ${err}`));
         newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت: ${err}`));
         
-        soundIdRef.current = (newHowl.play as any)();
+        soundIdRef.current = newHowl.play('_play');
         howlRef.current = newHowl;
     }, [ayahs, playbackRate, setError, cleanupPlayer, settings.memorization.delay]);
 
@@ -294,7 +297,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
 
     const updateProgress = useCallback(() => {
         if (howlRef.current && howlRef.current.playing() && soundIdRef.current) {
-            const seek = howlRef.current.seek(soundIdRef.current);
+            const seek = howlRef.current.seek();
             if (typeof seek === 'number') {
                 setProgress(seek);
             }

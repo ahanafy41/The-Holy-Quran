@@ -1,31 +1,31 @@
 {
-  "name": "Quran Study App",
-  "short_name": "Quran App",
+  "name": "القرآن الكريم",
+  "short_name": "Quran",
   "description": "Your companion for studying and pondering the Quran.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f1f5f9",
-  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4c81",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     },
     {
-      "src": "icon-maskable-192.png",
+      "src": "/icon-maskable-192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable"
     },
     {
-      "src": "icon-maskable-512.png",
+      "src": "/icon-maskable-512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"
