@@ -232,32 +232,36 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
 
         const newHowl = new Howl({
-            src: sources, html5: true, rate: settings.memorization.playbackRate,
-            onplay: (id) => setIsPlaying(true),
-            onpause: (id) => setIsPlaying(false),
-            onstop: (id) => setIsPlaying(false),
-            onend: (id) => {
-                if (repetitionCount < settings.memorization.repetitions) {
-                    timeoutRef.current = window.setTimeout(() => {
-                        soundIdRef.current = newHowl.play(undefined);
-                    }, 500);
-                    setRepetitionCount(prev => prev + 1);
-                } else {
-                    const nextIndex = currentAyahIndex + 1;
-                    if (nextIndex < ayahs.length) {
-                        timeoutRef.current = window.setTimeout(() => {
-                            playAyahRef.current?.(nextIndex);
-                        }, settings.memorization.delay * 1000);
-                    } else {
-                        setIsPlaying(false); // End of playlist
-                    }
-                }
-            },
-            onloaderror: (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`),
-            onplayerror: (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`)
+            src: sources,
+            html5: true,
+            rate: settings.memorization.playbackRate
         });
+
+        newHowl.on('play', () => setIsPlaying(true));
+        newHowl.on('pause', () => setIsPlaying(false));
+        newHowl.on('stop', () => setIsPlaying(false));
+        newHowl.on('end', (id) => {
+            if (repetitionCount < settings.memorization.repetitions) {
+                timeoutRef.current = window.setTimeout(() => {
+                    newHowl.seek(0, id);
+                    newHowl.play(id);
+                }, 500);
+                setRepetitionCount(prev => prev + 1);
+            } else {
+                const nextIndex = currentAyahIndex + 1;
+                if (nextIndex < ayahs.length) {
+                    timeoutRef.current = window.setTimeout(() => {
+                        playAyahRef.current?.(nextIndex);
+                    }, settings.memorization.delay * 1000);
+                } else {
+                    setIsPlaying(false); // End of playlist
+                }
+            }
+        });
+        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`));
+        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`));
         
-        soundIdRef.current = newHowl.play(undefined);
+        soundIdRef.current = (newHowl.play as any)();
         howlRef.current = newHowl;
     }, [ayahs, cleanupPlayer, settings, setError, currentAyahIndex, repetitionCount]);
     
@@ -276,7 +280,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             howlRef.current?.pause(soundIdRef.current!);
         } else {
             if (howlRef.current?.state() === 'loaded') {
-                soundIdRef.current = howlRef.current?.play(soundIdRef.current!);
+                howlRef.current?.play(soundIdRef.current!);
             } else {
                 playAyah(currentAyahIndex);
             }

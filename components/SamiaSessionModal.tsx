@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Ayah, SavedSection } from '../types';
 import { XMarkIcon, MicrophoneIcon, CheckCircleIcon, ArrowLeftIcon, InformationCircleIcon } from './Icons';
@@ -16,7 +15,7 @@ interface SamiaSessionModalProps {
     onClose: () => void;
 };
 
-type SessionStatus = 'idle' | 'recording' | 'processing' | 'feedback' | 'finished' | 'error';
+type SessionStatus = 'setup' | 'idle' | 'recording' | 'processing' | 'feedback' | 'finished' | 'error';
 
 interface Feedback {
     isCorrect: boolean;
@@ -28,10 +27,11 @@ const mimeType = 'audio/webm';
 
 export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, onClose }) => {
     const { ayahs, section } = playlist;
-    const { setSuccessMessage, setError: setGlobalError, apiKey } = useApp();
+    const { apiKey } = useApp();
 
-    const [status, setStatus] = useState<SessionStatus>('idle');
-    const [isFirstAyah, setIsFirstAyah] = useState(true);
+    const [status, setStatus] = useState<SessionStatus>('setup');
+    const [chunkSize, setChunkSize] = useState(1);
+    const [showInstructions, setShowInstructions] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
@@ -71,7 +71,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
 
     const handleStartRecording = () => {
         if (!streamRef.current || status !== 'idle') return;
-        setIsFirstAyah(false);
+        setShowInstructions(false);
         setError(null);
         setFeedback(null);
         try {
@@ -115,16 +115,27 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
         }
     };
 
+    const currentChunk = useMemo(() => 
+        ayahs.slice(currentAyahIndex, currentAyahIndex + chunkSize),
+        [ayahs, currentAyahIndex, chunkSize]
+    );
+
     const analyzeRecitation = async (base64Audio: string) => {
         if (!aiRef.current) return;
-        const currentAyah = ayahs[currentAyahIndex];
+        
+        const textToRecite = currentChunk.map(a => a.text).join(' ');
+        const firstAyah = currentChunk[0];
+        const lastAyah = currentChunk[currentChunk.length - 1];
+        const ayahRangeText = chunkSize === 1 
+            ? `الآية ${firstAyah.numberInSurah}`
+            : `الآيات ${firstAyah.numberInSurah} إلى ${lastAyah.numberInSurah}`;
 
-        const prompt = `You are an extremely precise Quran recitation examiner named Sami'a. Your task is to verify if the user's recitation EXACTLY matches a specific verse from the Quran, and nothing else.
+        const prompt = `You are an extremely precise Quran recitation examiner named Sami'a. Your task is to verify if the user's recitation EXACTLY matches a specific passage from the Quran, and nothing else.
 
-        The user is being tested ONLY on this verse:
-        - Surah: ${currentAyah.surah?.name}
-        - Ayah Number: ${currentAyah.numberInSurah}
-        - Correct Text: "${currentAyah.text}"
+        The user is being tested ONLY on this passage:
+        - Surah: ${firstAyah.surah?.name}
+        - Passage: ${ayahRangeText}
+        - Correct Text: "${textToRecite}"
 
         The user has provided an audio recording of their recitation. Your instructions are:
         1. Transcribe the user's full recitation from the audio.
@@ -134,7 +145,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             - If the user misses words, it is INCORRECT.
             - If the user says a different word, it is INCORRECT.
         4. Based on your comparison, provide feedback in the specified JSON format.
-            - If it is INCORRECT because the user recited more than the required verse, the 'correction_suggestion' MUST be "لقد قرأت أكثر من الآية المطلوبة. من فضلك اقرأ الآية المعروضة فقط.".
+            - If it is INCORRECT because the user recited more than the required passage, the 'correction_suggestion' MUST be "لقد قرأت أكثر من الآيات المطلوبة. من فضلك اقرأ المقطع المعروض فقط.".
             - For other mistakes, provide a clear, concise 'correction_suggestion' in Arabic explaining the primary error (e.g., "لقد قلت 'كلمة' بدلاً من 'الكلمة الصحيحة'.").
             - Always provide the 'user_transcription' as you heard it.`;
         
@@ -150,7 +161,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
 
         try {
             const response = await aiRef.current.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gem-2.5-flash",
                 contents: {
                     parts: [
                         { text: prompt },
@@ -161,7 +172,23 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             });
 
             const jsonText = response.text.trim();
-            const result = JSON.parse(jsonText);
+            let result;
+            try {
+                result = JSON.parse(jsonText);
+            } catch (parseError) {
+                console.error("Failed to parse Gemini response as JSON:", jsonText);
+                setError("عذراً، حدث خطأ غير متوقع أثناء تحليل الإجابة. حاول مرة أخرى.");
+                setStatus('idle');
+                return;
+            }
+
+            if (typeof result.is_correct === 'undefined' || typeof result.user_transcription === 'undefined') {
+                console.error("Gemini response is missing required keys:", result);
+                setError("عذراً، كانت الإجابة غير مكتملة. حاول مرة أخرى.");
+                setStatus('idle');
+                return;
+            }
+
             setFeedback({
                 isCorrect: result.is_correct,
                 userTranscription: result.user_transcription || '(لم يتم التعرف على صوت)',
@@ -179,28 +206,61 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
     const handleNext = () => {
         setFeedback(null);
         setError(null);
-        if (currentAyahIndex < ayahs.length - 1) {
-            setCurrentAyahIndex(prev => prev + 1);
+        const nextIndex = currentAyahIndex + chunkSize;
+        if (nextIndex < ayahs.length) {
+            setCurrentAyahIndex(nextIndex);
             setStatus('idle');
-            setIsFirstAyah(true);
+            setShowInstructions(true);
         } else {
             setStatus('finished');
         }
     }
+    
+    const startSession = (size: number) => {
+        setChunkSize(size);
+        setStatus('idle');
+    }
+
+    const renderSetup = () => (
+         <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="text-center w-full max-w-md">
+            <h3 className="text-2xl font-bold mb-2">كيف تود أن تُسمّع؟</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-8">اختر الطريقة التي تناسب مراجعتك.</p>
+            <div className="space-y-3">
+                <button onClick={() => startSession(1)} className="w-full text-lg font-semibold p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm hover:bg-green-50 dark:hover:bg-slate-700 transition-colors">
+                    آية واحدة في كل مرة
+                </button>
+                 <button disabled={ayahs.length < 2} onClick={() => startSession(3)} className="w-full text-lg font-semibold p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm hover:bg-green-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    مجموعات من ٣ آيات
+                </button>
+                <button disabled={ayahs.length < 4} onClick={() => startSession(5)} className="w-full text-lg font-semibold p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm hover:bg-green-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    مجموعات من ٥ آيات
+                </button>
+                 <button onClick={() => startSession(ayahs.length)} className="w-full text-lg font-semibold p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm hover:bg-green-50 dark:hover:bg-slate-700 transition-colors">
+                    المقطع كاملاً
+                </button>
+            </div>
+         </motion.div>
+    );
 
     const renderStatusUI = () => {
-        const currentAyah = ayahs[currentAyahIndex];
+        const endOfChunk = Math.min(currentAyahIndex + chunkSize, ayahs.length);
+        const title = chunkSize === 1
+            ? `آية ${currentAyahIndex + 1} من ${ayahs.length}`
+            : `آيات ${currentAyahIndex + 1} - ${endOfChunk} من ${ayahs.length}`;
+
         return (
             <motion.div key={currentAyahIndex} initial={{opacity:0}} animate={{opacity:1}} className="text-center w-full max-w-3xl">
-                <p className="font-semibold text-slate-500 dark:text-slate-400 mb-4">آية {currentAyahIndex + 1} من {ayahs.length}</p>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm mb-8 min-h-[150px] flex items-center justify-center">
-                   <p className="font-quran text-3xl md:text-4xl leading-loose text-center">{currentAyah.text}</p>
+                <p className="font-semibold text-slate-500 dark:text-slate-400 mb-4">{title}</p>
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm mb-8 max-h-60 overflow-y-auto">
+                   <p className="font-quran text-3xl md:text-4xl leading-loose text-center">
+                       {currentChunk.map(ayah => `${ayah.text} \u06dd${ayah.numberInSurah}\u06de`).join(' ')}
+                   </p>
                 </div>
 
-                 {isFirstAyah && status === 'idle' && (
+                 {showInstructions && status === 'idle' && (
                     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg flex items-center gap-3 mb-6">
                         <InformationCircleIcon className="w-6 h-6 flex-shrink-0"/>
-                        <p className="text-sm font-medium text-right">سيتم عرض آية واحدة في كل مرة. اضغط على الميكروفون ثم اقرأ الآية المعروضة فقط وبشكل دقيق.</p>
+                        <p className="text-sm font-medium text-right">اضغط على الميكروفون ثم اقرأ المقطع المعروض بصوت واضح.</p>
                     </motion.div>
                 )}
 
@@ -208,7 +268,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                     <AnimatePresence mode="wait">
                         {status === 'idle' && (
                              <motion.button key="idle" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
-                                 onClick={handleStartRecording} aria-label="بدء تسجيل تلاوة الآية"
+                                 onClick={handleStartRecording} aria-label="بدء تسجيل التلاوة"
                                  className="w-24 h-24 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-all transform hover:scale-105">
                                  <MicrophoneIcon className="w-12 h-12" />
                              </motion.button>
@@ -233,7 +293,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                                         <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
                                         <p className="text-2xl font-bold mt-4">إجابة صحيحة!</p>
                                         <button onClick={handleNext} className="mt-6 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 font-semibold transition-colors flex items-center gap-2 mx-auto">
-                                           <span> {currentAyahIndex === ayahs.length - 1 ? 'إنهاء الجلسة' : 'الآية التالية'}</span>
+                                           <span> {endOfChunk >= ayahs.length ? 'إنهاء الجلسة' : 'المقطع التالي'}</span>
                                             <ArrowLeftIcon className="w-5 h-5"/>
                                         </button>
                                     </div>
@@ -297,7 +357,10 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
 
             <main className="flex-grow flex flex-col items-center justify-center p-4">
                 <AnimatePresence mode="wait">
-                    {status === 'finished' ? renderFinished() : status === 'error' ? renderError() : renderStatusUI()}
+                    {status === 'setup' && renderSetup()}
+                    {status === 'finished' && renderFinished()}
+                    {status === 'error' && renderError()}
+                    {(status !== 'setup' && status !== 'finished' && status !== 'error') && renderStatusUI()}
                 </AnimatePresence>
             </main>
         </div>

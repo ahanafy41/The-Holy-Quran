@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as searchService from '../services/searchService';
@@ -32,13 +30,15 @@ export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             setIsSearching(false);
             return;
         }
-        setIsSearching(true);
-        // Using a short timeout to allow the spinner to render before potential blocking search
-        const searchHandle = setTimeout(() => {
-            setSearchResults(searchService.searchQuran(debouncedSearchQuery));
+
+        const performSearch = async () => {
+            setIsSearching(true);
+            const results = await searchService.searchQuran(debouncedSearchQuery);
+            setSearchResults(results);
             setIsSearching(false);
-        }, 50);
-        return () => clearTimeout(searchHandle);
+        };
+
+        performSearch();
     }, [debouncedSearchQuery]);
 
     const handleResultClick = (surahNumber: number, ayahNumber: number) => {

@@ -234,42 +234,41 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
             src: sources,
             html5: true,
             rate: playbackRate,
-            onload: function() {
-                setDuration(this.duration());
-            },
-            onplay: (id) => {
-                setIsPlaying(true);
-            },
-            onpause: (id) => setIsPlaying(false),
-            onstop: (id) => setIsPlaying(false),
-            onend: (id) => {
-                setTimeout(() => {
-                    setCurrentAyahIndex(prevIndex => {
-                        const { repeatMode, ayahs: currentAyahs } = playerStateRef.current;
-                        if (repeatMode === 'one') {
-                            playAyahFn.current?.(prevIndex);
-                            return prevIndex;
-                        }
-                        const nextIndex = prevIndex + 1;
-                        if (nextIndex >= currentAyahs.length) {
-                            if (repeatMode === 'all') { // Loop back to start
-                                playAyahFn.current?.(0);
-                                return 0;
-                            }
-                            setIsPlaying(false); // 'none' mode: stop at the end
-                            return prevIndex;
-                        }
-                        // For 'all' and 'none' modes when not at the end
-                        playAyahFn.current?.(nextIndex);
-                        return nextIndex;
-                    });
-                }, settings.memorization.delay * 1000 || 500);
-            },
-            onloaderror: (id, err) => setError(`فشل تحميل الصوت: ${err}`),
-            onplayerror: (id, err) => setError(`فشل تشغيل الصوت: ${err}`),
         });
+
+        newHowl.on('load', () => {
+            setDuration(newHowl.duration());
+        });
+        newHowl.on('play', () => setIsPlaying(true));
+        newHowl.on('pause', () => setIsPlaying(false));
+        newHowl.on('stop', () => setIsPlaying(false));
+        newHowl.on('end', () => {
+             setTimeout(() => {
+                setCurrentAyahIndex(prevIndex => {
+                    const { repeatMode, ayahs: currentAyahs } = playerStateRef.current;
+                    if (repeatMode === 'one') {
+                        playAyahFn.current?.(prevIndex);
+                        return prevIndex;
+                    }
+                    const nextIndex = prevIndex + 1;
+                    if (nextIndex >= currentAyahs.length) {
+                        if (repeatMode === 'all') { // Loop back to start
+                            playAyahFn.current?.(0);
+                            return 0;
+                        }
+                        setIsPlaying(false); // 'none' mode: stop at the end
+                        return prevIndex;
+                    }
+                    // For 'all' and 'none' modes when not at the end
+                    playAyahFn.current?.(nextIndex);
+                    return nextIndex;
+                });
+            }, settings.memorization.delay * 1000 || 500);
+        });
+        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت: ${err}`));
+        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت: ${err}`));
         
-        soundIdRef.current = newHowl.play(undefined);
+        soundIdRef.current = (newHowl.play as any)();
         howlRef.current = newHowl;
     }, [ayahs, playbackRate, setError, cleanupPlayer, settings.memorization.delay]);
 
@@ -294,8 +293,8 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
     }, [currentAyahIndex]);
 
     const updateProgress = useCallback(() => {
-        if (howlRef.current && typeof soundIdRef.current === 'number') {
-            const seek = howlRef.current.seek(soundIdRef.current);
+        if (howlRef.current && howlRef.current.playing() && soundIdRef.current) {
+            const seek = howlRef.current.seek();
             if (typeof seek === 'number') {
                 setProgress(seek);
             }
@@ -320,7 +319,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
             h?.pause(soundIdRef.current!);
         } else {
              if(h?.state() === 'loaded') {
-                soundIdRef.current = h?.play(soundIdRef.current!);
+                h?.play(soundIdRef.current!);
              } else {
                 playAyah(currentAyahIndex);
              }

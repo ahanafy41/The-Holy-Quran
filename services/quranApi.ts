@@ -1,4 +1,4 @@
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah } from '../types';
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult } from '../types';
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
 
@@ -123,4 +123,51 @@ export const getTafsirInfo = (): Promise<TafsirInfo[]> => {
 
 export const getTafsirForAyahWithEdition = (editionIdentifier: string, surahNumber: number, ayahNumber: number): Promise<Tafsir> => {
   return fetchAPI<Tafsir>(`ayah/${surahNumber}:${ayahNumber}/${editionIdentifier}`);
+};
+
+// Types for API search results
+interface ApiSearchMatch {
+    number: number;
+    text: string;
+    surah: {
+        number: number;
+        name: string;
+    };
+    numberInSurah: number;
+}
+
+interface ApiSearchResult {
+    count: number;
+    matches: ApiSearchMatch[];
+}
+
+export const searchQuran = async (query: string): Promise<SearchResult[]> => {
+  if (!query.trim()) {
+    return [];
+  }
+  // Use a text edition that is good for searching
+  const edition = 'quran-simple-clean'; 
+  const encodedQuery = encodeURIComponent(query.trim());
+
+  try {
+    const data = await fetchAPI<ApiSearchResult>(`search/${encodedQuery}/all/${edition}`);
+    if (!data || !data.matches) {
+        return [];
+    }
+
+    return data.matches.map(match => ({
+      surah: match.surah.number,
+      ayah: match.numberInSurah,
+      text: match.text,
+      // These fields are not provided by the API but are part of the type.
+      // They are not used in the search display, so empty strings are fine.
+      normalizedText: '',
+      normalizedTextNoSpaces: '',
+    }));
+  } catch (error) {
+    // The API may return 404 for no matches, which fetchAPI treats as an error.
+    // Gracefully handle this by returning an empty array.
+    console.warn(`Search for "${query}" failed or returned no results. This is expected if there are no matches.`);
+    return [];
+  }
 };
