@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Howl } from 'howler';
 import { Ayah, SavedSection, SurahSimple } from '../types';
@@ -8,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SamiaSessionModal } from './SamiaSessionModal';
 
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 type PlayerPlaylist = {
     section: SavedSection;
@@ -199,18 +200,41 @@ const SectionListView: React.FC<{
     );
 };
 
+// A local, un-exported version of the SettingSelect component
+const SettingSelect: React.FC<React.PropsWithChildren<{id: string; label: string; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;}>> = ({id, label, children, ...props}) => (
+    <div>
+        <label htmlFor={id} className="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-400">{label}</label>
+        <select id={id} {...props} className="w-full p-2 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500">
+            {children}
+        </select>
+    </div>
+);
+
 const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = ({ playlist, onBack }) => {
-    const { settings, setError } = useApp();
+    const { setError } = useApp();
     const { ayahs, section } = playlist;
-    
+
+    // UI State
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
     const [repetitionCount, setRepetitionCount] = useState(1);
     
+    // Settings State
+    const [repetitions, setRepetitions] = useState(3);
+    const [delay, setDelay] = useState(3); // seconds
+    const [playbackRate, setPlaybackRate] = useState(1);
+    
+    // Refs for player logic to avoid stale closures in callbacks
     const howlRef = useRef<Howl | null>(null);
     const soundIdRef = useRef<number | null>(null);
     const timeoutRef = useRef<number>();
     const playAyahRef = useRef<((index: number) => void) | null>(null);
+    const repetitionCounterRef = useRef(1);
+
+    const playerSettingsRef = useRef({ repetitions, delay, currentAyahIndex });
+    useEffect(() => {
+        playerSettingsRef.current = { repetitions, delay, currentAyahIndex };
+    }, [repetitions, delay, currentAyahIndex]);
 
     const cleanupPlayer = useCallback(() => {
         howlRef.current?.unload();
@@ -228,47 +252,48 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
 
         setCurrentAyahIndex(index);
         setRepetitionCount(1);
+        repetitionCounterRef.current = 1;
+        
         const ayah = ayahs[index];
         const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
 
         const newHowl = new Howl({
             src: sources,
             html5: true,
-            rate: settings.memorization.playbackRate,
-            sprite: {
-                _play: [0, 300000] // 5 minutes, should be enough for any ayah
-            }
+            rate: playbackRate,
         });
+        howlRef.current = newHowl;
 
-        newHowl.on('play', () => setIsPlaying(true));
-        newHowl.on('pause', () => setIsPlaying(false));
-        newHowl.on('stop', () => setIsPlaying(false));
-        newHowl.on('end', (id) => {
-            if (repetitionCount < settings.memorization.repetitions) {
+        newHowl.on('play', _ => setIsPlaying(true));
+        newHowl.on('pause', _ => setIsPlaying(false));
+        newHowl.on('stop', _ => setIsPlaying(false));
+        newHowl.on('loaderror', (_, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
+        newHowl.on('playerror', (_, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
+        
+        newHowl.on('end', () => {
+            const settings = playerSettingsRef.current;
+            if (repetitionCounterRef.current < settings.repetitions) {
                 timeoutRef.current = window.setTimeout(() => {
-                    if (typeof id === 'number' && howlRef.current) {
-                        howlRef.current.stop(id);
-                        howlRef.current.play(id);
+                    if (howlRef.current) {
+                        soundIdRef.current = howlRef.current.play();
                     }
                 }, 500);
-                setRepetitionCount(prev => prev + 1);
+                repetitionCounterRef.current += 1;
+                setRepetitionCount(repetitionCounterRef.current);
             } else {
-                const nextIndex = currentAyahIndex + 1;
+                const nextIndex = settings.currentAyahIndex + 1;
                 if (nextIndex < ayahs.length) {
                     timeoutRef.current = window.setTimeout(() => {
                         playAyahRef.current?.(nextIndex);
-                    }, settings.memorization.delay * 1000);
+                    }, settings.delay * 1000);
                 } else {
-                    setIsPlaying(false); // End of playlist
+                    setIsPlaying(false);
                 }
             }
         });
-        newHowl.on('loaderror', (id, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
-        newHowl.on('playerror', (id, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
         
-        soundIdRef.current = newHowl.play('_play');
-        howlRef.current = newHowl;
-    }, [ayahs, cleanupPlayer, settings, setError, currentAyahIndex, repetitionCount]);
+        soundIdRef.current = newHowl.play();
+    }, [ayahs, cleanupPlayer, playbackRate, setError]);
     
     useEffect(() => {
         playAyahRef.current = playAyah;
@@ -279,23 +304,34 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             playAyah(0);
         }
         return cleanupPlayer;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ayahs]);
+    }, [ayahs, playAyah, cleanupPlayer]);
     
     const handlePlayPause = () => {
         if (isPlaying) {
-            howlRef.current?.pause();
+            howlRef.current?.pause(soundIdRef.current!);
         } else {
             if (howlRef.current && howlRef.current.state() === 'loaded') {
-                howlRef.current.play(soundIdRef.current!);
+                soundIdRef.current = howlRef.current.play(soundIdRef.current!);
             } else {
                 playAyahRef.current?.(currentAyahIndex);
             }
         }
     };
     
-    const handleNext = () => playAyah((currentAyahIndex + 1) % ayahs.length);
-    const handlePrevious = () => playAyah((currentAyahIndex - 1 + ayahs.length) % ayahs.length);
+    const handleNext = () => {
+        cleanupPlayer();
+        const nextIndex = currentAyahIndex + 1;
+        if (nextIndex < ayahs.length) {
+            playAyah(nextIndex);
+        }
+    };
+    const handlePrevious = () => {
+        cleanupPlayer();
+        const prevIndex = currentAyahIndex - 1;
+        if (prevIndex >= 0) {
+            playAyah(prevIndex);
+        }
+    };
 
     const currentAyah = ayahs[currentAyahIndex];
     
@@ -307,7 +343,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
                 </button>
                 <div>
                      <h1 className="text-2xl font-bold">{section.name}</h1>
-                     <p className="text-slate-600 dark:text-slate-400">الآية {currentAyahIndex + 1} من {ayahs.length} | التكرار {repetitionCount} من {settings.memorization.repetitions}</p>
+                     <p className="text-slate-600 dark:text-slate-400">الآية {currentAyahIndex + 1} من {ayahs.length} | التكرار {repetitionCount} من {repetitions}</p>
                 </div>
             </header>
             
@@ -319,13 +355,40 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
                 )}
             </div>
             
-            <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4">
-                <div className="flex items-center justify-center gap-4">
-                     <button onClick={handlePrevious} aria-label="السابق" className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><PreviousIcon className="w-6 h-6"/></button>
+            <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4 space-y-4">
+                 <div className="flex items-center justify-center gap-4">
+                     <button onClick={handlePrevious} aria-label="السابق" disabled={currentAyahIndex === 0} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><PreviousIcon className="w-6 h-6"/></button>
                     <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="p-4 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-4">
                         {isPlaying ? <PauseIcon className="w-10 h-10"/> : <PlayIcon className="w-10 h-10"/>}
                     </button>
-                    <button onClick={handleNext} aria-label="التالي" className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><NextIcon className="w-6 h-6"/></button>
+                    <button onClick={handleNext} aria-label="التالي" disabled={currentAyahIndex >= ayahs.length - 1} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><NextIcon className="w-6 h-6"/></button>
+                </div>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4 grid grid-cols-3 gap-3 text-sm">
+                    <SettingSelect id="repetitions" label="التكرار" value={String(repetitions)} onChange={(e) => setRepetitions(parseInt(e.target.value, 10))}>
+                        {Array.from({ length: 20 }, (_, i) => i + 1).map(num => {
+                            let unit;
+                            if (num === 1) unit = 'مرة';
+                            else if (num === 2) unit = 'مرتان';
+                            else unit = 'مرات';
+                            return <option key={num} value={num}>{`${num} ${unit}`}</option>;
+                        })}
+                    </SettingSelect>
+                    <SettingSelect id="delay" label="التأخير" value={String(delay)} onChange={(e) => setDelay(parseInt(e.target.value, 10))}>
+                        {Array.from({ length: 11 }, (_, i) => i).map(num => {
+                            let unit;
+                            if (num === 0) return <option key={num} value={num}>بلا تأخير</option>;
+                            if (num === 1) unit = 'ثانية';
+                            else if (num === 2) unit = 'ثانيتان';
+                            else unit = 'ثوان';
+                            return <option key={num} value={num}>{`${num} ${unit}`}</option>;
+                        })}
+                    </SettingSelect>
+                     <SettingSelect id="playbackRate" label="السرعة" value={String(playbackRate)} onChange={e => setPlaybackRate(parseFloat(e.target.value))}>
+                        <option value="0.75">0.75x</option>
+                        <option value="1">1x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                     </SettingSelect>
                 </div>
             </div>
         </div>

@@ -18,7 +18,7 @@ type Message = {
     text: string;
 };
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClose }) => {
     const { apiKey } = useApp();

@@ -17,7 +17,7 @@ interface DivisionConfig {
     icon: React.FC<{ className?: string }>;
 }
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 export const IndexPage: React.FC = () => {
     const { surahList, navigateTo, savedSections } = useApp();

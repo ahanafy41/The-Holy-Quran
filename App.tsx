@@ -62,22 +62,19 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 export const useApp = () => useContext(AppContext)!;
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 // ======== MAIN APP COMPONENT ======== //
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('quranAppSettings');
-    const defaultSettings = {
+    const defaultSettings: AppSettings = {
       darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
       reciter: 'ar.alafasy',
       tafsir: 'ar.muyassar',
-      memorization: { repetitions: 3, delay: 3, playbackRate: 1 },
     };
      if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure memorization settings are fully populated
-        parsed.memorization = { ...defaultSettings.memorization, ...parsed.memorization };
         return { ...defaultSettings, ...parsed };
     }
     return defaultSettings;
@@ -169,7 +166,7 @@ const App: React.FC = () => {
   }, [installPromptEvent]);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings, memorization: {...prev.memorization, ...newSettings.memorization} }));
+    setSettings(prev => ({ ...prev, ...newSettings }));
   };
 
   const updateApiKey = useCallback((key: string) => {
@@ -267,12 +264,12 @@ const App: React.FC = () => {
 
     const newHowl = new Howl({
       src: sources, html5: true,
-      onplay: () => setIsPlaying(true),
-      onpause: () => setIsPlaying(false),
-      onend: () => { setIsPlaying(false); setActiveAyah(null); },
-      onstop: () => setIsPlaying(false),
-      onloaderror: () => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`),
-      onplayerror: () => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`)
+      onplay: _ => setIsPlaying(true),
+      onpause: _ => setIsPlaying(false),
+      onend: _ => { setIsPlaying(false); setActiveAyah(null); },
+      onstop: _ => setIsPlaying(false),
+      onloaderror: (_id, _err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`),
+      onplayerror: (_id, _err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`)
     });
     (newHowl as any).play();
     setHowlInstance(newHowl);
@@ -371,12 +368,6 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     
     useFocusTrap(modalRef, handleSaveAndClose);
     
-    const handlePlaybackRateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        updateSettings({
-            memorization: { ...settings.memorization, playbackRate: parseFloat(e.target.value) }
-        });
-    };
-
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
             <MotionDiv ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
@@ -421,54 +412,6 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                      <SettingSelect id="tafsir" label="التفسير" value={settings.tafsir} onChange={(e) => updateSettings({ tafsir: e.target.value })}>
                         {tafsirInfoList.map(t => <option key={t.identifier} value={t.identifier}>{t.name}</option>)}
                      </SettingSelect>
-                     <div>
-                        <h4 className="font-medium mb-3">إعدادات الاستماع والحفظ</h4>
-                        <div className="space-y-4">
-                            <SettingSelect 
-                                id="repetitions"
-                                label="عدد تكرار كل آية"
-                                value={String(settings.memorization.repetitions)}
-                                onChange={(e) => updateSettings({ memorization: { ...settings.memorization, repetitions: parseInt(e.target.value, 10) }})}
-                            >
-                                {Array.from({ length: 20 }, (_, i) => i + 1).map(num => {
-                                    let unit;
-                                    if (num === 1) unit = 'مرة واحدة';
-                                    else if (num === 2) unit = 'مرتان';
-                                    else if (num >= 3 && num <= 10) unit = 'مرات';
-                                    else unit = 'مرة';
-                                    return (
-                                        <option key={num} value={num}>{`${num} ${unit}`}</option>
-                                    );
-                                })}
-                            </SettingSelect>
-                            <SettingSelect id="playbackRate" label="سرعة القراءة" value={String(settings.memorization.playbackRate)} onChange={handlePlaybackRateChange}>
-                                <option value="0.75">بطيئة (0.75x)</option>
-                                <option value="1">عادية (1x)</option>
-                                <option value="1.25">سريعة (1.25x)</option>
-                                <option value="1.5">سريعة جداً (1.5x)</option>
-                             </SettingSelect>
-                             <SettingSelect 
-                                id="delay"
-                                label="التأخير بين الآيات"
-                                value={String(settings.memorization.delay)}
-                                onChange={(e) => updateSettings({ memorization: { ...settings.memorization, delay: parseInt(e.target.value, 10) }})}
-                            >
-                                {Array.from({ length: 11 }, (_, i) => i).map(num => {
-                                    let unit;
-                                    if (num === 0) unit = 'بلا تأخير';
-                                    else if (num === 1) unit = 'ثانية';
-                                    else if (num === 2) unit = 'ثانيتان';
-                                    else unit = 'ثوان';
-                                    
-                                    return (
-                                        <option key={num} value={num}>
-                                            {num === 0 ? unit : `${num} ${unit}`}
-                                        </option>
-                                    )
-                                })}
-                            </SettingSelect>
-                        </div>
-                    </div>
                      <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                         <h4 className="font-medium mb-3">إعدادات الذكاء الاصطناعي</h4>
                         <div className="space-y-2">

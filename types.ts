@@ -59,11 +59,6 @@ export interface AppSettings {
   darkMode: boolean;
   reciter: string;
   tafsir: string; // Storing tafsir identifier e.g., 'ar.muyassar'
-  memorization: {
-    repetitions: number; // This is now a boolean for repeat mode in the new player
-    delay: number; // in seconds
-    playbackRate: number;
-  };
 }
 
 export interface SavedSection {

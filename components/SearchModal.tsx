@@ -6,7 +6,7 @@ import { useApp, useDebounce, useFocusTrap, Spinner } from '../App';
 import { SearchResult } from '../types';
 import { XMarkIcon, SearchIcon } from './Icons';
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { navigateTo, surahList } = useApp();

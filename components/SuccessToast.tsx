@@ -10,7 +10,7 @@ interface SuccessToastProps {
     duration?: number;
 }
 
-const MotionDiv = motion("div");
+const MotionDiv = motion.div;
 
 export const SuccessToast: React.FC<SuccessToastProps> = ({ message, onClose, duration = 4000 }) => {
     useEffect(() => {

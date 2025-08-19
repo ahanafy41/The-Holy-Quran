@@ -132,7 +132,7 @@ interface AyahItemProps {
     onSelect: (event: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, onSelect }, ref) => {
     const { activeAyah } = useApp();

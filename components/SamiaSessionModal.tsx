@@ -26,8 +26,8 @@ interface Feedback {
 
 const mimeType = 'audio/webm';
 
-const MotionDiv = motion('div');
-const MotionButton = motion('button');
+const MotionDiv = motion.div;
+const MotionButton = motion.button;
 
 export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, onClose }) => {
     const { ayahs, section } = playlist;

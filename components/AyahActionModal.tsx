@@ -12,7 +12,7 @@ interface AyahActionModalProps {
     onClose: () => void;
 }
 
-const MotionDiv = motion('div');
+const MotionDiv = motion.div;
 
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError } = useApp();

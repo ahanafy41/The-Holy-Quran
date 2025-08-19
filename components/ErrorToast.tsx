@@ -10,7 +10,7 @@ interface ErrorToastProps {
     duration?: number;
 }
 
-const MotionDiv = motion("div");
+const MotionDiv = motion.div;
 
 export const ErrorToast: React.FC<ErrorToastProps> = ({ message, onClose, duration = 6000 }) => {
     useEffect(() => {
