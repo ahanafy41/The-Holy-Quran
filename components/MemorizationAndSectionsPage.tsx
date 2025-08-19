@@ -284,7 +284,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
     
     const handlePlayPause = () => {
         if (isPlaying) {
-            howlRef.current?.pause(soundIdRef.current!);
+            howlRef.current?.pause();
         } else {
             if (howlRef.current && howlRef.current.state() === 'loaded') {
                 howlRef.current.play(soundIdRef.current!);
