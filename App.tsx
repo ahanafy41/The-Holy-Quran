@@ -54,6 +54,8 @@ interface AppContextType {
   savedSections: SavedSection[];
   addSavedSection: (section: Omit<SavedSection, 'id'>) => void;
   removeSavedSection: (sectionId: string) => void;
+  canInstall: boolean;
+  triggerInstall: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -106,8 +108,9 @@ const App: React.FC = () => {
   const [tafsirContent, setTafsirContent] = useState<{ayah: Ayah, tafsir: Tafsir | null, surahNumber: number, surahName: string, tafsirName?: string, isLoading: boolean, error?: string} | null>(null);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [aiAssistantAyah, setAIAssistantAyah] = useState<Ayah | null>(null);
+  
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(window.matchMedia('(display-mode: standalone)').matches);
 
 
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -143,14 +146,25 @@ const App: React.FC = () => {
         event.preventDefault();
         setInstallPromptEvent(event);
     };
-
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
     
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+  
+  const triggerInstall = async () => {
+      if (!installPromptEvent) return;
+      installPromptEvent.prompt();
+      const { outcome } = await installPromptEvent.userChoice;
+      if (outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          setIsStandalone(true);
+      } else {
+          console.log('User dismissed the install prompt');
+      }
+      setInstallPromptEvent(null);
+  };
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings, memorization: {...prev.memorization, ...newSettings.memorization} }));
@@ -296,13 +310,16 @@ const App: React.FC = () => {
   };
 
   const showSearch = () => setIsSearchOpen(true);
+  
+  const canInstall = !!installPromptEvent && !isStandalone;
 
   const appContextValue = useMemo(() => ({
     settings, updateSettings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah,
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
-  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey]);
+    canInstall, triggerInstall,
+  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, canInstall]);
 
   const renderView = () => {
     switch (view) {
@@ -319,7 +336,7 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={appContextValue}>
       <AnimatePresence>
-        {installPromptEvent && !isStandalone && <InstallPWAButton promptEvent={installPromptEvent} onInstall={() => setInstallPromptEvent(null)} />}
+        {canInstall && <InstallPWAButton onInstall={triggerInstall} />}
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </AnimatePresence>
@@ -342,17 +359,7 @@ const App: React.FC = () => {
 // ======== PWA INSTALL BUTTON ======== //
 const MotionDiv = motion('div');
 
-const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = ({ promptEvent, onInstall }) => {
-    const handleInstallClick = async () => {
-        if (!promptEvent) return;
-        promptEvent.prompt();
-        // userChoice is a promise that resolves with the user's decision
-        const { outcome } = await promptEvent.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
-        // The prompt can only be used once, so we clear it
-        onInstall();
-    };
-
+const InstallPWAButton: React.FC<{ onInstall: () => void }> = ({ onInstall }) => {
     return (
         <MotionDiv
             initial={{ opacity: 0, y: 100 }}
@@ -362,7 +369,7 @@ const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = 
             className="fixed bottom-4 left-4 z-[99]"
         >
             <button
-                onClick={handleInstallClick}
+                onClick={onInstall}
                 className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-900 transition-transform transform hover:scale-105"
                 title="تثبيت التطبيق على جهازك"
                 aria-label="تثبيت التطبيق"
@@ -377,7 +384,7 @@ const InstallPWAButton: React.FC<{ promptEvent: any; onInstall: () => void }> = 
 // ======== MODAL COMPONENTS ======== //
 
 const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey } = useApp();
+    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, canInstall, triggerInstall } = useApp();
     const modalRef = useRef<HTMLDivElement>(null);
     const [localApiKey, setLocalApiKey] = useState(apiKey || '');
 
@@ -403,6 +410,24 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                     <button onClick={handleSaveAndClose} aria-label="Close settings" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto text-right">
+                     {canInstall && (
+                        <div className="pb-6 border-b border-slate-200 dark:border-slate-700">
+                            <h4 className="font-medium mb-3">تثبيت التطبيق</h4>
+                            <button
+                                onClick={() => {
+                                    triggerInstall();
+                                    onClose();
+                                }}
+                                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
+                            >
+                                <ArrowDownTrayIcon className="w-6 h-6" />
+                                <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
+                            </button>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
+                                احصل على تجربة استخدام أفضل ووصول أسرع للتطبيق من شاشتك الرئيسية.
+                            </p>
+                        </div>
+                    )}
                      <SettingSelect id="reciter" label="القارئ" value={settings.reciter} onChange={(e) => updateSettings({ reciter: e.target.value })}>
                         {reciters.map(r => <option key={r.identifier} value={r.identifier}>{r.name}</option>)}
                      </SettingSelect>

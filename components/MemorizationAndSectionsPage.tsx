@@ -289,7 +289,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             if (howlRef.current && howlRef.current.state() === 'loaded') {
                 howlRef.current.play(soundIdRef.current!);
             } else {
-                playAyah(currentAyahIndex);
+                playAyahRef.current?.(currentAyahIndex);
             }
         }
     };
