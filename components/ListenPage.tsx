@@ -243,10 +243,10 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         newHowl.on('load', () => {
             setDuration(newHowl.duration());
         });
-        newHowl.on('play', (soundId) => setIsPlaying(true));
-        newHowl.on('pause', (soundId) => setIsPlaying(false));
-        newHowl.on('stop', (soundId) => setIsPlaying(false));
-        newHowl.on('end', (soundId: number) => {
+        newHowl.on('play', () => setIsPlaying(true));
+        newHowl.on('pause', () => setIsPlaying(false));
+        newHowl.on('stop', () => setIsPlaying(false));
+        newHowl.on('end', () => {
              setTimeout(() => {
                 setCurrentAyahIndex(prevIndex => {
                     const { repeatMode, ayahs: currentAyahs } = playerStateRef.current;

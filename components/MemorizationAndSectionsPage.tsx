@@ -240,9 +240,9 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             }
         });
 
-        newHowl.on('play', (soundId) => setIsPlaying(true));
-        newHowl.on('pause', (soundId) => setIsPlaying(false));
-        newHowl.on('stop', (soundId) => setIsPlaying(false));
+        newHowl.on('play', () => setIsPlaying(true));
+        newHowl.on('pause', () => setIsPlaying(false));
+        newHowl.on('stop', () => setIsPlaying(false));
         newHowl.on('end', (id) => {
             if (repetitionCount < settings.memorization.repetitions) {
                 timeoutRef.current = window.setTimeout(() => {

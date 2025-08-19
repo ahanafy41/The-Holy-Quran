@@ -54,6 +54,7 @@ interface AppContextType {
   savedSections: SavedSection[];
   addSavedSection: (section: Omit<SavedSection, 'id'>) => void;
   removeSavedSection: (sectionId: string) => void;
+  isStandalone: boolean;
   canInstall: boolean;
   triggerInstall: () => void;
 }
@@ -61,6 +62,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 export const useApp = () => useContext(AppContext)!;
 
+const MotionDiv = motion('div');
 
 // ======== MAIN APP COMPONENT ======== //
 const App: React.FC = () => {
@@ -153,7 +155,7 @@ const App: React.FC = () => {
     };
   }, []);
   
-  const triggerInstall = async () => {
+  const triggerInstall = useCallback(async () => {
       if (!installPromptEvent) return;
       installPromptEvent.prompt();
       const { outcome } = await installPromptEvent.userChoice;
@@ -164,7 +166,7 @@ const App: React.FC = () => {
           console.log('User dismissed the install prompt');
       }
       setInstallPromptEvent(null);
-  };
+  }, [installPromptEvent]);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings, memorization: {...prev.memorization, ...newSettings.memorization} }));
@@ -318,8 +320,8 @@ const App: React.FC = () => {
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
-    canInstall, triggerInstall,
-  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, canInstall]);
+    isStandalone, canInstall, triggerInstall,
+  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall]);
 
   const renderView = () => {
     switch (view) {
@@ -336,7 +338,6 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={appContextValue}>
       <AnimatePresence>
-        {canInstall && <InstallPWAButton onInstall={triggerInstall} />}
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </AnimatePresence>
@@ -356,35 +357,10 @@ const App: React.FC = () => {
   );
 };
 
-// ======== PWA INSTALL BUTTON ======== //
-const MotionDiv = motion('div');
-
-const InstallPWAButton: React.FC<{ onInstall: () => void }> = ({ onInstall }) => {
-    return (
-        <MotionDiv
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-            className="fixed bottom-4 left-4 z-[99]"
-        >
-            <button
-                onClick={onInstall}
-                className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-900 transition-transform transform hover:scale-105"
-                title="تثبيت التطبيق على جهازك"
-                aria-label="تثبيت التطبيق"
-            >
-                <ArrowDownTrayIcon className="w-6 h-6" />
-                <span className="font-semibold">تثبيت التطبيق</span>
-            </button>
-        </MotionDiv>
-    );
-};
-
 // ======== MODAL COMPONENTS ======== //
 
 const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, canInstall, triggerInstall } = useApp();
+    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
     const modalRef = useRef<HTMLDivElement>(null);
     const [localApiKey, setLocalApiKey] = useState(apiKey || '');
 
@@ -410,19 +386,30 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                     <button onClick={handleSaveAndClose} aria-label="Close settings" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto text-right">
-                     {canInstall && (
+                     {!isStandalone && (
                         <div className="pb-6 border-b border-slate-200 dark:border-slate-700">
                             <h4 className="font-medium mb-3">تثبيت التطبيق</h4>
-                            <button
-                                onClick={() => {
-                                    triggerInstall();
-                                    onClose();
-                                }}
-                                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
-                            >
-                                <ArrowDownTrayIcon className="w-6 h-6" />
-                                <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
-                            </button>
+                            {canInstall ? (
+                                <button
+                                    onClick={() => {
+                                        triggerInstall();
+                                        onClose();
+                                    }}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
+                                >
+                                    <ArrowDownTrayIcon className="w-6 h-6" />
+                                    <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
+                                </button>
+                            ) : (
+                                <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg text-center">
+                                     <p className="text-sm text-slate-600 dark:text-slate-300">
+                                        خيار التثبيت غير متاح حاليًا من قبل المتصفح.
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        جرب استخدام التطبيق قليلًا ثم تحقق مرة أخرى.
+                                    </p>
+                                </div>
+                            )}
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
                                 احصل على تجربة استخدام أفضل ووصول أسرع للتطبيق من شاشتك الرئيسية.
                             </p>
