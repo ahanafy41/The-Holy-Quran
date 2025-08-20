@@ -1,10 +1,11 @@
-const CORE_CACHE_NAME = 'quran-study-app-core-v6'; // Version bumped to trigger update
+const CORE_CACHE_NAME = 'quran-study-app-core-v7'; // Version bumped to trigger update
 const QURAN_DATA_CACHE_NAME = 'quran-app-data-v1';
 const AUDIO_CACHE_PREFIX = 'quran-audio-';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/index.tsx',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png',
@@ -12,7 +13,15 @@ const STATIC_ASSETS = [
   '/icon-maskable-512x512.png',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap',
-  'https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap',
+  // JS Dependencies from importmap
+  'https://esm.sh/react@^19.1.1',
+  'https://esm.sh/react-dom@^19.1.1/client',
+  'https://esm.sh/wavesurfer.js@7',
+  'https://esm.sh/@google/genai',
+  'https://esm.sh/framer-motion@^11.0.0',
+  'https://esm.sh/react-use-measure',
+  'https://esm.sh/focus-trap-react@^10.2.3'
 ];
 
 const API_HOST = 'api.alquran.cloud';
