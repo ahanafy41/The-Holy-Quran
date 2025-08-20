@@ -1,7 +1,10 @@
-const CORE_CACHE_NAME = 'quran-study-app-core-v7'; // Version bumped to trigger update
+// A more robust and clearer service worker implementation
+
+const CORE_CACHE_NAME = 'quran-study-app-core-v8'; // Bumped version
 const QURAN_DATA_CACHE_NAME = 'quran-app-data-v1';
 const AUDIO_CACHE_PREFIX = 'quran-audio-';
 
+// All the assets that constitute the "app shell"
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -24,122 +27,133 @@ const STATIC_ASSETS = [
   'https://esm.sh/focus-trap-react@^10.2.3'
 ];
 
+// Hosts for different types of content
 const API_HOST = 'api.alquran.cloud';
-const GSTATIC_HOST = 'fonts.gstatic.com';
-const AUDIO_HOSTS = [
-  'everyayah.com',
-  'cdn.islamic.network',
-];
+const AUDIO_HOSTS = ['everyayah.com', 'cdn.islamic.network'];
+
+// --- EVENT LISTENERS ---
 
 self.addEventListener('install', event => {
+  console.log('[SW] Install event');
   event.waitUntil(
     caches.open(CORE_CACHE_NAME).then(cache => {
-      console.log('Opened core cache and caching static assets');
-      return cache.addAll(STATIC_ASSETS).catch(error => {
-        console.error('Failed to cache static assets during install:', error);
-      });
+      console.log('[SW] Caching core static assets');
+      return cache.addAll(STATIC_ASSETS);
+    }).catch(error => {
+      console.error('[SW] Failed to cache static assets during install:', error);
     })
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
+  console.log('[SW] Activate event');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          const isActiveCoreCache = cacheName === CORE_CACHE_NAME;
-          const isActiveDataCache = cacheName === QURAN_DATA_CACHE_NAME;
-          const isActiveAudioCache = cacheName.startsWith(AUDIO_CACHE_PREFIX);
-          
-          // Delete any cache that is not one of our active caches
-          if (!isActiveCoreCache && !isActiveDataCache && !isActiveAudioCache) {
-            console.log('Deleting old/unused cache:', cacheName);
+          // Clean up old caches that are not the current ones
+          const isCoreCache = cacheName === CORE_CACHE_NAME;
+          const isDataCache = cacheName === QURAN_DATA_CACHE_NAME;
+          const isAudioCache = cacheName.startsWith(AUDIO_CACHE_PREFIX);
+
+          if (!isCoreCache && !isDataCache && !isAudioCache) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+        console.log('[SW] Claiming clients');
+        return self.clients.claim();
+    })
   );
 });
-
-// Helper function to find a response in any of the dynamic audio caches
-async function getFromAudioCaches(request) {
-  const cacheKeys = await caches.keys();
-  for (const key of cacheKeys) {
-    if (key.startsWith(AUDIO_CACHE_PREFIX)) {
-      const cache = await caches.open(key);
-      const match = await cache.match(request);
-      if (match) return match;
-    }
-  }
-  return null;
-}
 
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Ignore non-GET requests
   if (request.method !== 'GET') {
     return;
   }
 
-  // Strategy 1: Navigation requests (for SPA routing)
-  // Network-first, falling back to the cached app shell (/index.html).
-  // This is the key fix for the freezing issue when navigating offline.
+  // --- ROUTING ---
+
+  // 1. Navigation strategy (for SPA)
+  // Network first, but fallback to the cached index.html for offline support.
+  // This is crucial for the app to load when offline.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => {
-        console.log('Fetch for navigation failed, serving /index.html from cache.');
-        return caches.match('/index.html');
+        console.log('[SW] Navigation fetch failed. Serving app shell from cache.');
+        return caches.match('/'); // Serve the root, which should be cached as /index.html
       })
     );
     return;
   }
 
-  // Strategy 2: Downloaded Content (audio & quran text) - Cache-first
-  // Prioritize serving user-downloaded content from the cache.
-  const isAudio = AUDIO_HOSTS.some(host => url.hostname.includes(host));
-  if (isAudio) {
-    event.respondWith(
-      getFromAudioCaches(request).then(cachedResponse => {
-        return cachedResponse || fetch(request); // Fallback to network if not in any audio cache
-      })
-    );
-    return;
-  }
-  if (url.hostname === API_HOST && url.pathname.startsWith('/v1/surah')) {
-    event.respondWith(
-      caches.open(QURAN_DATA_CACHE_NAME).then(cache => {
-        return cache.match(request).then(cachedResponse => {
-          return cachedResponse || fetch(request); // Fallback for surahs not in the text data cache
-        });
-      })
-    );
-    return;
-  }
+  // 2. Data/Audio Caching Strategy (Cache First)
+  // For downloaded Quran data and audio files, serve from cache if available.
+  const isApiRequest = url.hostname === API_HOST;
+  const isAudioRequest = AUDIO_HOSTS.some(host => url.hostname.includes(host));
 
-  // Strategy 3: App Shell Assets, Fonts & other APIs - Stale-while-revalidate
-  // Serve from cache immediately for speed, then update the cache in the background.
-  // Provides offline fallback if the item is already in the cache.
-  event.respondWith(
-    caches.match(request).then(cachedResponse => {
-      const fetchPromise = fetch(request).then(networkResponse => {
-        // If the fetch is successful, update the cache.
-        if (networkResponse.ok) {
-          caches.open(CORE_CACHE_NAME).then(cache => {
-            cache.put(request, networkResponse.clone());
-          });
+  if (isApiRequest || isAudioRequest) {
+    event.respondWith(
+      // Custom cache-first logic that checks all relevant caches
+      findInCaches(request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        return networkResponse;
-      }).catch(err => {
-        // Network failed. The request will fail if there's no cached response.
-        // This is acceptable as we've already returned the cachedResponse if it existed.
-        console.warn(`Network request for ${request.url} failed.`);
+        return fetch(request);
+      })
+    );
+    return;
+  }
+  
+  // 3. Static Assets Strategy (Stale-While-Revalidate)
+  // For core app files, fonts, etc. Serve from cache for speed, update in background.
+  event.respondWith(
+    caches.open(CORE_CACHE_NAME).then(cache => {
+      return cache.match(request).then(cachedResponse => {
+        const fetchPromise = fetch(request).then(networkResponse => {
+          if (networkResponse.ok) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        });
+        
+        // Return cached response immediately if available, otherwise wait for network.
+        return cachedResponse || fetchPromise;
       });
-
-      // Return cached response immediately if available, otherwise wait for the network.
-      return cachedResponse || fetchPromise;
     })
   );
 });
+
+
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Searches for a request in all relevant caches (data, and all audio caches).
+ * @param {Request} request The request to find.
+ * @returns {Promise<Response|undefined>}
+ */
+async function findInCaches(request) {
+  // Check the data cache first
+  const dataCache = await caches.open(QURAN_DATA_CACHE_NAME);
+  let match = await dataCache.match(request);
+  if (match) return match;
+  
+  // Check all audio caches
+  const cacheKeys = await caches.keys();
+  const audioCacheNames = cacheKeys.filter(key => key.startsWith(AUDIO_CACHE_PREFIX));
+  
+  for (const cacheName of audioCacheNames) {
+    const audioCache = await caches.open(cacheName);
+    match = await audioCache.match(request);
+    if (match) return match;
+  }
+
+  return undefined;
+}
