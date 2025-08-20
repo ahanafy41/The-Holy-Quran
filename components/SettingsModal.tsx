@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
@@ -6,6 +7,7 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 import { XMarkIcon, ArrowDownTrayIcon } from './Icons';
 import { SettingSelect } from './SettingSelect';
 import { OfflineManager } from './OfflineManager';
+import { ManualInstallInstructions } from './ManualInstallInstructions';
 
 export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
@@ -38,29 +40,24 @@ export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                         <div className="pb-6 border-b border-slate-200 dark:border-slate-700">
                             <h4 className="font-medium mb-3">تثبيت التطبيق</h4>
                             {canInstall ? (
-                                <button
-                                    onClick={() => {
-                                        triggerInstall();
-                                        onClose();
-                                    }}
-                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
-                                >
-                                    <ArrowDownTrayIcon className="w-6 h-6" />
-                                    <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            triggerInstall();
+                                            onClose();
+                                        }}
+                                        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
+                                    >
+                                        <ArrowDownTrayIcon className="w-6 h-6" />
+                                        <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
+                                    </button>
+                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
+                                        احصل على تجربة استخدام أفضل ووصول أسرع للتطبيق من شاشتك الرئيسية.
+                                    </p>
+                                </>
                             ) : (
-                                <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg text-center">
-                                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                                        خيار التثبيت غير متاح حاليًا من قبل المتصفح.
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                        جرب استخدام التطبيق قليلًا ثم تحقق مرة أخرى.
-                                    </p>
-                                </div>
+                                <ManualInstallInstructions />
                             )}
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
-                                احصل على تجربة استخدام أفضل ووصول أسرع للتطبيق من شاشتك الرئيسية.
-                            </p>
                         </div>
                     )}
                      <SettingSelect id="reciter" label="القارئ" value={settings.reciter} onChange={(e) => updateSettings({ reciter: e.target.value })}>
