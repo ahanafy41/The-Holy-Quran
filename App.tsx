@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef } from 'react';
-import { Howl } from 'howler';
+import WaveSurfer from 'wavesurfer.js';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SearchResult, SavedSection } from './types';
 import * as api from './services/quranApi';
 import { XMarkIcon, ArrowDownTrayIcon } from './components/Icons';
@@ -92,8 +92,14 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('home');
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
-  const [howlInstance, setHowlInstance] = useState<Howl | null>(null);
+  
+  // Wavesurfer state for simple, global playback
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const wavesurferContainerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const activeAyahRef = useRef<Ayah | null>(null);
+  const audioSourcesRef = useRef<{ sources: string[], index: number }>({ sources: [], index: 0 });
+  
   const [targetAyah, setTargetAyah] = useState<number | null>(null);
   
   const [savedSections, setSavedSections] = useState<SavedSection[]>(() => {
@@ -114,6 +120,46 @@ const App: React.FC = () => {
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
+  // Initialize headless Wavesurfer instance
+  useEffect(() => {
+    if (!wavesurferContainerRef.current) return;
+    const ws = WaveSurfer.create({
+        container: wavesurferContainerRef.current,
+        height: 0, // Visually hidden
+        mediaControls: false,
+    });
+    wavesurferRef.current = ws;
+
+    const onDecode = () => {
+        ws.play();
+    };
+
+    const onError = (err: Error) => {
+        console.error(`Wavesurfer error on source ${audioSourcesRef.current.index}:`, err);
+        audioSourcesRef.current.index++;
+        const { sources, index } = audioSourcesRef.current;
+        if (index < sources.length) {
+            ws.load(sources[index]);
+        } else {
+            setError(`فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`);
+            setActiveAyah(null);
+            setIsPlaying(false);
+        }
+    };
+
+    ws.on('decode', onDecode);
+    ws.on('error', onError);
+    ws.on('play', () => setIsPlaying(true));
+    ws.on('pause', () => setIsPlaying(false));
+    ws.on('finish', () => {
+        setIsPlaying(false);
+        setActiveAyah(null);
+    });
+
+    return () => {
+        ws.destroy();
+    };
+  }, [setError]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', settings.darkMode);
@@ -258,26 +304,28 @@ const App: React.FC = () => {
 
 
   const playAyah = useCallback((ayah: Ayah) => {
-    (howlInstance as any)?.stop();
-    setActiveAyah(ayah);
-    const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
+    const wavesurfer = wavesurferRef.current;
+    if (!wavesurfer) return;
 
-    const newHowl = new Howl({
-      src: sources, html5: true,
-      onplay: _ => setIsPlaying(true),
-      onpause: _ => setIsPlaying(false),
-      onend: _ => { setIsPlaying(false); setActiveAyah(null); },
-      onstop: _ => setIsPlaying(false),
-      onloaderror: (_id, _err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}.`),
-      onplayerror: (_id, _err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}.`)
-    });
-    (newHowl as any).play();
-    setHowlInstance(newHowl);
-  }, [howlInstance, setError]);
+    // Stop any other complex players if they are active
+    window.dispatchEvent(new CustomEvent('global-player-stop'));
+
+    setActiveAyah(ayah);
+    activeAyahRef.current = ayah;
+
+    const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
+    if (sources.length === 0) {
+        setError(`لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`);
+        return;
+    }
+
+    audioSourcesRef.current = { sources: sources, index: 0 };
+    wavesurfer.load(sources[0]);
+  }, [setError]);
 
   const pauseAyah = useCallback(() => {
-    (howlInstance as any)?.pause();
-  }, [howlInstance]);
+    wavesurferRef.current?.pause();
+  }, []);
 
   const showTafsir = async (ayah: Ayah) => {
       if (!ayah.surah) return;
@@ -334,6 +382,7 @@ const App: React.FC = () => {
 
   return (
     <AppContext.Provider value={appContextValue}>
+      <div ref={wavesurferContainerRef} className="h-0 w-0 overflow-hidden" />
       <AnimatePresence>
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}

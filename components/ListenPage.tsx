@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Howl, Howler } from 'howler';
+import WaveSurfer from 'wavesurfer.js';
 import { Ayah, Surah, SurahSimple, QuranDivision } from '../types';
 import * as api from '../services/quranApi';
 import { useApp } from '../App';
@@ -178,78 +178,82 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; onSelect: (
 
 
 const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ playlist, onBack }) => {
-    const { setError } = useApp();
+    const { setError, pauseAyah: pauseGlobalPlayer } = useApp();
     const { ayahs, title } = playlist;
     
     // Player state
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isReady, setIsReady] = useState(false);
     const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
 
-    const howlRef = useRef<Howl | null>(null);
-    const soundIdRef = useRef<number | null>(null);
-    const progressAnimationFrameRef = useRef<number>();
-    const ayahListRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const waveformContainerRef = useRef<HTMLDivElement>(null);
     const activeAyahRef = useRef<HTMLDivElement>(null);
 
-    const cleanupPlayer = useCallback(() => {
-        howlRef.current?.unload();
-        howlRef.current = null;
-        soundIdRef.current = null;
-        if (progressAnimationFrameRef.current) {
-            cancelAnimationFrame(progressAnimationFrameRef.current);
-        }
+    // Stop the global player when this component mounts
+    useEffect(() => {
+        pauseGlobalPlayer();
+        window.addEventListener('global-player-stop', () => wavesurferRef.current?.stop());
+        return () => window.removeEventListener('global-player-stop', () => wavesurferRef.current?.stop());
+    }, [pauseGlobalPlayer]);
+
+    // Initialize WaveSurfer
+    useEffect(() => {
+        if (!waveformContainerRef.current) return;
+        const ws = WaveSurfer.create({
+            container: waveformContainerRef.current,
+            waveColor: '#d4d4d8', // zinc-300
+            progressColor: '#16a34a', // green-600
+            height: 80,
+            barWidth: 3,
+            barGap: 2,
+            barRadius: 3,
+            cursorWidth: 0,
+            mediaControls: false,
+        });
+        wavesurferRef.current = ws;
+
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('decode', (d) => {
+            setDuration(d);
+            setIsReady(true);
+            ws.play();
+        });
+        ws.on('audioprocess', (time) => setProgress(time));
+        ws.on('finish', () => {
+            setTimeout(() => {
+                setCurrentAyahIndex(prev => (prev < ayahs.length - 1 ? prev + 1 : prev));
+                if (currentAyahIndex === ayahs.length - 1) {
+                    setIsPlaying(false);
+                }
+            }, 500);
+        });
+
+        return () => ws.destroy();
     }, []);
 
-    // Effect to play audio when currentAyahIndex changes
+    // Load audio when currentAyahIndex changes
     useEffect(() => {
-        // Don't do anything if playlist is empty
-        if (ayahs.length === 0) return;
-        
+        if (!wavesurferRef.current || !ayahs[currentAyahIndex]) return;
+
+        setIsReady(false);
         const ayah = ayahs[currentAyahIndex];
-        if (!ayah) return;
-
-        // Clean up any existing Howl instance and reset UI state for the new track
-        cleanupPlayer();
-        setProgress(0);
-        setDuration(0);
-
         const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
-        const newHowl = new Howl({
-            src: sources,
-            html5: true,
-        });
-
-        howlRef.current = newHowl;
-
-        const playNext = () => {
-            setCurrentAyahIndex(prevIndex => {
-                if (prevIndex < ayahs.length - 1) {
-                    return prevIndex + 1;
-                }
-                // End of playlist
-                setIsPlaying(false);
-                return prevIndex;
-            });
+        
+        let sourceIndex = 0;
+        const loadTrack = (index: number) => {
+            if (index >= sources.length) {
+                setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}`);
+                return;
+            }
+            wavesurferRef.current?.load(sources[index]).catch(() => loadTrack(index + 1));
         };
-
-        newHowl.on('load', () => setDuration(newHowl.duration()));
-        newHowl.on('play', (_) => setIsPlaying(true));
-        newHowl.on('pause', (_) => setIsPlaying(false));
-        newHowl.on('stop', (_) => setIsPlaying(false));
-        newHowl.on('end', () => {
-            soundIdRef.current = null;
-            setTimeout(playNext, 500); // Wait half a second before playing the next
-        });
-        newHowl.on('loaderror', (_, err) => setError(`فشل تحميل الصوت: ${String(err)}`));
-        newHowl.on('playerror', (_, err) => setError(`فشل تشغيل الصوت: ${String(err)}`));
-
-        soundIdRef.current = newHowl.play();
-
-        // The main cleanup function for the component unmount or when dependencies change
-        return cleanupPlayer;
-    }, [currentAyahIndex, ayahs, cleanupPlayer, setError]);
+        loadTrack(sourceIndex);
+        
+    }, [currentAyahIndex, ayahs, setError]);
 
     // Effect for scrolling the active ayah into view
     useEffect(() => {
@@ -257,64 +261,20 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
         activeAyahRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, [currentAyahIndex]);
-
-    // Effect for updating the progress bar
-    const updateProgress = useCallback(() => {
-        const howl = howlRef.current;
-        if (howl && howl.playing()) {
-            const seek = howl.seek();
-            if (typeof seek === 'number') {
-                setProgress(seek);
-            }
-        }
-        progressAnimationFrameRef.current = requestAnimationFrame(updateProgress);
-    }, []);
-
-    useEffect(() => {
-        if (isPlaying) {
-            progressAnimationFrameRef.current = requestAnimationFrame(updateProgress);
-        } else {
-            if (progressAnimationFrameRef.current) {
-                cancelAnimationFrame(progressAnimationFrameRef.current);
-            }
-        }
-        return () => {
-            if (progressAnimationFrameRef.current) {
-                cancelAnimationFrame(progressAnimationFrameRef.current);
-            }
-        };
-    }, [isPlaying, updateProgress]);
-
+    
     // Control handlers
-    const handlePlayPause = () => {
-        const h = howlRef.current;
-        if (!h) {
-            if (ayahs.length > 0) setCurrentAyahIndex(0);
-            return;
-        }
-        if (isPlaying) {
-            h.pause(soundIdRef.current!);
-        } else {
-            soundIdRef.current = h.play(soundIdRef.current || undefined);
-        }
-    };
-
+    const handlePlayPause = () => wavesurferRef.current?.playPause();
     const handleNext = () => {
-       if (currentAyahIndex < ayahs.length - 1) {
-           setCurrentAyahIndex(currentAyahIndex + 1);
-       }
+       if (currentAyahIndex < ayahs.length - 1) setCurrentAyahIndex(currentAyahIndex + 1);
     };
-
     const handlePrevious = () => {
-       if (currentAyahIndex > 0) {
-           setCurrentAyahIndex(currentAyahIndex - 1);
-       }
+       if (currentAyahIndex > 0) setCurrentAyahIndex(currentAyahIndex - 1);
     };
-
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newTime = parseFloat(e.target.value);
-        howlRef.current?.seek(newTime);
-        setProgress(newTime);
+    
+    const formatTime = (secs: number) => {
+        const minutes = Math.floor(secs / 60) || 0;
+        const seconds = Math.floor(secs - minutes * 60) || 0;
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
     const currentAyah = ayahs[currentAyahIndex];
@@ -329,7 +289,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)]">
+        <div className="flex flex-col h-[calc(100vh-8rem)]">
              <header className="flex items-center gap-4 mb-4 flex-shrink-0">
                 <button onClick={onBack} aria-label="الرجوع للاختيار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                     <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
@@ -340,7 +300,7 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
                 </div>
             </header>
             
-            <div ref={ayahListRef} className="flex-grow overflow-y-auto space-y-1 pr-2">
+            <div className="flex-grow overflow-y-auto space-y-1 pr-2">
                 {ayahs.map((ayah, index) => {
                     const isActive = index === currentAyahIndex;
                     return (
@@ -361,48 +321,26 @@ const PlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ play
             </div>
             
             <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4">
-                <div className="flex items-center gap-4">
-                     <div className="text-center w-28">
-                         <p className="font-quran text-2xl">{currentAyah.surah?.name}</p>
-                         <p className="text-sm font-mono">{currentAyah.numberInSurah}</p>
-                     </div>
-                     <div className="flex-grow space-y-2">
-                         <div className="flex items-center justify-center gap-4">
-                             <button onClick={handlePrevious} aria-label="السابق" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === 0}><PreviousIcon className="w-6 h-6"/></button>
-                            <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="p-3 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-2">
-                                {isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
-                            </button>
-                            <button onClick={handleNext} aria-label="التالي" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === ayahs.length - 1}><NextIcon className="w-6 h-6"/></button>
-                         </div>
-                         <PlayerProgressBar progress={progress} duration={duration} onSeek={handleSeek} />
-                     </div>
+                <div className="flex items-center justify-center gap-4 mb-3">
+                     <button onClick={handlePrevious} aria-label="السابق" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === 0}><PreviousIcon className="w-6 h-6"/></button>
+                    <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="p-3 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-2 disabled:bg-slate-400" disabled={!isReady}>
+                        {isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
+                    </button>
+                    <button onClick={handleNext} aria-label="التالي" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === ayahs.length - 1}><NextIcon className="w-6 h-6"/></button>
                 </div>
+                 <div className="relative">
+                    <div ref={waveformContainerRef} className="w-full cursor-pointer" />
+                    {!isReady && (
+                        <div className="absolute inset-0 bg-white/70 dark:bg-slate-800/70 flex items-center justify-center">
+                            <Spinner />
+                        </div>
+                    )}
+                 </div>
+                 <div className="flex justify-between text-xs font-mono mt-1">
+                    <span>{formatTime(progress)}</span>
+                    <span>{formatTime(duration)}</span>
+                 </div>
             </div>
-        </div>
-    );
-};
-
-const PlayerProgressBar: React.FC<{ progress: number, duration: number, onSeek: (e: React.ChangeEvent<HTMLInputElement>) => void }> = ({ progress, duration, onSeek }) => {
-    const formatTime = (secs: number) => {
-        const minutes = Math.floor(secs / 60) || 0;
-        const seconds = Math.floor(secs - minutes * 60) || 0;
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    };
-
-    return (
-        <div className="flex items-center gap-2 text-xs font-mono">
-            <span>{formatTime(progress)}</span>
-            <input
-                type="range"
-                min="0"
-                max={duration || 1}
-                step="0.1"
-                value={progress}
-                onChange={onSeek}
-                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-600"
-                aria-label="Seek audio"
-            />
-            <span>{formatTime(duration)}</span>
         </div>
     );
 };

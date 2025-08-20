@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Howl } from 'howler';
+import WaveSurfer from 'wavesurfer.js';
 import { Ayah, SavedSection, SurahSimple } from '../types';
 import * as api from '../services/quranApi';
 import { useApp } from '../App';
@@ -17,11 +17,16 @@ type PlayerPlaylist = {
 };
 
 export const MemorizationAndSectionsPage: React.FC = () => {
-    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings } = useApp();
+    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings, pauseAyah: pauseGlobalPlayer } = useApp();
     const [playlist, setPlaylist] = useState<PlayerPlaylist | null>(null);
     const [samiaPlaylist, setSamiaPlaylist] = useState<PlayerPlaylist | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Stop the global player when this view is active
+    useEffect(() => {
+        pauseGlobalPlayer();
+    }, [playlist, samiaPlaylist, pauseGlobalPlayer]);
 
     const handleStartListening = async (section: SavedSection) => {
         setIsLoading(true);
@@ -224,28 +229,14 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
     const [delay, setDelay] = useState(3); // seconds
     const [playbackRate, setPlaybackRate] = useState(1);
     
-    // Refs for player logic to avoid stale closures in callbacks
-    const howlRef = useRef<Howl | null>(null);
-    const soundIdRef = useRef<number | null>(null);
-    const timeoutRef = useRef<number>();
-    const playAyahRef = useRef<((index: number) => void) | null>(null);
+    // Refs
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const waveformContainerRef = useRef<HTMLDivElement>(null);
+    const timeoutRef = useRef<number | undefined>();
     const repetitionCounterRef = useRef(1);
-
-    const playerSettingsRef = useRef({ repetitions, delay, currentAyahIndex });
-    useEffect(() => {
-        playerSettingsRef.current = { repetitions, delay, currentAyahIndex };
-    }, [repetitions, delay, currentAyahIndex]);
-
-    const cleanupPlayer = useCallback(() => {
-        howlRef.current?.unload();
-        howlRef.current = null;
-        soundIdRef.current = null;
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    }, []);
-
+    
     const playAyah = useCallback((index: number) => {
-        cleanupPlayer();
-        if (index < 0 || index >= ayahs.length) {
+        if (index < 0 || index >= ayahs.length || !wavesurferRef.current) {
             setIsPlaying(false);
             return;
         }
@@ -253,90 +244,100 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
         setCurrentAyahIndex(index);
         setRepetitionCount(1);
         repetitionCounterRef.current = 1;
-        
+
         const ayah = ayahs[index];
         const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
-
-        const newHowl = new Howl({
-            src: sources,
-            html5: true,
-            rate: playbackRate,
-        });
-        howlRef.current = newHowl;
-
-        newHowl.on('play', _ => setIsPlaying(true));
-        newHowl.on('pause', _ => setIsPlaying(false));
-        newHowl.on('stop', _ => setIsPlaying(false));
-        newHowl.on('loaderror', (_, err) => setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
-        newHowl.on('playerror', (_, err) => setError(`فشل تشغيل الصوت للآية ${ayah.numberInSurah}. ${String(err)}`));
         
-        newHowl.on('end', () => {
-            const settings = playerSettingsRef.current;
-            if (repetitionCounterRef.current < settings.repetitions) {
-                timeoutRef.current = window.setTimeout(() => {
-                    if (howlRef.current) {
-                        soundIdRef.current = howlRef.current.play();
-                    }
-                }, 500);
-                repetitionCounterRef.current += 1;
-                setRepetitionCount(repetitionCounterRef.current);
-            } else {
-                const nextIndex = settings.currentAyahIndex + 1;
-                if (nextIndex < ayahs.length) {
-                    timeoutRef.current = window.setTimeout(() => {
-                        playAyahRef.current?.(nextIndex);
-                    }, settings.delay * 1000);
-                } else {
-                    setIsPlaying(false);
-                }
+        const loadTrack = (sourceIndex: number) => {
+            if (sourceIndex >= sources.length) {
+                setError(`فشل تحميل الصوت للآية ${ayah.numberInSurah}`);
+                return;
             }
+            wavesurferRef.current?.load(sources[sourceIndex]).catch(() => loadTrack(sourceIndex + 1));
+        };
+        loadTrack(0);
+
+    }, [ayahs, setError]);
+    
+    // Effect to create and destroy the WaveSurfer instance
+    useEffect(() => {
+        if (!waveformContainerRef.current) return;
+
+        const ws = WaveSurfer.create({
+            container: waveformContainerRef.current,
+            height: 60,
+            waveColor: '#d4d4d8',
+            progressColor: '#16a34a',
+            barWidth: 2,
+            barGap: 1,
+            barRadius: 2,
+            mediaControls: false,
         });
-        
-        soundIdRef.current = newHowl.play();
-    }, [ayahs, cleanupPlayer, playbackRate, setError]);
-    
-    useEffect(() => {
-        playAyahRef.current = playAyah;
-    }, [playAyah]);
-    
-    useEffect(() => {
+        wavesurferRef.current = ws;
+
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('decode', () => ws.play());
+        ws.on('error', (err) => setError(`خطأ في الصوت: ${err.toString()}`));
+
         if (ayahs.length > 0) {
             playAyah(0);
         }
-        return cleanupPlayer;
-    }, [ayahs, playAyah, cleanupPlayer]);
-    
-    const handlePlayPause = () => {
-        if (isPlaying) {
-            howlRef.current?.pause(soundIdRef.current!);
-        } else {
-            if (howlRef.current && howlRef.current.state() === 'loaded') {
-                soundIdRef.current = howlRef.current.play(soundIdRef.current!);
+
+        return () => {
+            clearTimeout(timeoutRef.current);
+            ws.destroy();
+        };
+    }, [ayahs, playAyah, setError]);
+
+    // Effect to manage the 'finish' event handler with fresh state
+    useEffect(() => {
+        const ws = wavesurferRef.current;
+        if (!ws) return;
+
+        const finishHandler = () => {
+            clearTimeout(timeoutRef.current);
+            if (repetitionCounterRef.current < repetitions) {
+                timeoutRef.current = window.setTimeout(() => {
+                    ws.play();
+                }, 500);
+                repetitionCounterRef.current += 1;
+                setRepetitionCount(c => c + 1);
             } else {
-                playAyahRef.current?.(currentAyahIndex);
+                const nextIndex = currentAyahIndex + 1;
+                if (nextIndex < ayahs.length) {
+                    timeoutRef.current = window.setTimeout(() => {
+                        playAyah(nextIndex);
+                    }, delay * 1000);
+                } else {
+                    setIsPlaying(false); // End of playlist
+                }
             }
-        }
-    };
+        };
+
+        ws.on('finish', finishHandler);
+
+        return () => {
+            ws.un('finish', finishHandler);
+        };
+    }, [repetitions, delay, currentAyahIndex, ayahs.length, playAyah]);
     
+    useEffect(() => {
+        wavesurferRef.current?.setPlaybackRate(playbackRate);
+    }, [playbackRate]);
+
+    const handlePlayPause = () => wavesurferRef.current?.playPause();
     const handleNext = () => {
-        cleanupPlayer();
-        const nextIndex = currentAyahIndex + 1;
-        if (nextIndex < ayahs.length) {
-            playAyah(nextIndex);
-        }
-    };
+        if(currentAyahIndex < ayahs.length - 1) playAyah(currentAyahIndex + 1);
+    }
     const handlePrevious = () => {
-        cleanupPlayer();
-        const prevIndex = currentAyahIndex - 1;
-        if (prevIndex >= 0) {
-            playAyah(prevIndex);
-        }
-    };
+        if(currentAyahIndex > 0) playAyah(currentAyahIndex - 1);
+    }
 
     const currentAyah = ayahs[currentAyahIndex];
     
     return (
-        <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)]">
+        <div className="flex flex-col h-[calc(100vh-8rem)]">
              <header className="flex items-center gap-4 mb-4 flex-shrink-0">
                 <button onClick={onBack} aria-label="الرجوع للاختيار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                     <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
@@ -347,13 +348,12 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
                 </div>
             </header>
             
-            <div className="flex-grow overflow-hidden flex items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-inner">
-                {currentAyah && (
-                    <p dir="rtl" className="font-quran text-4xl md:text-5xl lg:text-6xl leading-loose text-center">
-                        {currentAyah.text}
-                    </p>
-                )}
-            </div>
+            <div className="flex-grow flex flex-col justify-center p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-inner">
+                 <p dir="rtl" className="font-quran text-4xl md:text-5xl text-center mb-auto pt-8">
+                     {currentAyah?.text}
+                 </p>
+                 <div ref={waveformContainerRef} className="w-full mt-auto pb-4" />
+             </div>
             
             <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4 space-y-4">
                  <div className="flex items-center justify-center gap-4">

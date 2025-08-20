@@ -11,7 +11,7 @@
   "dependencies": {
     "react-dom": "^19.1.1",
     "react": "^19.1.1",
-    "howler": "^2.2.4",
+    "wavesurfer.js": "7",
     "@google/genai": "latest",
     "framer-motion": "^11.0.0",
     "react-use-measure": "latest",

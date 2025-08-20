@@ -18,16 +18,68 @@ interface SamiaSessionModalProps {
 
 type SessionStatus = 'setup' | 'idle' | 'recording' | 'processing' | 'feedback' | 'finished' | 'error';
 
+interface TajweedSuggestion {
+    rule: string;
+    suggestion: string;
+}
+
 interface Feedback {
     isCorrect: boolean;
     userTranscription: string;
-    correctionSuggestion?: string;
+    tajweedScore: number;
+    positiveFeedback: string;
+    areasForImprovement: TajweedSuggestion[];
 }
 
 const mimeType = 'audio/webm';
 
 const MotionDiv = motion.div;
 const MotionButton = motion.button;
+
+const TajweedScoreCircle: React.FC<{ score: number }> = ({ score }) => {
+    const size = 100;
+    const strokeWidth = 10;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
+
+    let color = 'stroke-green-500';
+    if (score < 75) color = 'stroke-yellow-500';
+    if (score < 50) color = 'stroke-red-500';
+
+    return (
+        <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+            <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+                <circle
+                    className="text-slate-200 dark:text-slate-700"
+                    strokeWidth={strokeWidth}
+                    stroke="currentColor"
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                />
+                <circle
+                    className={`transition-all duration-1000 ease-out ${color}`}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r={radius}
+                    cx={size / 2}
+                    cy={size / 2}
+                />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-slate-700 dark:text-slate-200">
+                {score}
+                <span className="text-sm">%</span>
+            </span>
+        </div>
+    );
+};
+
 
 export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, onClose }) => {
     const { ayahs, section } = playlist;
@@ -134,33 +186,43 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             ? `الآية ${firstAyah.numberInSurah}`
             : `الآيات ${firstAyah.numberInSurah} إلى ${lastAyah.numberInSurah}`;
 
-        const prompt = `You are an extremely precise Quran recitation examiner named Sami'a. Your task is to verify if the user's recitation EXACTLY matches a specific passage from the Quran, and nothing else.
+        const prompt = `أنت معلم قرآن خبير متخصص في علم التجويد، اسمك "سامع". مهمتك هي تقييم تلاوة الطالب لتقديم ملاحظات دقيقة ومفيدة. يجب أن يكون تحليلك مبنياً على قواعد التجويد المعروفة، ومشجعاً للطالب.
 
-        The user is being tested ONLY on this passage:
-        - Surah: ${firstAyah.surah?.name}
-        - Passage: ${ayahRangeText}
-        - Correct Text: "${textToRecite}"
+الطالب يقوم بتسميع المقطع التالي فقط:
+- السورة: ${firstAyah.surah?.name}
+- المقطع: ${ayahRangeText}
+- النص الصحيح: "${textToRecite}"
 
-        The user has provided an audio recording of their recitation. Your instructions are:
-        1. Transcribe the user's full recitation from the audio.
-        2. Normalize both your transcription and the correct text (remove diacritics, standardize alef to ا, ة to ه, ى to ي).
-        3. Perform a STRICT comparison. The user's recitation is ONLY correct if their normalized transcription is an IDENTICAL match to the normalized correct text.
-            - If the user recites extra words, even from the next verse, it is INCORRECT.
-            - If the user misses words, it is INCORRECT.
-            - If the user says a different word, it is INCORRECT.
-        4. Based on your comparison, provide feedback in the specified JSON format.
-            - If it is INCORRECT because the user recited more than the required passage, the 'correction_suggestion' MUST be "لقد قرأت أكثر من الآيات المطلوبة. من فضلك اقرأ المقطع المعروض فقط.".
-            - For other mistakes, provide a clear, concise 'correction_suggestion' in Arabic explaining the primary error (e.g., "لقد قلت 'كلمة' بدلاً من 'الكلمة الصحيحة'.").
-            - Always provide the 'user_transcription' as you heard it.`;
+لقد قدم المستخدم تسجيلاً صوتياً لتلاوته. تعليماتك هي:
+1.  أولاً، قم بنسخ تلاوة المستخدم الكاملة من الصوت إلى نص عربي.
+2.  ثانياً، قارن النص المنسوخ بالنص الصحيح كلمة بكلمة. حدد ما إذا كانت التلاوة متطابقة تمامًا (\`is_correct\`).
+3.  ثالثاً، قم بتحليل التلاوة من ناحية أحكام التجويد (مثل المدود، الغنة، القلقلة، ومخارج الحروف). أعطِ درجة من 0 إلى 100 لجودة التجويد.
+4.  رابعاً، قدم ملخصًا إيجابيًا ومختصرًا (\`positive_feedback\`) حول ما أحسن فيه الطالب.
+5.  خامساً، حدد ما يصل إلى 3 نقاط محددة للتحسين (\`areas_for_improvement\`). لكل نقطة، اذكر اسم الحكم أو نوع الخطأ (مثال: "المد المتصل"، "مخرج حرف الضاد"، "خطأ في النص") وقدم اقتراحًا واضحًا وعمليًا باللغة العربية.
+6.  إذا كانت هناك كلمة خطأ في النص، يجب أن تكون هذه إحدى نقاط التحسين.
+7.  قدم تحليلك الكامل بتنسيق JSON المحدد.`;
         
         const responseSchema = {
             type: Type.OBJECT,
             properties: {
-                is_correct: { type: Type.BOOLEAN, description: "True if the recitation is an exact match, false otherwise." },
-                user_transcription: { type: Type.STRING, description: "The full transcription of what the user said, in Arabic." },
-                correction_suggestion: { type: Type.STRING, description: "A brief, helpful suggestion for correction in Arabic if a mistake was found." },
+                is_correct: { type: Type.BOOLEAN, description: "True إذا كانت التلاوة مطابقة تمامًا للنص كلمة بكلمة، وإلا false." },
+                user_transcription: { type: Type.STRING, description: "النسخ الكامل لما قاله المستخدم باللغة العربية." },
+                tajweed_score: { type: Type.INTEGER, description: "درجة من 0 إلى 100 لجودة تطبيق أحكام التجويد." },
+                positive_feedback: { type: Type.STRING, description: "ملخص إيجابي ومختصر لما أداه المستخدم بشكل جيد." },
+                areas_for_improvement: {
+                    type: Type.ARRAY,
+                    description: "قائمة من الاقتراحات المحددة لتحسين التلاوة.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            rule: { type: Type.STRING, description: "اسم حكم التجويد أو نوع الخطأ (مثال: 'الغنة', 'خطأ في كلمة')." },
+                            suggestion: { type: Type.STRING, description: "اقتراح واضح وعملي للتحسين." },
+                        },
+                        required: ['rule', 'suggestion']
+                    }
+                }
             },
-            required: ['is_correct', 'user_transcription']
+            required: ['is_correct', 'user_transcription', 'tajweed_score', 'positive_feedback', 'areas_for_improvement']
         };
 
         try {
@@ -186,7 +248,13 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                 return;
             }
 
-            if (typeof result.is_correct === 'undefined' || typeof result.user_transcription === 'undefined') {
+            if (
+                typeof result.is_correct === 'undefined' ||
+                typeof result.user_transcription === 'undefined' ||
+                typeof result.tajweed_score === 'undefined' ||
+                typeof result.positive_feedback === 'undefined' ||
+                !Array.isArray(result.areas_for_improvement)
+            ) {
                 console.error("Gemini response is missing required keys:", result);
                 setError("عذراً، كانت الإجابة غير مكتملة. حاول مرة أخرى.");
                 setStatus('idle');
@@ -196,7 +264,9 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             setFeedback({
                 isCorrect: result.is_correct,
                 userTranscription: result.user_transcription || '(لم يتم التعرف على صوت)',
-                correctionSuggestion: result.correction_suggestion
+                tajweedScore: result.tajweed_score,
+                positiveFeedback: result.positive_feedback,
+                areasForImprovement: result.areas_for_improvement,
             });
             setStatus('feedback');
 
@@ -291,35 +361,51 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                             </MotionDiv>
                         )}
                         {status === 'feedback' && feedback && (
-                            <MotionDiv key="feedback" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full">
-                                {feedback.isCorrect ? (
-                                    <div className="text-center">
-                                        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto" />
-                                        <p className="text-2xl font-bold mt-4">إجابة صحيحة!</p>
-                                        <button onClick={handleNext} className="mt-6 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 font-semibold transition-colors flex items-center gap-2 mx-auto">
-                                           <span> {endOfChunk >= ayahs.length ? 'إنهاء الجلسة' : 'المقطع التالي'}</span>
-                                            <ArrowLeftIcon className="w-5 h-5"/>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg space-y-3">
-                                        <h3 className="font-bold text-red-600 dark:text-red-400 text-xl">هناك خطأ ما</h3>
-                                        
-                                        <div className="text-right bg-white dark:bg-slate-800 p-3 rounded-md">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">تلاوتك:</p>
-                                            <p className="font-semibold text-red-700 dark:text-red-300">"{feedback.userTranscription}"</p>
-                                        </div>
-                                         <div className="text-right bg-white dark:bg-slate-800 p-3 rounded-md">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">التصحيح المقترح:</p>
-                                            <p className="font-semibold text-blue-700 dark:text-blue-300">{feedback.correctionSuggestion || 'يرجى التأكد من مطابقة التلاوة للآية.'}</p>
-                                        </div>
+                            <MotionDiv key="feedback" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full space-y-4">
+                                <div className={`text-center p-4 rounded-lg ${feedback.isCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                                    <h3 className={`text-2xl font-bold flex items-center justify-center gap-2 ${feedback.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {feedback.isCorrect ? <CheckCircleIcon className="w-8 h-8" /> : <InformationCircleIcon className="w-8 h-8" />}
+                                        <span>{feedback.isCorrect ? "مطابقة للنص" : "تحتاج لمراجعة"}</span>
+                                    </h3>
+                                </div>
 
-                                        <div className="mt-4 flex justify-center gap-4">
-                                             <button onClick={() => setStatus('idle')} className="px-5 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-full font-semibold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">حاول مرة أخرى</button>
-                                             <button onClick={handleNext} className="px-5 py-2 text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors">تخطي</button>
-                                        </div>
+                                <div className="p-4 bg-white dark:bg-slate-700/50 rounded-lg flex items-center gap-4 text-right">
+                                    <TajweedScoreCircle score={feedback.tajweedScore} />
+                                    <div className="flex-grow">
+                                        <h4 className="font-bold text-lg">أداؤك في التجويد</h4>
+                                        <p className="text-slate-600 dark:text-slate-300">{feedback.positiveFeedback}</p>
+                                    </div>
+                                </div>
+
+                                {feedback.areasForImprovement.length > 0 && (
+                                    <div className="p-4 bg-white dark:bg-slate-700/50 rounded-lg space-y-3">
+                                        <h4 className="font-bold text-lg text-right">ملاحظات للتطوير</h4>
+                                        <ul className="space-y-2">
+                                            {feedback.areasForImprovement.map((item, index) => (
+                                                <li key={index} className="flex items-start gap-3 text-right p-2 bg-slate-50 dark:bg-slate-800 rounded-md">
+                                                    <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                                                    <div>
+                                                        <p className="font-semibold">{item.rule}</p>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-300">{item.suggestion}</p>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 )}
+                                
+                                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm text-right">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">ما تم التعرف عليه من تلاوتك:</p>
+                                    <p className="font-mono text-slate-700 dark:text-slate-300">"{feedback.userTranscription}"</p>
+                                </div>
+
+                                <div className="mt-4 flex justify-center gap-4">
+                                    <button onClick={() => { setStatus('idle'); setShowInstructions(true); }} className="px-5 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-full font-semibold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">حاول مرة أخرى</button>
+                                    <button onClick={handleNext} className="px-5 py-2 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition-colors flex items-center gap-2">
+                                        <span>{endOfChunk >= ayahs.length ? 'إنهاء' : 'التالي'}</span>
+                                        <ArrowLeftIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </MotionDiv>
                         )}
                     </AnimatePresence>
