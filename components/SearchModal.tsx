@@ -1,8 +1,11 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import * as searchService from '../services/searchService';
-import { useApp, useDebounce, useFocusTrap, Spinner } from '../App';
+import { useApp } from '../context/AppContext';
+import { useDebounce } from '../hooks/useDebounce';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { Spinner } from './Spinner';
 import { SearchResult } from '../types';
 import { XMarkIcon, SearchIcon } from './Icons';
 

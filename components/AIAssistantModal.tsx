@@ -5,7 +5,7 @@ import { GoogleGenAI, Chat } from '@google/genai';
 import { Ayah } from '../types';
 import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 
 
 interface AIAssistantModalProps {

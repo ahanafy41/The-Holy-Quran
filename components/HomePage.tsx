@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 import { BookOpenIcon, HeadphonesIcon, FlowerIcon, SearchIcon, CogIcon, SunIcon, MoonIcon } from './Icons';
 
 export const HomePage: React.FC = () => {

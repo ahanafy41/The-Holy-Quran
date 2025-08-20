@@ -4,7 +4,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { Ayah, SavedSection } from '../types';
 import { XMarkIcon, MicrophoneIcon, CheckCircleIcon, ArrowLeftIcon, InformationCircleIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 
 interface PlayerPlaylist {
     section: SavedSection;

@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Ayah, Surah, QuranDivision } from '../types';
 import * as api from '../services/quranApi';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 import { AyahActionModal } from './AyahActionModal';
+import { AyahItem } from './AyahItem';
+import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,7 +38,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
         fetchDivisionData();
     }, [division, settings.reciter, setError]);
     
-    const handleAyahSelect = (ayah: Ayah, event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
+    const handleAyahSelect = (ayah: Ayah) => {
         setSelectedAyah(ayah);
     };
 
@@ -88,7 +90,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
                     <AyahItem 
                         ayah={ayah}
                         isSelected={selectedAyah?.number === ayah.number}
-                        onSelect={(e) => handleAyahSelect(ayah, e)}
+                        onSelect={() => handleAyahSelect(ayah)}
+                        layoutIdPrefix="division"
                         ref={(el: HTMLDivElement | null) => {
                             if (el) ayahRefs.current.set(ayah.number, el);
                             else ayahRefs.current.delete(ayah.number);
@@ -125,59 +128,3 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
         </div>
     );
 };
-
-interface AyahItemProps {
-    ayah: Ayah;
-    isSelected: boolean;
-    onSelect: (event: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => void;
-}
-
-const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, onSelect }, ref) => {
-    const { activeAyah } = useApp();
-    const isPlaying = activeAyah?.number === ayah.number;
-
-    const ayahNumberCircle = (
-        <div className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
-            {ayah.numberInSurah}
-        </div>
-    );
-
-    return (
-        <div ref={ref}
-            onClick={onSelect}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(e); }}
-            tabIndex={0}
-            role="button"
-            aria-label={`${ayah.text} - الآية رقم ${ayah.numberInSurah} من سورة ${ayah.surah?.name}.`}
-            aria-haspopup="dialog"
-            aria-expanded={isSelected}
-            className={`group p-4 rounded-xl transition-all duration-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${
-                isSelected ? 'bg-green-50 dark:bg-green-500/10' :
-                isPlaying ? 'bg-green-50 dark:bg-green-500/10' :
-                'hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}>
-            <AnimatePresence>
-            {(isSelected || isPlaying) && (
-                <motion.div 
-                    layout
-                    layoutId={`outline-div-${ayah.number}`}
-                    className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                />
-            )}
-            </AnimatePresence>
-            {ayahNumberCircle}
-            <p dir="rtl" className="font-quran text-3xl md:text-4xl leading-loose text-right pr-14" aria-hidden="true">
-                {ayah.text}
-            </p>
-        </div>
-    );
-});
-
-
-const Spinner: React.FC = () => (
-    <svg className="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);

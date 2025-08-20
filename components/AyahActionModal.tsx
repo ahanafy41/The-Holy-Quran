@@ -2,7 +2,7 @@
 import React from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Ayah } from '../types';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon } from './Icons';
 import { motion } from 'framer-motion';
 

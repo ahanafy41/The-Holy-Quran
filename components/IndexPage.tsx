@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../App';
+import { useApp } from '../context/AppContext';
 import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
 import { QuranDivision, SurahSimple, SavedSection } from '../types';
 import { BookOpenIcon, FolderIcon, ChevronLeftIcon, ArrowRightIcon, FlowerIcon } from './Icons';

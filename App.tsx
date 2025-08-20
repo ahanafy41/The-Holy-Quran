@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SearchResult, SavedSection } from './types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection } from './types';
 import * as api from './services/quranApi';
-import { XMarkIcon, ArrowDownTrayIcon } from './components/Icons';
 import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
@@ -14,53 +13,10 @@ import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
 import { SuccessToast } from './components/SuccessToast';
+import { SettingsModal } from './components/SettingsModal';
+import { TafsirModal } from './components/TafsirModal';
+import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
-
-
-// ======== APP CONTEXT ======== //
-
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization';
-
-interface DivisionInfo extends QuranDivision {
-    title: string;
-}
-
-interface AppContextType {
-  settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
-  reciters: Reciter[];
-  tafsirInfoList: TafsirInfo[];
-  surahList: SurahSimple[];
-  currentSurah: Surah | null;
-  loadSurah: (surahNumber: number) => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
-  setError: (message: string | null) => void;
-  setSuccessMessage: (message: string | null) => void;
-  activeAyah: Ayah | null;
-  targetAyah: number | null;
-  setTargetAyah: (ayah: number | null) => void;
-  playAyah: (ayah: Ayah) => void;
-  pauseAyah: () => void;
-  isPlaying: boolean;
-  navigateTo: (view: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => void;
-  showTafsir: (ayah: Ayah) => void;
-  showAIAssistant: (ayah: Ayah) => void;
-  showSearch: () => void;
-  showSettings: () => void;
-  apiKey: string | null;
-  updateApiKey: (key: string) => void;
-  view: View;
-  savedSections: SavedSection[];
-  addSavedSection: (section: Omit<SavedSection, 'id'>) => void;
-  removeSavedSection: (sectionId: string) => void;
-  isStandalone: boolean;
-  canInstall: boolean;
-  triggerInstall: () => void;
-}
-
-const AppContext = createContext<AppContextType | null>(null);
-export const useApp = () => useContext(AppContext)!;
 
 // ======== MAIN APP COMPONENT ======== //
 const App: React.FC = () => {
@@ -121,6 +77,7 @@ const App: React.FC = () => {
   // Initialize headless Wavesurfer instance
   useEffect(() => {
     if (!wavesurferContainerRef.current) return;
+    console.log('[Global Player DEBUG] Initializing headless WaveSurfer instance.');
     const ws = WaveSurfer.create({
         container: wavesurferContainerRef.current,
         height: 0, // Visually hidden
@@ -128,36 +85,48 @@ const App: React.FC = () => {
     });
     wavesurferRef.current = ws;
 
-    const onDecode = () => {
+    const onReady = () => {
+        console.log('[Global Player DEBUG] Event: ready. Playing audio.');
         ws.play();
     };
 
     const onError = (err: Error) => {
-        console.error(`Wavesurfer error on source ${audioSourcesRef.current.index}:`, err);
+        console.error(`[Global Player DEBUG] Event: error on source index ${audioSourcesRef.current.index}:`, err);
         audioSourcesRef.current.index++;
         const { sources, index } = audioSourcesRef.current;
         if (index < sources.length) {
+            console.log(`[Global Player DEBUG] Trying next source ${index + 1}/${sources.length}: ${sources[index]}`);
             ws.load(sources[index]);
         } else {
-            setError(`فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`);
+            const errorMsg = `فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`;
+            console.error(`[Global Player DEBUG] ${errorMsg}`);
+            setError(errorMsg);
             setActiveAyah(null);
             setIsPlaying(false);
         }
     };
 
-    ws.on('decode', onDecode);
+    ws.on('ready', onReady);
     ws.on('error', onError);
-    ws.on('play', () => setIsPlaying(true));
-    ws.on('pause', () => setIsPlaying(false));
+    ws.on('play', () => {
+        console.log('[Global Player DEBUG] Event: play');
+        setIsPlaying(true);
+    });
+    ws.on('pause', () => {
+        console.log('[Global Player DEBUG] Event: pause');
+        setIsPlaying(false);
+    });
     ws.on('finish', () => {
+        console.log('[Global Player DEBUG] Event: finish');
         setIsPlaying(false);
         setActiveAyah(null);
     });
 
     return () => {
+        console.log('[Global Player DEBUG] Destroying headless WaveSurfer instance.');
         ws.destroy();
     };
-  }, [setError]);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', settings.darkMode);
@@ -304,20 +273,26 @@ const App: React.FC = () => {
   const playAyah = useCallback((ayah: Ayah) => {
     const wavesurfer = wavesurferRef.current;
     if (!wavesurfer) return;
+    console.log(`[Global Player DEBUG] playAyah called for ayah ${ayah.surah?.name} ${ayah.numberInSurah}`, ayah);
 
     // Stop any other complex players if they are active
+    console.log('[Global Player DEBUG] Dispatching global-player-stop event.');
     window.dispatchEvent(new CustomEvent('global-player-stop'));
 
     setActiveAyah(ayah);
     activeAyahRef.current = ayah;
 
     const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
+    console.log('[Global Player DEBUG] Audio sources:', sources);
     if (sources.length === 0) {
-        setError(`لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`);
+        const errorMsg = `لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`;
+        console.error(`[Global Player DEBUG] ${errorMsg}`);
+        setError(errorMsg);
         return;
     }
 
     audioSourcesRef.current = { sources: sources, index: 0 };
+    console.log(`[Global Player DEBUG] Loading source 1/${sources.length}: ${sources[0]}`);
     wavesurfer.load(sources[0]);
   }, [setError]);
 
@@ -400,178 +375,5 @@ const App: React.FC = () => {
     </AppContext.Provider>
   );
 };
-
-// ======== MODAL COMPONENTS ======== //
-
-const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
-    const modalRef = useRef<HTMLDivElement>(null);
-    const [localApiKey, setLocalApiKey] = useState(apiKey || '');
-
-    const handleSaveAndClose = () => {
-        updateApiKey(localApiKey);
-        onClose();
-    };
-    
-    useFocusTrap(modalRef, handleSaveAndClose);
-    
-    return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
-             onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h3 id="settings-title" className="font-bold text-lg">الإعدادات</h3>
-                    <button onClick={handleSaveAndClose} aria-label="Close settings" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
-                </div>
-                <div className="p-6 space-y-6 overflow-y-auto text-right">
-                     {!isStandalone && (
-                        <div className="pb-6 border-b border-slate-200 dark:border-slate-700">
-                            <h4 className="font-medium mb-3">تثبيت التطبيق</h4>
-                            {canInstall ? (
-                                <button
-                                    onClick={() => {
-                                        triggerInstall();
-                                        onClose();
-                                    }}
-                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800 transition-colors"
-                                >
-                                    <ArrowDownTrayIcon className="w-6 h-6" />
-                                    <span className="font-semibold">تثبيت التطبيق على الجهاز</span>
-                                </button>
-                            ) : (
-                                <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg text-center">
-                                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                                        خيار التثبيت غير متاح حاليًا من قبل المتصفح.
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                        جرب استخدام التطبيق قليلًا ثم تحقق مرة أخرى.
-                                    </p>
-                                </div>
-                            )}
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
-                                احصل على تجربة استخدام أفضل ووصول أسرع للتطبيق من شاشتك الرئيسية.
-                            </p>
-                        </div>
-                    )}
-                     <SettingSelect id="reciter" label="القارئ" value={settings.reciter} onChange={(e) => updateSettings({ reciter: e.target.value })}>
-                        {reciters.map(r => <option key={r.identifier} value={r.identifier}>{r.name}</option>)}
-                     </SettingSelect>
-                     <SettingSelect id="tafsir" label="التفسير" value={settings.tafsir} onChange={(e) => updateSettings({ tafsir: e.target.value })}>
-                        {tafsirInfoList.map(t => <option key={t.identifier} value={t.identifier}>{t.name}</option>)}
-                     </SettingSelect>
-                     <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <h4 className="font-medium mb-3">إعدادات الذكاء الاصطناعي</h4>
-                        <div className="space-y-2">
-                            <label htmlFor="apiKey" className="block text-sm font-medium">مفتاح Gemini API</label>
-                            <input
-                                type="password"
-                                id="apiKey"
-                                value={localApiKey}
-                                onChange={(e) => setLocalApiKey(e.target.value)}
-                                placeholder="أدخل مفتاحك هنا"
-                                className="w-full p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500 ltr-input"
-                                dir="ltr"
-                            />
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                مفتاح API الخاص بك يُحفظ محلياً في متصفحك فقط.
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-500 hover:underline">
-                                    {' '}الحصول على مفتاح
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
-                    <button onClick={handleSaveAndClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">تم</button>
-                </div>
-            </motion.div>
-        </div>
-    );
-};
-
-const TafsirModal: React.FC<{content: any, onClose: () => void}> = ({ content, onClose }) => {
-    const modalRef = useRef<HTMLDivElement>(null);
-    useFocusTrap(modalRef, onClose);
-
-    return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
-              onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="tafsir-title">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h3 id="tafsir-title" className="font-bold text-lg">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>
-                    <button onClick={onClose} aria-label="Close Tafsir" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
-                </div>
-                <div className="p-6 overflow-y-auto space-y-4 text-right">
-                    <div className="font-quran text-2xl leading-loose bg-slate-100 dark:bg-slate-700/50 p-4 rounded-md">{content.ayah.text}</div>
-                    {content.isLoading && <div className="text-center p-4 flex justify-center items-center gap-2"><Spinner/> ...جاري تحميل التفسير</div>}
-                    {content.error && <div className="text-center p-4 text-red-500" role="alert">{content.error}</div>}
-                    {content.tafsir && <div className="text-lg leading-relaxed prose dark:prose-invert max-w-none">{content.tafsir.text}</div>}
-                </div>
-                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
-                    <button onClick={onClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">إغلاق</button>
-                </div>
-            </motion.div>
-        </div>
-    );
-};
-
-// ======== UTILITY COMPONENTS & HOOKS ======== //
-
-export const useDebounce = <T,>(value: T, delay: number): T => {
-    const [debouncedValue, setDebouncedValue] = useState<T>(value);
-    useEffect(() => {
-        const handler = setTimeout(() => setDebouncedValue(value), delay);
-        return () => clearTimeout(handler);
-    }, [value, delay]);
-    return debouncedValue;
-};
-
-export const useFocusTrap = (ref: React.RefObject<HTMLElement>, onClose: () => void) => {
-    const triggerRef = useRef<HTMLElement | null>(null);
-
-    useEffect(() => {
-        triggerRef.current = document.activeElement as HTMLElement;
-        const focusableElements = ref.current?.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstElement = focusableElements?.[0];
-        firstElement?.focus();
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-            if (e.key === 'Tab' && ref.current) {
-                const elements = Array.from(focusableElements || []);
-                if (elements.length === 0) return;
-                const first = elements[0];
-                const last = elements[elements.length - 1];
-                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } 
-                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            triggerRef.current?.focus();
-        };
-    }, [ref, onClose]);
-};
-
-export const SettingSelect: React.FC<React.PropsWithChildren<{id: string; label: string; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;}>> = ({id, label, children, ...props}) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium mb-1">{label}</label>
-        <select id={id} {...props} className="w-full p-2.5 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500">
-            {children}
-        </select>
-    </div>
-);
-
-export const Spinner: React.FC = () => (
-    <svg className="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
-
 
 export default App;
