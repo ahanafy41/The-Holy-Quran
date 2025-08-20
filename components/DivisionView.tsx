@@ -132,8 +132,6 @@ interface AyahItemProps {
     onSelect: (event: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
-const MotionDiv = motion.div;
-
 const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, onSelect }, ref) => {
     const { activeAyah } = useApp();
     const isPlaying = activeAyah?.number === ayah.number;
@@ -160,7 +158,7 @@ const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSele
             }`}>
             <AnimatePresence>
             {(isSelected || isPlaying) && (
-                <MotionDiv 
+                <motion.div 
                     layout
                     layoutId={`outline-div-${ayah.number}`}
                     className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"

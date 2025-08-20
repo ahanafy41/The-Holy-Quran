@@ -26,8 +26,6 @@ type Playlist = {
     ayahs: Ayah[];
 };
 
-const MotionDiv = motion.div;
-
 export const ListenPage: React.FC = () => {
     const { settings, setError, navigateTo } = useApp();
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
@@ -92,7 +90,7 @@ export const ListenPage: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto">
             <AnimatePresence mode="wait">
-                <MotionDiv
+                <motion.div
                     key={playlist ? 'player' : 'selection'}
                     initial={{ opacity: 0, x: playlist ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -100,7 +98,7 @@ export const ListenPage: React.FC = () => {
                     transition={{ duration: 0.25 }}
                 >
                     {renderContent()}
-                </MotionDiv>
+                </motion.div>
             </AnimatePresence>
         </div>
     );
@@ -122,14 +120,14 @@ const SelectionView: React.FC<{onPlayRequest: (item: DivisionItem, config: Divis
     return (
          <AnimatePresence mode="wait">
             {activeList ? (
-                <MotionDiv key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <ListView list={activeList} onBack={() => setActiveList(null)} onSelect={(item) => onPlayRequest(item, activeList)} surahMap={surahMap} />
-                </MotionDiv>
+                </motion.div>
             ) : (
-                 <MotionDiv key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <p className="text-slate-600 dark:text-slate-400 mb-6">اختر ما تود الاستماع إليه من الفهارس التالية.</p>
                     <IndexGrid divisions={divisions} onSelect={setActiveList} />
-                </MotionDiv>
+                </motion.div>
             )}
         </AnimatePresence>
     );

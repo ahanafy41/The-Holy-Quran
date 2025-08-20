@@ -9,8 +9,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SamiaSessionModal } from './SamiaSessionModal';
 
 
-const MotionDiv = motion.div;
-
 type PlayerPlaylist = {
     section: SavedSection;
     ayahs: Ayah[];
@@ -118,7 +116,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
                 )}
             </AnimatePresence>
             <AnimatePresence mode="wait">
-                <MotionDiv
+                <motion.div
                     key={playlist ? 'player' : samiaPlaylist ? 'samia' : 'selection'}
                     initial={{ opacity: 0, x: (playlist || samiaPlaylist) ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -126,7 +124,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
                     transition={{ duration: 0.25 }}
                 >
                     {renderContent()}
-                </MotionDiv>
+                </motion.div>
             </AnimatePresence>
         </div>
     );
@@ -277,7 +275,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
 
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
-        ws.on('decode', () => ws.play());
+        ws.on('decode', (duration) => ws.play());
         ws.on('error', (err) => setError(`خطأ في الصوت: ${err.toString()}`));
 
         if (ayahs.length > 0) {
@@ -300,7 +298,7 @@ const PlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = (
             if (repetitionCounterRef.current < repetitions) {
                 timeoutRef.current = window.setTimeout(() => {
                     ws.play();
-                }, 500);
+                }, delay * 1000);
                 repetitionCounterRef.current += 1;
                 setRepetitionCount(c => c + 1);
             } else {
@@ -423,7 +421,7 @@ const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section: Omit<
     
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <MotionDiv ref={modalRef} initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}}
+            <motion.div ref={modalRef} initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}}
                 onClick={e => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg flex flex-col" role="dialog" aria-modal="true" aria-labelledby="create-section-title">
                 <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="create-section-title" className="font-bold text-lg">إضافة مقطع جديد</h3>
@@ -470,7 +468,7 @@ const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section: Omit<
                     <button onClick={onClose} className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 font-semibold">إلغاء</button>
                     <button onClick={handleSaveClick} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">حفظ المقطع</button>
                 </footer>
-            </MotionDiv>
+            </motion.div>
         </div>
     );
 };

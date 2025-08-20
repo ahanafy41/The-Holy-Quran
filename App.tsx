@@ -62,8 +62,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 export const useApp = () => useContext(AppContext)!;
 
-const MotionDiv = motion.div;
-
 // ======== MAIN APP COMPONENT ======== //
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
@@ -419,7 +417,7 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
-            <MotionDiv ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
              onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="settings-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="settings-title" className="font-bold text-lg">الإعدادات</h3>
@@ -486,7 +484,7 @@ const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
                     <button onClick={handleSaveAndClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">تم</button>
                 </div>
-            </MotionDiv>
+            </motion.div>
         </div>
     );
 };
@@ -497,7 +495,7 @@ const TafsirModal: React.FC<{content: any, onClose: () => void}> = ({ content, o
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <MotionDiv ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
               onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="tafsir-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="tafsir-title" className="font-bold text-lg">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>
@@ -512,7 +510,7 @@ const TafsirModal: React.FC<{content: any, onClose: () => void}> = ({ content, o
                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-left">
                     <button onClick={onClose} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800">إغلاق</button>
                 </div>
-            </MotionDiv>
+            </motion.div>
         </div>
     );
 };

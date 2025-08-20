@@ -17,8 +17,6 @@ interface DivisionConfig {
     icon: React.FC<{ className?: string }>;
 }
 
-const MotionDiv = motion.div;
-
 export const IndexPage: React.FC = () => {
     const { surahList, navigateTo, savedSections } = useApp();
     const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
@@ -58,13 +56,13 @@ export const IndexPage: React.FC = () => {
             </header>
             <AnimatePresence mode="wait">
                 {activeList ? (
-                    <MotionDiv key="list" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                    <motion.div key="list" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
                         <ListView list={activeList} onBack={() => setActiveList(null)} navigateTo={navigateTo as any} surahMap={surahMap} />
-                    </MotionDiv>
+                    </motion.div>
                 ) : (
-                    <MotionDiv key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <IndexGrid divisions={divisions} onSelect={handleDivisionSelect} />
-                    </MotionDiv>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

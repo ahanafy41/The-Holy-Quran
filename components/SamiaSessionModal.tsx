@@ -33,9 +33,6 @@ interface Feedback {
 
 const mimeType = 'audio/webm';
 
-const MotionDiv = motion.div;
-const MotionButton = motion.button;
-
 const TajweedScoreCircle: React.FC<{ score: number }> = ({ score }) => {
     const size = 100;
     const strokeWidth = 10;
@@ -296,7 +293,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
     }
 
     const renderSetup = () => (
-         <MotionDiv initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="text-center w-full max-w-md">
+         <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="text-center w-full max-w-md">
             <h3 className="text-2xl font-bold mb-2">كيف تود أن تُسمّع؟</h3>
             <p className="text-slate-600 dark:text-slate-400 mb-8">اختر الطريقة التي تناسب مراجعتك.</p>
             <div className="space-y-3">
@@ -313,7 +310,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                     المقطع كاملاً
                 </button>
             </div>
-         </MotionDiv>
+         </motion.div>
     );
 
     const renderStatusUI = () => {
@@ -323,7 +320,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             : `آيات ${currentAyahIndex + 1} - ${endOfChunk} من ${ayahs.length}`;
 
         return (
-            <MotionDiv key={currentAyahIndex} initial={{opacity:0}} animate={{opacity:1}} className="text-center w-full max-w-3xl">
+            <motion.div key={currentAyahIndex} initial={{opacity:0}} animate={{opacity:1}} className="text-center w-full max-w-3xl">
                 <p className="font-semibold text-slate-500 dark:text-slate-400 mb-4">{title}</p>
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm mb-8 max-h-60 overflow-y-auto">
                    <p className="font-quran text-3xl md:text-4xl leading-loose text-center">
@@ -332,36 +329,36 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                 </div>
 
                  {showInstructions && status === 'idle' && (
-                    <MotionDiv initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg flex items-center gap-3 mb-6">
+                    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg flex items-center gap-3 mb-6">
                         <InformationCircleIcon className="w-6 h-6 flex-shrink-0"/>
                         <p className="text-sm font-medium text-right">اضغط على الميكروفون ثم اقرأ المقطع المعروض بصوت واضح.</p>
-                    </MotionDiv>
+                    </motion.div>
                 )}
 
                 <div className="flex justify-center items-center h-48">
                     <AnimatePresence mode="wait">
                         {status === 'idle' && (
-                             <MotionButton key="idle" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
+                             <motion.button key="idle" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
                                  onClick={handleStartRecording} aria-label="بدء تسجيل التلاوة"
                                  className="w-24 h-24 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-all transform hover:scale-105">
                                  <MicrophoneIcon className="w-12 h-12" />
-                             </MotionButton>
+                             </motion.button>
                         )}
                         {status === 'recording' && (
-                             <MotionButton key="recording" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
+                             <motion.button key="recording" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
                                  onClick={handleStopRecording} aria-label="إيقاف التسجيل"
                                  className="w-24 h-24 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg animate-pulse">
                                  <div className="w-8 h-8 bg-white rounded-md"></div>
-                             </MotionButton>
+                             </motion.button>
                         )}
                         {status === 'processing' && (
-                            <MotionDiv key="processing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center">
+                            <motion.div key="processing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center">
                                 <Spinner />
                                 <p className="mt-4 font-semibold text-slate-500">يتم التحقق...</p>
-                            </MotionDiv>
+                            </motion.div>
                         )}
                         {status === 'feedback' && feedback && (
-                            <MotionDiv key="feedback" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full space-y-4">
+                            <motion.div key="feedback" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full space-y-4">
                                 <div className={`text-center p-4 rounded-lg ${feedback.isCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
                                     <h3 className={`text-2xl font-bold flex items-center justify-center gap-2 ${feedback.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                         {feedback.isCorrect ? <CheckCircleIcon className="w-8 h-8" /> : <InformationCircleIcon className="w-8 h-8" />}
@@ -406,34 +403,34 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                                         <ArrowLeftIcon className="w-4 h-4" />
                                     </button>
                                 </div>
-                            </MotionDiv>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
                 {error && <p className="text-red-500 mt-4 font-semibold">{error}</p>}
-            </MotionDiv>
+            </motion.div>
         )
     };
     
     const renderFinished = () => (
-        <MotionDiv initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center">
+        <motion.div initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center">
             <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
             <h3 className="text-3xl font-bold">أحسنت صنعًا!</h3>
             <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">لقد أكملت تسميع مقطع "{section.name}" بنجاح.</p>
             <button onClick={onClose} className="mt-8 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors">
                 العودة
             </button>
-        </MotionDiv>
+        </motion.div>
     );
      const renderError = () => (
-        <MotionDiv initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl">
+        <motion.div initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl">
             <XMarkIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-2xl font-bold">حدث خطأ</h3>
             <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">{error}</p>
             <button onClick={onClose} className="mt-8 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors">
                 العودة
             </button>
-        </MotionDiv>
+        </motion.div>
     );
 
     return (

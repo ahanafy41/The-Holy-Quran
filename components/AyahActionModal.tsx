@@ -12,8 +12,6 @@ interface AyahActionModalProps {
     onClose: () => void;
 }
 
-const MotionDiv = motion.div;
-
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError } = useApp();
 
@@ -68,7 +66,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                     // initialFocus can be specified, but by default it focuses the first tabbable element
                 }}
             >
-                <MotionDiv
+                <motion.div
                     layout
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -108,7 +106,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                             ))}
                         </div>
                     </div>
-                </MotionDiv>
+                </motion.div>
             </FocusTrap>
         </div>
     );

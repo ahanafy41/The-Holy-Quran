@@ -10,8 +10,6 @@ interface SuccessToastProps {
     duration?: number;
 }
 
-const MotionDiv = motion.div;
-
 export const SuccessToast: React.FC<SuccessToastProps> = ({ message, onClose, duration = 4000 }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -21,7 +19,7 @@ export const SuccessToast: React.FC<SuccessToastProps> = ({ message, onClose, du
     }, [onClose, duration]);
 
     return (
-        <MotionDiv
+        <motion.div
             layout
             initial={{ opacity: 0, y: 50, scale: 0.3 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -39,6 +37,6 @@ export const SuccessToast: React.FC<SuccessToastProps> = ({ message, onClose, du
             >
                 <XMarkIcon className="w-5 h-5" />
             </button>
-        </MotionDiv>
+        </motion.div>
     );
 };
