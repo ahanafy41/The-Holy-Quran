@@ -292,8 +292,10 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
         setStatus('idle');
     }
 
+    const animationProps = {initial:{opacity:0, scale:0.9}, animate:{opacity:1, scale:1}};
+
     const renderSetup = () => (
-         <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="text-center w-full max-w-md">
+         <motion.div {...animationProps} className="text-center w-full max-w-md">
             <h3 className="text-2xl font-bold mb-2">كيف تود أن تُسمّع؟</h3>
             <p className="text-slate-600 dark:text-slate-400 mb-8">اختر الطريقة التي تناسب مراجعتك.</p>
             <div className="space-y-3">
@@ -319,8 +321,12 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
             ? `آية ${currentAyahIndex + 1} من ${ayahs.length}`
             : `آيات ${currentAyahIndex + 1} - ${endOfChunk} من ${ayahs.length}`;
 
+        const statusAnimationProps = {initial:{opacity:0}, animate:{opacity:1}};
+        const buttonAnimationProps = {initial:{scale:0.5, opacity:0}, animate:{scale:1, opacity:1}, exit:{scale:0.5, opacity:0}};
+        const feedbackAnimationProps = {initial:{opacity:0, y:20}, animate:{opacity:1, y:0}};
+
         return (
-            <motion.div key={currentAyahIndex} initial={{opacity:0}} animate={{opacity:1}} className="text-center w-full max-w-3xl">
+            <motion.div key={currentAyahIndex} {...statusAnimationProps} className="text-center w-full max-w-3xl">
                 <p className="font-semibold text-slate-500 dark:text-slate-400 mb-4">{title}</p>
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm mb-8 max-h-60 overflow-y-auto">
                    <p className="font-quran text-3xl md:text-4xl leading-loose text-center">
@@ -338,27 +344,27 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
                 <div className="flex justify-center items-center h-48">
                     <AnimatePresence mode="wait">
                         {status === 'idle' && (
-                             <motion.button key="idle" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
+                             <motion.button key="idle" {...buttonAnimationProps}
                                  onClick={handleStartRecording} aria-label="بدء تسجيل التلاوة"
                                  className="w-24 h-24 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-all transform hover:scale-105">
                                  <MicrophoneIcon className="w-12 h-12" />
                              </motion.button>
                         )}
                         {status === 'recording' && (
-                             <motion.button key="recording" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.5, opacity:0}}
+                             <motion.button key="recording" {...buttonAnimationProps}
                                  onClick={handleStopRecording} aria-label="إيقاف التسجيل"
                                  className="w-24 h-24 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg animate-pulse">
                                  <div className="w-8 h-8 bg-white rounded-md"></div>
                              </motion.button>
                         )}
                         {status === 'processing' && (
-                            <motion.div key="processing" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="text-center">
+                            <motion.div key="processing" {...statusAnimationProps} className="text-center">
                                 <Spinner />
                                 <p className="mt-4 font-semibold text-slate-500">يتم التحقق...</p>
                             </motion.div>
                         )}
                         {status === 'feedback' && feedback && (
-                            <motion.div key="feedback" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="w-full space-y-4">
+                            <motion.div key="feedback" {...feedbackAnimationProps} className="w-full space-y-4">
                                 <div className={`text-center p-4 rounded-lg ${feedback.isCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
                                     <h3 className={`text-2xl font-bold flex items-center justify-center gap-2 ${feedback.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                         {feedback.isCorrect ? <CheckCircleIcon className="w-8 h-8" /> : <InformationCircleIcon className="w-8 h-8" />}
@@ -413,7 +419,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
     };
     
     const renderFinished = () => (
-        <motion.div initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center">
+        <motion.div {...animationProps} className="text-center">
             <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
             <h3 className="text-3xl font-bold">أحسنت صنعًا!</h3>
             <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">لقد أكملت تسميع مقطع "{section.name}" بنجاح.</p>
@@ -423,7 +429,7 @@ export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, 
         </motion.div>
     );
      const renderError = () => (
-        <motion.div initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl">
+        <motion.div {...animationProps} className="text-center p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl">
             <XMarkIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-2xl font-bold">حدث خطأ</h3>
             <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">{error}</p>

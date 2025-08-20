@@ -87,15 +87,19 @@ export const ListenPage: React.FC = () => {
         );
     };
     
+    const viewAnimation = {
+        initial: { opacity: 0, x: playlist ? 20 : -20 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: playlist ? -20 : 20 },
+        transition: { duration: 0.25 }
+    };
+
     return (
         <div className="max-w-4xl mx-auto">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={playlist ? 'player' : 'selection'}
-                    initial={{ opacity: 0, x: playlist ? 20 : -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: playlist ? -20 : 20 }}
-                    transition={{ duration: 0.25 }}
+                    {...viewAnimation}
                 >
                     {renderContent()}
                 </motion.div>
@@ -117,14 +121,20 @@ const SelectionView: React.FC<{onPlayRequest: (item: DivisionItem, config: Divis
         { id: 'pages', title: 'الصفحات', items: pages, itemLabel: 'صفحة', icon: BookOpenIcon },
     ], [surahList]);
 
+    const animationProps = {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 }
+    };
+
     return (
          <AnimatePresence mode="wait">
             {activeList ? (
-                <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div key="list" {...animationProps}>
                     <ListView list={activeList} onBack={() => setActiveList(null)} onSelect={(item) => onPlayRequest(item, activeList)} surahMap={surahMap} />
                 </motion.div>
             ) : (
-                 <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <motion.div key="index" {...animationProps}>
                     <p className="text-slate-600 dark:text-slate-400 mb-6">اختر ما تود الاستماع إليه من الفهارس التالية.</p>
                     <IndexGrid divisions={divisions} onSelect={setActiveList} />
                 </motion.div>

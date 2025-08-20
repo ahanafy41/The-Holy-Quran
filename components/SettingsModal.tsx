@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
@@ -17,10 +18,16 @@ export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     };
     
     useFocusTrap(modalRef, handleSaveAndClose);
+
+    const modalAnimation = {
+        initial: {scale: 0.95, opacity: 0},
+        animate: {scale: 1, opacity: 1},
+        exit: {scale: 0.95, opacity: 0}
+    };
     
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleSaveAndClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <motion.div ref={modalRef} {...modalAnimation}
              onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="settings-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="settings-title" className="font-bold text-lg">الإعدادات</h3>

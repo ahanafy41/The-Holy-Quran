@@ -22,6 +22,13 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
         </div>
     );
 
+    const outlineAnimation = {
+        layoutId: `outline-${layoutIdPrefix}-${ayah.number}`,
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 }
+    };
+
     return (
         <div
             ref={ref}
@@ -42,11 +49,8 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
             <AnimatePresence>
             {(isSelected || isPlaying) && (
                 <motion.div 
-                    layoutId={`outline-${layoutIdPrefix}-${ayah.number}`}
+                    {...outlineAnimation}
                     className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
                 />
             )}
             </AnimatePresence>

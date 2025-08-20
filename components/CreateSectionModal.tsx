@@ -33,10 +33,16 @@ export const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section
         if (!selectedSurah || startAyah === null || endAyah === null) { setError('يرجى تحديد سورة ونطاق آيات صحيح.'); return; }
         onSave({ name: sectionName.trim(), surahNumber: selectedSurah.number, startAyah, endAyah });
     };
+
+    const modalAnimation = {
+        initial: {scale:0.9, opacity:0},
+        animate: {scale:1, opacity:1},
+        exit: {scale:0.9, opacity:0}
+    };
     
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div ref={modalRef} initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.9, opacity:0}}
+            <motion.div ref={modalRef} {...modalAnimation}
                 onClick={e => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg flex flex-col" role="dialog" aria-modal="true" aria-labelledby="create-section-title">
                 <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="create-section-title" className="font-bold text-lg">إضافة مقطع جديد</h3>

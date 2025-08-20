@@ -104,6 +104,13 @@ export const MemorizationAndSectionsPage: React.FC = () => {
         );
     };
 
+    const viewAnimation = {
+        initial: { opacity: 0, x: (playlist || samiaPlaylist) ? 20 : -20 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: (playlist || samiaPlaylist) ? -20 : 20 },
+        transition: { duration: 0.25 }
+    };
+
     return (
         <div className="max-w-4xl mx-auto">
             <AnimatePresence>
@@ -120,10 +127,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
             <AnimatePresence mode="wait">
                 <motion.div
                     key={playlist ? 'player' : samiaPlaylist ? 'samia' : 'selection'}
-                    initial={{ opacity: 0, x: (playlist || samiaPlaylist) ? 20 : -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: (playlist || samiaPlaylist) ? -20 : 20 }}
-                    transition={{ duration: 0.25 }}
+                    {...viewAnimation}
                 >
                     {renderContent()}
                 </motion.div>

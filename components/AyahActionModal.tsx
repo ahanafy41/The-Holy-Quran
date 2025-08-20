@@ -55,6 +55,13 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
     ];
 
+    const modalAnimation = {
+        initial: { scale: 0.9, opacity: 0 },
+        animate: { scale: 1, opacity: 1 },
+        exit: { scale: 0.9, opacity: 0 },
+        transition: { type: 'spring', damping: 15, stiffness: 200 }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="presentation">
             <FocusTrap
@@ -67,11 +74,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                 }}
             >
                 <motion.div
-                    layout
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+                    {...modalAnimation}
                     onClick={(e) => e.stopPropagation()}
                     className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
                     role="dialog"

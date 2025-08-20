@@ -23,9 +23,15 @@ export const TafsirModal: React.FC<TafsirModalProps> = ({ content, onClose }) =>
     const modalRef = useRef<HTMLDivElement>(null);
     useFocusTrap(modalRef, onClose);
 
+    const modalAnimation = {
+        initial: {scale: 0.95, opacity: 0},
+        animate: {scale: 1, opacity: 1},
+        exit: {scale: 0.95, opacity: 0}
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div ref={modalRef} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+            <motion.div ref={modalRef} {...modalAnimation}
               onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="tafsir-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 id="tafsir-title" className="font-bold text-lg">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>

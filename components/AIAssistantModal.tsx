@@ -74,6 +74,27 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
     
     const suggestionPrompts = ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"];
 
+    const modalAnimationProps = {
+        initial: {scale: 0.95, opacity: 0},
+        animate: {scale: 1, opacity: 1},
+        exit: {scale: 0.95, opacity: 0}
+    };
+
+    const suggestionsAnimationProps = {
+        initial: {opacity:0},
+        animate: {opacity:1}
+    };
+
+    const messageAnimationProps = {
+        initial: {opacity: 0, y: 10},
+        animate: {opacity: 1, y: 0}
+    };
+    
+    const respondingAnimationProps = {
+        initial: {opacity: 0},
+        animate: {opacity: 1}
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4" onClick={onClose} role="presentation">
             <FocusTrap
@@ -84,7 +105,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                     initialFocus: '#ai-assistant-input',
                 }}
             >
-                <motion.div ref={modalContentRef} layout initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}}
+                <motion.div ref={modalContentRef} {...modalAnimationProps}
                   onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="ai-assistant-title">
                     <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-shrink-0">
                         <div className="flex items-center gap-3">
@@ -102,7 +123,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                     <div className="flex-1 p-4 overflow-y-auto space-y-4" aria-live="polite">
                         <AnimatePresence>
                         {messages.length === 0 && !isResponding && (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="text-center text-slate-500 dark:text-slate-400 py-8">
+                            <motion.div {...suggestionsAnimationProps} className="text-center text-slate-500 dark:text-slate-400 py-8">
                                 <p className="mb-4">كيف يمكنني مساعدتك في فهم هذه الآية؟</p>
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {suggestionPrompts.map(prompt => (
@@ -116,7 +137,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                         )}
                         </AnimatePresence>
                         {messages.map((msg, index) => (
-                            <motion.div key={index} initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}}
+                            <motion.div key={index} {...messageAnimationProps}
                              className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-white"/></div>}
                                 <div className={`max-w-[85%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-lg' : 'bg-slate-100 dark:bg-slate-700 rounded-bl-lg'}`}>
@@ -125,7 +146,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                             </motion.div>
                         ))}
                         {isResponding && messages[messages.length - 1]?.role !== 'model' && (
-                             <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="flex items-start gap-2.5 justify-start" role="status">
+                             <motion.div {...respondingAnimationProps} className="flex items-start gap-2.5 justify-start" role="status">
                                  <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                                      <SparklesIcon className="w-5 h-5 text-white"/>
                                  </div>

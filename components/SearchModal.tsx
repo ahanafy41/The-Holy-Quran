@@ -54,14 +54,18 @@ export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         inputRef.current?.focus();
     }, []);
 
+    const modalAnimation = {
+        initial: { y: -50, opacity: 0 },
+        animate: { y: 0, opacity: 1 },
+        exit: { y: -50, opacity: 0 },
+        transition: { type: 'spring', damping: 15, stiffness: 200 }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[10vh]" onClick={onClose}>
             <motion.div
                 ref={modalRef}
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -50, opacity: 0 }}
-                transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+                {...modalAnimation}
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
                 role="dialog"
