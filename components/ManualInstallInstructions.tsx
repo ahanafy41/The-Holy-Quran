@@ -40,7 +40,7 @@ export const ManualInstallInstructions: React.FC = () => {
                 );
             case 'android':
                 return (
-     دد                  <>
+                    <>
                         <p className="mb-4 text-sm text-center">لتثبيت التطبيق على جهازك، اتبع الخطوات التالية:</p>
                         <ol className="space-y-3 text-right">
                             <InstructionStep icon={ThreeDotsVerticalIcon} text="اضغط على زر القائمة (ثلاث نقاط) في المتصفح." />
