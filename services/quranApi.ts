@@ -1,6 +1,25 @@
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult } from '../types';
+
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter } from '../types';
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
+const MP3QURAN_API_URL = 'https://www.mp3quran.net/api/v3';
+
+// For mp3quran.net API
+interface MP3QuranReciter {
+    id: number;
+    name: string;
+    rewaya: string;
+    count: string;
+    suras: string;
+    moshaf: Moshaf[];
+}
+interface Moshaf {
+    id: number;
+    name: string;
+    server: string;
+    surah_total: number;
+    surah_list: string;
+}
 
 async function fetchWithRetry(url: string, retries = 3, backoff = 1000) {
     for (let i = 0; i < retries; i++) {
@@ -39,6 +58,56 @@ async function fetchAPI<T,>(endpoint: string): Promise<T> {
   }
 }
 
+async function fetchMP3QuranAPI<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${MP3QURAN_API_URL}/${endpoint}`);
+  if (!response.ok) {
+    throw new Error(`mp3quran.net API call failed: ${response.statusText}`);
+  }
+  const data = await response.json();
+  return data.reciters as T;
+}
+
+export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
+    const rawReciters = await fetchMP3QuranAPI<MP3QuranReciter[]>('reciters?language=ar');
+    const listeningReciters: ListeningReciter[] = [];
+
+    rawReciters.forEach(reciter => {
+        // Find all complete recordings (moshafs) for the reciter
+        const completeMoshafs = reciter.moshaf.filter(m => m.surah_total === 114);
+        
+        completeMoshafs.forEach(moshaf => {
+            // If a reciter has more than one style (e.g., Murattal, Mujawwad),
+            // or if the style name is different from the rewaya, create a unique name.
+            // This prevents duplicate-looking entries in the UI.
+            const hasMultipleStyles = completeMoshafs.length > 1;
+            const isDescriptiveStyle = moshaf.name && moshaf.name !== reciter.rewaya;
+
+            const displayName = (hasMultipleStyles || isDescriptiveStyle)
+                ? `${reciter.name} (${moshaf.name})`
+                : reciter.name;
+
+            listeningReciters.push({
+                identifier: `${reciter.id}-${moshaf.id}`,
+                name: displayName,
+                rewaya: reciter.rewaya,
+                server: moshaf.server,
+            });
+        });
+    });
+
+    // Manually add Sheikh Muhammad Rifat with his partial recording
+    const muhammadRifatReciter: ListeningReciter = {
+        identifier: '241-241',
+        name: 'محمد رفعت (مرتل)',
+        rewaya: 'حفص عن عاصم',
+        server: 'https://server14.mp3quran.net/refat/',
+        surah_list: "1,10,11,12,17,18,19,20,48,54,55,56,69,72,73,75,76,77,78,79,81,82,83,85,86,87,88,89,96,98,100"
+    };
+    listeningReciters.unshift(muhammadRifatReciter);
+
+    return listeningReciters;
+};
+
 // Helper to add a fallback audio URL from a more reliable CDN (everyayah.com)
 const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifier: string): Ayah => {
     // Maps API reciter identifier to the folder name on everyayah.com
@@ -53,6 +122,7 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
         'sudais': 'Abdurrahmaan_As-Sudais_128kbps',
         'saoodshuraym': 'Saood_ash-Shuraym_128kbps',
         'abdullahbasfar': 'Abdullah_Basfar_128kbps',
+        'faresabbad': 'Fares_Abbad_64kbps',
         // Note: some reciters from alquran.cloud might not be on everyayah.com
     };
 
@@ -112,9 +182,27 @@ export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Pr
     return ayah;
 };
 
-export const getReciters = (): Promise<Reciter[]> => {
-    return fetchAPI<Reciter[]>('edition/format/audio')
-        .then(reciters => reciters.filter(r => r.type === 'versebyverse'));
+export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
+    const reciters = await fetchAPI<Reciter[]>('edition/format/audio');
+    const filteredReciters = reciters.filter(r => r.type === 'versebyverse');
+    
+    const faresAbbadIdentifier = 'ar.faresabbad';
+    const faresAbbadExists = filteredReciters.some(r => r.identifier === faresAbbadIdentifier);
+
+    if (!faresAbbadExists) {
+        const faresAbbadReciter: Reciter = {
+            identifier: faresAbbadIdentifier,
+            language: 'ar',
+            name: 'فارس عباد',
+            englishName: 'Fares Abbad',
+            format: 'audio/mpeg',
+            type: 'versebyverse',
+        };
+        // Prepend him to the list to make him easy to find and select by default
+        return [faresAbbadReciter, ...filteredReciters];
+    }
+    
+    return filteredReciters;
 };
 
 export const getTafsirInfo = (): Promise<TafsirInfo[]> => {

@@ -19,6 +19,14 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    const titleRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [division]);
 
     useEffect(() => {
         const fetchDivisionData = async () => {
@@ -27,7 +35,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
             setFetchedSurahs([]);
             try {
                 const surahNumbers = Array.from({length: division.end.surah - division.start.surah + 1}, (_, i) => division.start.surah + i);
-                const surahs = await Promise.all(surahNumbers.map(num => api.getSurah(num, settings.reciter)));
+                const surahs = await Promise.all(surahNumbers.map(num => api.getSurah(num, settings.memorizationReciter)));
                 setFetchedSurahs(surahs);
             } catch (e) {
                 setError(`فشل تحميل محتوى ${division.title}.`);
@@ -36,7 +44,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
             }
         };
         fetchDivisionData();
-    }, [division, settings.reciter, setError]);
+    }, [division, settings.memorizationReciter, setError]);
     
     const handleAyahSelect = (ayah: Ayah) => {
         setSelectedAyah(ayah);
@@ -104,15 +112,8 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
 
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6 text-center">
-                <button 
-                    onClick={() => navigateTo('index')}
-                    aria-label="الرجوع إلى الفهرس"
-                    className="absolute top-1/2 -translate-y-1/2 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">{division.title}</h2>
+             <header className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6 text-center">
+                <h2 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold mb-2 focus:outline-none">{division.title}</h2>
                  {division.startSurahName && 
                     <p className="text-lg text-slate-600 dark:text-slate-300">
                         يبدأ من سورة {division.startSurahName}، آية {division.start.ayah}

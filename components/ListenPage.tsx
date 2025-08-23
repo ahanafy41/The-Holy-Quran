@@ -1,104 +1,80 @@
 
-import React, { useState, useMemo } from 'react';
-import { Ayah, SurahSimple, QuranDivision } from '../types';
-import * as api from '../services/quranApi';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { SurahSimple } from '../types';
+import { ListeningReciter } from '../types';
 import { useApp } from '../context/AppContext';
-import {
-    ArrowRightIcon, ChevronLeftIcon, BookOpenIcon,
-} from './Icons';
-import { juzs, pages, hizbs } from '../data/quranicDivisions';
+import { ChevronLeftIcon, ArrowRightIcon, SpeakerWaveIcon, SearchIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Spinner } from './Spinner';
 import { ListenPlayerView } from './ListenPlayerView';
 
-
-// Define types for clarity
-type DivisionItem = SurahSimple | QuranDivision | { name: string; number: number };
-interface DivisionConfig {
-    id: string;
-    title: string;
-    items: DivisionItem[];
-    itemLabel: string;
-    icon: React.FC<{ className?: string }>;
-}
-type Playlist = {
-    title: string;
-    ayahs: Ayah[];
-};
+type View = 'reciters' | 'surahs' | 'player';
 
 export const ListenPage: React.FC = () => {
-    const { settings, setError, navigateTo } = useApp();
-    const [playlist, setPlaylist] = useState<Playlist | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const { listeningReciters, surahList } = useApp();
+    const [view, setView] = useState<View>('reciters');
+    const [selectedReciter, setSelectedReciter] = useState<ListeningReciter | null>(null);
+    const [selectedSurah, setSelectedSurah] = useState<SurahSimple | null>(null);
 
-    const handlePlayRequest = async (item: DivisionItem, config: DivisionConfig) => {
-        setIsLoading(true);
-        setError(null);
-        let ayahs: Ayah[] = [];
-        let title = '';
-
-        try {
-            if (config.id === 'surahs') {
-                const surah = item as SurahSimple;
-                const fullSurah = await api.getSurah(surah.number, settings.reciter);
-                ayahs = fullSurah.ayahs;
-                title = `سورة ${surah.name}`;
-            } else {
-                const division = item as QuranDivision;
-                const surahNumbers = Array.from({ length: division.end.surah - division.start.surah + 1 }, (_, i) => division.start.surah + i);
-                const surahPromises = surahNumbers.map(num => api.getSurah(num, settings.reciter));
-                const fetchedSurahs = await Promise.all(surahPromises);
-                
-                ayahs = fetchedSurahs.flatMap(s => s.ayahs).filter(a => {
-                    if (!a.surah) return false;
-                    const inRange = (sNum: number, aNum: number) => 
-                        (sNum > division.start.surah || (sNum === division.start.surah && aNum >= division.start.ayah)) &&
-                        (sNum < division.end.surah || (sNum === division.end.surah && aNum <= division.end.ayah));
-                    return inRange(a.surah.number, a.numberInSurah);
-                });
-                title = `${config.itemLabel} ${division.number}`;
-            }
-            setPlaylist({ title, ayahs });
-        } catch (e) {
-            setError(`فشل تحميل المقطع الصوتي.`);
-            console.error(e);
-        } finally {
-            setIsLoading(false);
-        }
+    const availableSurahsForSelectedReciter = useMemo(() => {
+        if (!selectedReciter || !selectedReciter.surah_list) return surahList;
+        const availableNumbers = new Set(selectedReciter.surah_list.split(',').map(Number));
+        return surahList.filter(s => availableNumbers.has(s.number));
+    }, [selectedReciter, surahList]);
+    
+    const handleReciterSelect = (reciter: ListeningReciter) => {
+        setSelectedReciter(reciter);
+        setView('surahs');
     };
 
+    const handleSurahSelect = (surah: SurahSimple) => {
+        setSelectedSurah(surah);
+        setView('player');
+    };
+    
+    const handleTrackChange = (direction: 'next' | 'prev') => {
+        if (!selectedSurah) return;
+        const currentSurahIndex = availableSurahsForSelectedReciter.findIndex(s => s.number === selectedSurah.number);
+        
+        if (currentSurahIndex === -1) return; // Should not happen
+
+        const nextIndex = direction === 'next' ? currentSurahIndex + 1 : currentSurahIndex - 1;
+        
+        if (nextIndex >= 0 && nextIndex < availableSurahsForSelectedReciter.length) {
+            setSelectedSurah(availableSurahsForSelectedReciter[nextIndex]);
+        }
+    }
+
+    const handleBack = () => {
+        if (view === 'player') setView('surahs');
+        else if (view === 'surahs') setView('reciters');
+    }
+    
     const renderContent = () => {
-        if (isLoading) {
-            return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري التحميل...</div>;
+        if (view === 'player' && selectedReciter && selectedSurah) {
+            const currentSurahIndex = availableSurahsForSelectedReciter.findIndex(s => s.number === selectedSurah.number);
+            const isFirst = currentSurahIndex === 0;
+            const isLast = currentSurahIndex === availableSurahsForSelectedReciter.length - 1;
+            return <ListenPlayerView reciter={selectedReciter} surah={selectedSurah} onBack={handleBack} onTrackChange={handleTrackChange} isFirst={isFirst} isLast={isLast} />;
         }
-        if (playlist) {
-            return <ListenPlayerView playlist={playlist} onBack={() => setPlaylist(null)} />;
+        if (view === 'surahs' && selectedReciter) {
+            return <SurahListView reciter={selectedReciter} surahs={availableSurahsForSelectedReciter} onSelect={handleSurahSelect} onBack={handleBack} />;
         }
-        return (
-             <div>
-                <header className="flex items-center gap-4 mb-6">
-                    <button onClick={() => navigateTo('home')} aria-label="الرجوع للقائمة الرئيسية" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                        <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                    </button>
-                    <h1 className="text-2xl md:text-3xl font-bold">الاستماع للقرآن الكريم</h1>
-                </header>
-                <SelectionView onPlayRequest={handlePlayRequest} />
-            </div>
-        );
+        return <ReciterListView reciters={listeningReciters} onSelect={handleReciterSelect} />;
     };
     
     const viewAnimation = {
-        initial: { opacity: 0, x: playlist ? 20 : -20 },
+        initial: { opacity: 0, x: 20 },
         animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: playlist ? -20 : 20 },
+        exit: { opacity: 0, x: -20 },
         transition: { duration: 0.25 }
     };
-
+    
     return (
         <div className="max-w-4xl mx-auto">
-            <AnimatePresence mode="wait">
+             <AnimatePresence mode="wait">
                 <motion.div
-                    key={playlist ? 'player' : 'selection'}
+                    key={view}
                     {...viewAnimation}
                 >
                     {renderContent()}
@@ -108,78 +84,109 @@ export const ListenPage: React.FC = () => {
     );
 };
 
-const SelectionView: React.FC<{onPlayRequest: (item: DivisionItem, config: DivisionConfig) => void}> = ({ onPlayRequest }) => {
-    const { surahList } = useApp();
-    const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
+const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}> = ({ reciters, onSelect }) => {
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const surahMap = useMemo(() => new Map(surahList.map(s => [s.number, s.name])), [surahList]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
-    const divisions = useMemo((): DivisionConfig[] => [
-        { id: 'surahs', title: 'السور', items: surahList, itemLabel: 'سورة', icon: BookOpenIcon },
-        { id: 'juzs', title: 'الأجزاء', items: juzs, itemLabel: 'جزء', icon: BookOpenIcon },
-        { id: 'hizbs', title: 'الأحزاب', items: hizbs, itemLabel: 'حزب', icon: BookOpenIcon },
-        { id: 'pages', title: 'الصفحات', items: pages, itemLabel: 'صفحة', icon: BookOpenIcon },
-    ], [surahList]);
+    const filteredReciters = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return reciters;
+        }
+        return reciters.filter(reciter =>
+            reciter.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [reciters, searchQuery]);
 
-    const animationProps = {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 }
-    };
+    if (reciters.length === 0 && !searchQuery) {
+        return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل القراء...</div>;
+    }
+    
+    return (
+        <div>
+            <header className="mb-6 space-y-4">
+                <h1 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold focus:outline-none">اختر القارئ</h1>
+                <div className="relative">
+                    <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="ابحث عن قارئ..."
+                        className="w-full h-12 px-4 pr-11 text-right bg-white dark:bg-slate-800 rounded-xl shadow-sm border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+                        aria-label="ابحث عن قارئ"
+                    />
+                    <div className="absolute top-0 right-0 h-12 w-12 flex items-center justify-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                        <SearchIcon className="w-5 h-5" />
+                    </div>
+                </div>
+            </header>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm">
+                {filteredReciters.length > 0 ? (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                        {filteredReciters.map(reciter => (
+                            <button key={reciter.identifier} onClick={() => onSelect(reciter)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
+                                <div>
+                                    <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                        {reciter.name}
+                                    </p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">{reciter.rewaya}</p>
+                                </div>
+                                <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                        <p>لم يتم العثور على نتائج للبحث "{searchQuery}"</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+const SurahListView: React.FC<{reciter: ListeningReciter, surahs: SurahSimple[], onSelect: (s: SurahSimple) => void, onBack: () => void}> = ({ reciter, surahs, onSelect, onBack }) => {
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
-         <AnimatePresence mode="wait">
-            {activeList ? (
-                <motion.div key="list" {...animationProps}>
-                    <ListView list={activeList} onBack={() => setActiveList(null)} onSelect={(item) => onPlayRequest(item, activeList)} surahMap={surahMap} />
-                </motion.div>
-            ) : (
-                 <motion.div key="index" {...animationProps}>
-                    <p className="text-slate-600 dark:text-slate-400 mb-6">اختر ما تود الاستماع إليه من الفهارس التالية.</p>
-                    <IndexGrid divisions={divisions} onSelect={setActiveList} />
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
-};
-
-const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: DivisionConfig) => void; }> = ({ divisions, onSelect }) => (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        {divisions.map((div) => (
-            <button key={div.id} onClick={() => onSelect(div)} className="p-4 md:p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-center hover:shadow-md hover:-translate-y-1 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-900">
-                <div.icon className="w-10 h-10 text-green-500 mx-auto" />
-                <h2 className="text-lg font-bold mt-3">{div.title}</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{div.items.length > 0 ? `${div.items.length} ${div.itemLabel}` : 'قريباً'}</p>
-            </button>
-        ))}
-    </div>
-);
-
-const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; onSelect: (item: DivisionItem) => void; surahMap: Map<number, string>; }> = ({ list, onBack, onSelect, surahMap }) => (
-    <div>
-        <header className="flex items-center gap-4 mb-6">
-            <button onClick={onBack} aria-label="الرجوع" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-            </button>
-            <h1 className="text-2xl md:text-3xl font-bold">{list.title}</h1>
-        </header>
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
-            {list.items.map((item: any, index: number) => (
-                <button key={`${list.id}-${item.number || index}`} onClick={() => onSelect(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                    <div>
-                        <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                          {`${list.itemLabel} ${item.number}`}
-                          {list.id === 'surahs' && ` - ${item.name}`}
-                        </p>
-                        {list.id !== 'surahs' && item.start && (
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                يبدأ من: سورة {surahMap.get(item.start.surah)}، آية {item.start.ayah}
-                            </p>
-                        )}
-                    </div>
-                    <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
+        <div>
+            <header className="flex items-center gap-4 mb-6">
+                 <button onClick={onBack} aria-label="الرجوع لاختيار القارئ" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
                 </button>
-            ))}
+                <div>
+                    <h1 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold focus:outline-none">اختر السورة</h1>
+                    <p className="text-slate-500 dark:text-slate-400">{reciter.name}</p>
+                </div>
+            </header>
+             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
+                {surahs.map(surah => (
+                     <button key={surah.number} onClick={() => onSelect(surah)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
+                        <div className="flex items-center gap-4">
+                            <span className="text-lg font-mono text-slate-400 group-hover:text-green-500">{surah.number}</span>
+                             <div>
+                                <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                    {surah.name}
+                                </p>
+                                 <p className="text-sm text-slate-500 dark:text-slate-400">{surah.englishName}</p>
+                             </div>
+                        </div>
+                        <SpeakerWaveIcon className="w-6 h-6 text-slate-400 group-hover:text-green-500 transition-colors" />
+                    </button>
+                ))}
+            </div>
         </div>
-    </div>
-);
+    )
+}

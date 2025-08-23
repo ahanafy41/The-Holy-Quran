@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { Ayah, SavedSection } from '../types';
+import * as api from '../services/quranApi';
 import { XMarkIcon, MicrophoneIcon, CheckCircleIcon, ArrowLeftIcon, InformationCircleIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
@@ -78,9 +78,9 @@ const TajweedScoreCircle: React.FC<{ score: number }> = ({ score }) => {
 };
 
 
-export const SamiaSessionModal: React.FC<SamiaSessionModalProps> = ({ playlist, onClose }) => {
+export const SamiaSessionModal = ({ playlist, onClose }: SamiaSessionModalProps) => {
     const { ayahs, section } = playlist;
-    const { apiKey } = useApp();
+    const { apiKey, settings } = useApp();
 
     const [status, setStatus] = useState<SessionStatus>('setup');
     const [chunkSize, setChunkSize] = useState(1);

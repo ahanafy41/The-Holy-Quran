@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Ayah, SavedSection, SurahSimple } from '../types';
 import * as api from '../services/quranApi';
 import { useApp } from '../context/AppContext';
@@ -32,7 +32,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const surahData = await api.getSurah(section.surahNumber, settings.reciter);
+            const surahData = await api.getSurah(section.surahNumber, settings.memorizationReciter);
             const sectionAyahs = surahData.ayahs.filter(
                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
             );
@@ -55,7 +55,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
         setError(null);
         try {
             // We don't need reciter for Samia mode, but getSurah requires it. We can use any valid one.
-            const surahData = await api.getSurah(section.surahNumber, settings.reciter);
+            const surahData = await api.getSurah(section.surahNumber, settings.memorizationReciter);
             const sectionAyahs = surahData.ayahs.filter(
                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
             );
@@ -147,18 +147,21 @@ const SectionListView: React.FC<{
     
     const { surahList, navigateTo } = useApp();
     const surahMap = useMemo(() => new Map(surahList.map(s => [s.number, s.name])), [surahList]);
+    const titleRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <div className="space-y-6">
             <header className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                     <button onClick={() => navigateTo('home')} aria-label="الرجوع للقائمة الرئيسية" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                        <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                    </button>
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-bold">الحفظ والمراجعة</h1>
-                        <p className="text-slate-600 dark:text-slate-400">أنشئ وراجع مقاطعك المحفوظة.</p>
-                    </div>
+                <div>
+                    <h1 ref={titleRef} tabIndex={-1} className="text-3xl md:text-4xl font-bold focus:outline-none">الحفظ والمراجعة</h1>
+                    <p className="text-slate-600 dark:text-slate-400">أنشئ وراجع مقاطعك المحفوظة.</p>
                 </div>
                 <button onClick={onAddSection} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors flex-shrink-0">
                    إضافة مقطع

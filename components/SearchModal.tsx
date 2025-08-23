@@ -59,7 +59,7 @@ export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         animate: { y: 0, opacity: 1 },
         exit: { y: -50, opacity: 0 },
         transition: { type: 'spring', damping: 15, stiffness: 200 }
-    };
+    } as const;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[10vh]" onClick={onClose}>

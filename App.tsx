@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection } from './types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter } from './types';
 import * as api from './services/quranApi';
 import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
@@ -15,6 +15,8 @@ import { ErrorToast } from './components/ErrorToast';
 import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
+import { BottomNavBar } from './components/BottomNavBar';
+import { QuickAccessMenu } from './components/QuickAccessMenu';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,18 +26,24 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('quranAppSettings');
     const defaultSettings: AppSettings = {
       darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
-      reciter: 'ar.alafasy',
+      memorizationReciter: 'ar.faresabbad',
       tafsir: 'ar.muyassar',
     };
      if (saved) {
         const parsed = JSON.parse(saved);
+        // Migration from old setting key
+        if(parsed.reciter && !parsed.memorizationReciter) {
+            parsed.memorizationReciter = parsed.reciter;
+            delete parsed.reciter;
+        }
         return { ...defaultSettings, ...parsed };
     }
     return defaultSettings;
   });
   
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem('quranUserApiKey'));
-  const [reciters, setReciters] = useState<Reciter[]>([]);
+  const [memorizationReciters, setMemorizationReciters] = useState<Reciter[]>([]);
+  const [listeningReciters, setListeningReciters] = useState<ListeningReciter[]>([]);
   const [tafsirInfoList, setTafsirInfoList] = useState<TafsirInfo[]>([]);
   const [surahList, setSurahList] = useState<SurahSimple[]>([]);
   const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
@@ -212,7 +220,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const surahData = await api.getSurah(surahNumber, settings.reciter);
+      const surahData = await api.getSurah(surahNumber, settings.memorizationReciter);
       setCurrentSurah(surahData);
       localStorage.setItem('lastReadSurah', String(surahNumber));
       document.title = `${surahData.name} - Quran Study App`;
@@ -222,7 +230,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [settings.reciter]);
+  }, [settings.memorizationReciter]);
   
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
     setTargetAyah(params?.ayahNumber ?? null);
@@ -237,18 +245,24 @@ const App: React.FC = () => {
     setView(targetView);
     mainContentRef.current?.scrollTo(0,0);
   }, [loadSurah, currentSurah]);
+  
+  const scrollToTop = useCallback(() => {
+      mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const initApp = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [sList, rList, tList] = await Promise.all([
+      const [sList, vReciters, lReciters, tList] = await Promise.all([
         api.getSurahList(), 
-        api.getReciters(),
+        api.getVerseByVerseReciters(),
+        api.getListeningReciters(),
         api.getTafsirInfo(),
       ]);
       setSurahList(sList);
-      setReciters(rList);
+      setMemorizationReciters(vReciters);
+      setListeningReciters(lReciters);
       setTafsirInfoList(tList.filter(t => t.language === 'ar'));
       
     } catch (e) {
@@ -267,7 +281,7 @@ const App: React.FC = () => {
     if (view === 'reader' && currentSurah) {
       loadSurah(currentSurah.number);
     }
-  }, [view, currentSurah, settings.reciter, loadSurah]);
+  }, [view, currentSurah, settings.memorizationReciter, loadSurah]);
 
 
   const playAyah = useCallback((ayah: Ayah) => {
@@ -334,12 +348,12 @@ const App: React.FC = () => {
   const canInstall = !!installPromptEvent && !isStandalone;
 
   const appContextValue = useMemo(() => ({
-    settings, updateSettings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah,
+    settings, updateSettings, memorizationReciters, listeningReciters, tafsirInfoList, surahList, currentSurah, loadSurah,
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
-    isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view,
+    isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view, scrollToTop,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
     isStandalone, canInstall, triggerInstall,
-  }), [settings, reciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall]);
+  }), [settings, memorizationReciters, listeningReciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop]);
 
   const renderView = () => {
     switch (view) {
@@ -367,11 +381,20 @@ const App: React.FC = () => {
         {isAIAssistantOpen && aiAssistantAyah && <AIAssistantModal ayah={aiAssistantAyah} onClose={() => { setIsAIAssistantOpen(false); setAIAssistantAyah(null); }} />}
       </AnimatePresence>
 
-      <div ref={mainContentRef} className="h-screen w-screen overflow-y-auto">
+      <div ref={mainContentRef} className="h-screen w-screen overflow-y-auto pb-20">
         <main tabIndex={-1} className="p-4 md:p-6 lg:p-8 focus:outline-none">
           {renderView()}
         </main>
       </div>
+
+      <AnimatePresence>
+        {view !== 'home' && (
+          <>
+            <BottomNavBar />
+            <QuickAccessMenu />
+          </>
+        )}
+      </AnimatePresence>
     </AppContext.Provider>
   );
 };

@@ -1,10 +1,18 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { BookOpenIcon, HeadphonesIcon, FlowerIcon, SearchIcon, CogIcon, SunIcon, MoonIcon } from './Icons';
 
 export const HomePage: React.FC = () => {
     const { navigateTo, showSearch, showSettings, settings, updateSettings } = useApp();
+    const titleRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const menuItems = [
         {
@@ -43,7 +51,7 @@ export const HomePage: React.FC = () => {
                 <div className="inline-block p-4 bg-green-500 rounded-2xl mb-4">
                     <BookOpenIcon className="w-10 h-10 text-white"/>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white">القرآن الكريم</h1>
+                <h1 ref={titleRef} tabIndex={-1} className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white focus:outline-none">القرآن الكريم</h1>
                 <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">رفيقك لدراسة وتدبر القرآن</p>
             </header>
             

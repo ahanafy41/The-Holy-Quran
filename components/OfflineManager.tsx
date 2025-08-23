@@ -7,7 +7,7 @@ import { Reciter } from '../types';
 type DownloadStatus = 'downloaded' | 'downloading' | 'none';
 
 export const OfflineManager: React.FC = () => {
-    const { reciters, setSuccessMessage, setError } = useApp();
+    const { memorizationReciters: reciters, setSuccessMessage, setError } = useApp();
     
     const [reciterStatuses, setReciterStatuses] = useState<Record<string, DownloadStatus>>({});
     const [reciterProgress, setReciterProgress] = useState<Record<string, number>>({});

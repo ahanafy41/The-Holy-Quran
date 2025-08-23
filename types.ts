@@ -40,6 +40,15 @@ export interface Reciter {
   type: 'surah' | 'versebyverse';
 }
 
+// From mp3quran.net API
+export interface ListeningReciter {
+  identifier: string; // combination of id and moshaf id
+  name: string;
+  rewaya: string;
+  server: string; // The base URL for audio files
+  surah_list?: string; // Optional: comma-separated list of available surah numbers
+}
+
 export interface Tafsir {
   id: number;
   name: string;
@@ -57,8 +66,8 @@ export interface TafsirInfo {
 
 export interface AppSettings {
   darkMode: boolean;
-  reciter: string;
-  tafsir: string; // Storing tafsir identifier e.g., 'ar.muyassar'
+  memorizationReciter: string; // for verse-by-verse
+  tafsir: string; 
 }
 
 export interface SavedSection {

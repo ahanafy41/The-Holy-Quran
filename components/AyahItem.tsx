@@ -15,6 +15,7 @@ interface AyahItemProps {
 export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, isHighlighted, onSelect, layoutIdPrefix }, ref) => {
     const { activeAyah } = useApp();
     const isPlaying = activeAyah?.number === ayah.number;
+    const descriptionId = `desc-${layoutIdPrefix}-${ayah.number}`;
     
     const ayahNumberCircle = (
         <div className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
@@ -37,6 +38,7 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
             tabIndex={0}
             role="button"
             aria-label={`${ayah.text} - الآية رقم ${ayah.numberInSurah} من سورة ${ayah.surah?.name}.`}
+            aria-describedby={descriptionId}
             aria-haspopup="dialog"
             aria-expanded={isSelected}
             className={`group p-4 rounded-xl transition-all duration-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${
@@ -46,6 +48,7 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
                 'hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
         >
+            <span id={descriptionId} className="sr-only">للمزيد من الخيارات، اضغط Enter.</span>
             <AnimatePresence>
             {(isSelected || isPlaying) && (
                 <motion.div 

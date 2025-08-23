@@ -1,6 +1,6 @@
 
 import { createContext, useContext } from 'react';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection } from '../types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection, ListeningReciter } from '../types';
 
 export interface DivisionInfo extends QuranDivision {
     title: string;
@@ -11,7 +11,8 @@ export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memori
 export interface AppContextType {
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
-  reciters: Reciter[];
+  memorizationReciters: Reciter[];
+  listeningReciters: ListeningReciter[];
   tafsirInfoList: TafsirInfo[];
   surahList: SurahSimple[];
   currentSurah: Surah | null;
@@ -31,6 +32,7 @@ export interface AppContextType {
   showAIAssistant: (ayah: Ayah) => void;
   showSearch: () => void;
   showSettings: () => void;
+  scrollToTop: () => void;
   apiKey: string | null;
   updateApiKey: (key: string) => void;
   view: View;

@@ -3,7 +3,7 @@ import React from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
-import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon } from './Icons';
+import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon } from './Icons';
 import { motion } from 'framer-motion';
 
 
@@ -13,7 +13,7 @@ interface AyahActionModalProps {
 }
 
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
-    const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError } = useApp();
+    const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError, view, navigateTo, showSearch } = useApp();
 
     const handleCopy = async () => {
         const textToCopy = `${ayah.text} (سورة ${ayah.surah?.name}: ${ayah.numberInSurah})`;
@@ -46,6 +46,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
     };
 
     const isCurrentlyPlaying = isPlaying && activeAyah?.number === ayah.number;
+    const isNestedReadingView = ['reader', 'division'].includes(view);
 
     const menuItems = [
         { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); onClose(); } },
@@ -53,6 +54,16 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
+        { 
+            label: isNestedReadingView ? 'الرجوع للفهرس' : 'الرئيسية', 
+            icon: isNestedReadingView ? ArrowRightIcon : HomeIcon, 
+            action: () => { 
+                isNestedReadingView ? navigateTo('index') : navigateTo('home'); 
+                onClose(); 
+            },
+            iconClassName: isNestedReadingView ? 'transform -scale-x-100' : ''
+        },
+        { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); onClose(); } },
     ];
 
     const modalAnimation = {
@@ -60,7 +71,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         animate: { scale: 1, opacity: 1 },
         exit: { scale: 0.9, opacity: 0 },
         transition: { type: 'spring', damping: 15, stiffness: 200 }
-    };
+    } as const;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="presentation">
@@ -103,7 +114,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                                     onClick={item.action}
                                     className="w-full flex items-center justify-start text-right gap-3 p-3 rounded-lg text-md font-medium transition-colors bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-slate-800"
                                 >
-                                    <item.icon className="w-6 h-6 text-green-500" />
+                                    <item.icon className={`w-6 h-6 text-green-500 ${ (item as any).iconClassName || ''}`} />
                                     <span>{item.label}</span>
                                 </button>
                             ))}

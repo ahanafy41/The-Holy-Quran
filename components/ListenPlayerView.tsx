@@ -1,97 +1,63 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Ayah } from '../types';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { SurahSimple, ListeningReciter } from '../types';
 import { useApp } from '../context/AppContext';
 import { ArrowRightIcon, PauseIcon, PlayIcon, PreviousIcon, NextIcon } from './Icons';
 import { Spinner } from './Spinner';
 
-interface Playlist {
-    title: string;
-    ayahs: Ayah[];
+interface ListenPlayerViewProps {
+    reciter: ListeningReciter;
+    surah: SurahSimple;
+    onBack: () => void;
+    onTrackChange: (direction: 'next' | 'prev') => void;
+    isFirst: boolean;
+    isLast: boolean;
 };
 
-export const ListenPlayerView: React.FC<{ playlist: Playlist, onBack: () => void }> = ({ playlist, onBack }) => {
-    const { setError, pauseAyah: pauseGlobalPlayer } = useApp();
-    const { ayahs, title } = playlist;
+export const ListenPlayerView: React.FC<ListenPlayerViewProps> = ({ reciter, surah, onBack, onTrackChange, isFirst, isLast }) => {
+    const { pauseAyah: pauseGlobalPlayer } = useApp();
     
     // Player state
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
 
     const audioRef = useRef<HTMLAudioElement>(null);
-    const activeAyahRef = useRef<HTMLDivElement>(null);
-    const currentSourcesRef = useRef<{ sources: string[], index: number }>({ sources: [], index: 0 });
+    const titleRef = useRef<HTMLHeadingElement>(null);
 
-    // Stop other players when this component mounts
+    // Stop other players when this component mounts and manage focus
     useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+
         pauseGlobalPlayer();
         const stopThisPlayer = () => audioRef.current?.pause();
         window.addEventListener('global-player-stop', stopThisPlayer);
-        return () => window.removeEventListener('global-player-stop', stopThisPlayer);
+        
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('global-player-stop', stopThisPlayer);
+        }
     }, [pauseGlobalPlayer]);
 
-    const playNextAyah = useCallback(() => {
-        setCurrentAyahIndex(prevIndex => {
-            if (prevIndex < ayahs.length - 1) {
-                return prevIndex + 1;
-            }
-            setIsPlaying(false); // End of playlist
-            return prevIndex;
-        });
-    }, [ayahs.length]);
-    
-    const loadAndPlay = useCallback((ayah: Ayah) => {
-        if (!audioRef.current) return;
-
-        const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
-        if (sources.length === 0) {
-            setError(`لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`);
-            playNextAyah();
-            return;
-        }
-
-        currentSourcesRef.current = { sources, index: 0 };
-        audioRef.current.src = sources[0];
+    // Main effect to handle playback when track changes
+    useEffect(() => {
+        if (!audioRef.current || !reciter || !surah) return;
+        
+        const paddedSurah = String(surah.number).padStart(3, '0');
+        const audioUrl = `${reciter.server}/${paddedSurah}.mp3`;
+        
+        audioRef.current.src = audioUrl;
         setIsLoading(true);
         audioRef.current.play().catch(e => {
-            console.warn("Autoplay was prevented. User may need to interact first.", e);
-            setIsPlaying(false); // Update UI to show play button if autoplay fails
+            console.warn("Autoplay was prevented.", e);
+            setIsPlaying(false);
         });
 
-    }, [playNextAyah, setError]);
+    }, [reciter, surah]);
 
-    // Main effect to handle playback when index changes
-    useEffect(() => {
-        if (currentAyahIndex >= 0 && currentAyahIndex < ayahs.length) {
-            const ayahToPlay = ayahs[currentAyahIndex];
-            loadAndPlay(ayahToPlay);
-        }
-    }, [currentAyahIndex, ayahs, loadAndPlay]);
-
-    // Effect to scroll active ayah into view
-    useEffect(() => {
-      activeAyahRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, [currentAyahIndex]);
-
-    const handleError = () => {
-        const { sources, index } = currentSourcesRef.current;
-        const nextIndex = index + 1;
-        if (audioRef.current && nextIndex < sources.length) {
-            // Try next source
-            currentSourcesRef.current.index = nextIndex;
-            audioRef.current.src = sources[nextIndex];
-            audioRef.current.play();
-        } else {
-            // All sources failed for this ayah
-            const currentAyah = ayahs[currentAyahIndex];
-            setError(`فشل تحميل صوت الآية ${currentAyah.numberInSurah}. سيتم تخطيها.`);
-            // Use a short timeout to allow the error toast to appear before skipping
-            setTimeout(playNextAyah, 500); 
-        }
-    };
-    
     // Player controls
     const handlePlayPause = () => {
         if (!audioRef.current) return;
@@ -101,13 +67,7 @@ export const ListenPlayerView: React.FC<{ playlist: Playlist, onBack: () => void
             audioRef.current.play();
         }
     };
-    const handleNext = () => {
-       if (currentAyahIndex < ayahs.length - 1) setCurrentAyahIndex(currentAyahIndex + 1);
-    };
-    const handlePrevious = () => {
-       if (currentAyahIndex > 0) setCurrentAyahIndex(currentAyahIndex - 1);
-    };
-
+    
     const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (audioRef.current) {
             const newTime = Number(event.target.value);
@@ -121,23 +81,14 @@ export const ListenPlayerView: React.FC<{ playlist: Playlist, onBack: () => void
         const seconds = Math.floor(secs - minutes * 60) || 0;
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
-
-    if (ayahs.length === 0) {
-         return (
-            <div className="text-center p-8">
-                <p>لا يوجد آيات في قائمة التشغيل هذه.</p>
-                <button onClick={onBack} className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg">الرجوع</button>
-            </div>
-        );
-    }
     
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)]">
-             <audio
+        <div>
+            <audio
                 ref={audioRef}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
-                onEnded={playNextAyah}
+                onEnded={() => onTrackChange('next')}
                 onLoadedData={() => {
                     if (audioRef.current) {
                         setDuration(audioRef.current.duration);
@@ -147,41 +98,27 @@ export const ListenPlayerView: React.FC<{ playlist: Playlist, onBack: () => void
                 onTimeUpdate={() => {
                     if (audioRef.current) setProgress(audioRef.current.currentTime);
                 }}
-                onError={handleError}
+                onError={(e) => {
+                    console.error("Audio Error:", e);
+                    setIsLoading(false);
+                }}
                 preload="auto"
             />
-             <header className="flex items-center gap-4 mb-4 flex-shrink-0">
-                <button onClick={onBack} aria-label="الرجوع للاختيار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
-                <div>
-                     <h1 className="text-2xl font-bold">{title}</h1>
-                     <p className="text-slate-600 dark:text-slate-400">{ayahs.length} آيات</p>
+             <header className="mb-4">
+                <div className="flex items-center gap-4 mb-2">
+                    <button onClick={onBack} aria-label="الرجوع" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
+                    </button>
+                    <h1 ref={titleRef} tabIndex={-1} className="text-2xl font-bold focus:outline-none">{`سورة ${surah.name}`}</h1>
                 </div>
+                 <p className="text-slate-600 dark:text-slate-400 mr-14">{reciter.name} - {reciter.rewaya}</p>
             </header>
-            
-            <div className="flex-grow overflow-y-auto space-y-1 pr-2">
-                {ayahs.map((ayah, index) => {
-                    const isActive = index === currentAyahIndex;
-                    return (
-                        <div 
-                          key={ayah.number}
-                          ref={isActive ? activeAyahRef : null}
-                          className={`p-4 rounded-xl transition-colors duration-300 relative ${
-                            isActive ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-200' : 'text-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                           <p dir="rtl" className="font-quran text-3xl leading-loose text-right">
-                                {ayah.text}
-                                <span className={`font-mono text-xl transition-colors ${isActive ? 'text-green-500' : 'text-slate-400'}`}> ({ayah.numberInSurah})</span>
-                           </p>
-                        </div>
-                    );
-                })}
-            </div>
-            
-            <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4">
-                 <div className="flex items-center gap-2 mb-2">
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 space-y-4">
+                <div className="text-center py-16">
+                    <p className="font-quran text-6xl">{surah.name}</p>
+                </div>
+                 <div className="flex items-center gap-2">
                     <span className="text-xs font-mono">{formatTime(progress)}</span>
                     <input
                         type="range"
@@ -195,11 +132,11 @@ export const ListenPlayerView: React.FC<{ playlist: Playlist, onBack: () => void
                     <span className="text-xs font-mono">{formatTime(duration)}</span>
                  </div>
                 <div className="flex items-center justify-center gap-4">
-                     <button onClick={handlePrevious} aria-label="السابق" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === 0}><PreviousIcon className="w-6 h-6"/></button>
-                    <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="w-16 h-16 p-3 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-2 disabled:bg-slate-400 flex items-center justify-center" disabled={isLoading}>
-                        {isLoading ? <Spinner /> : (isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>)}
+                    <button onClick={() => onTrackChange('prev')} aria-label="السابق" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={isFirst}><PreviousIcon className="w-8 h-8"/></button>
+                    <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="w-20 h-20 p-3 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-2 disabled:bg-slate-400 flex items-center justify-center" disabled={isLoading}>
+                        {isLoading ? <Spinner /> : (isPlaying ? <PauseIcon className="w-10 h-10"/> : <PlayIcon className="w-10 h-10"/>)}
                     </button>
-                    <button onClick={handleNext} aria-label="التالي" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={currentAyahIndex === ayahs.length - 1}><NextIcon className="w-6 h-6"/></button>
+                    <button onClick={() => onTrackChange('next')} aria-label="التالي" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors" disabled={isLast}><NextIcon className="w-8 h-8"/></button>
                 </div>
             </div>
         </div>

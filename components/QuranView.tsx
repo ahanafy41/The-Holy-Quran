@@ -14,9 +14,19 @@ export const QuranView: React.FC = () => {
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    const titleRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
         ayahRefs.current.clear();
+    }, [currentSurah]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (currentSurah && titleRef.current) {
+                titleRef.current.focus();
+            }
+        }, 100);
+        return () => clearTimeout(timer);
     }, [currentSurah]);
 
     const handleAyahSelect = (ayah: Ayah) => {
@@ -66,16 +76,9 @@ export const QuranView: React.FC = () => {
     
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="relative mb-6 text-center">
-                <button 
-                    onClick={() => navigateTo('index')}
-                    aria-label="الرجوع إلى الفهرس"
-                    className="absolute top-1/2 -translate-y-1/2 right-0 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
+             <header className="mb-6 text-center">
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
-                    <h2 className="font-quran text-4xl md:text-5xl font-bold mb-2">{currentSurah.name}</h2>
+                    <h2 ref={titleRef} tabIndex={-1} className="font-quran text-4xl md:text-5xl font-bold mb-2 focus:outline-none">{currentSurah.name}</h2>
                     <p className="text-lg text-slate-600 dark:text-slate-300">{currentSurah.englishName}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{currentSurah.revelationType} - {currentSurah.ayahs.length} آيات</p>
                      {currentSurah.number !== 1 && currentSurah.number !== 9 && (

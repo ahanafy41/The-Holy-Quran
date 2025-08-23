@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
 import { QuranDivision, SurahSimple, SavedSection } from '../types';
@@ -20,6 +20,16 @@ interface DivisionConfig {
 export const IndexPage: React.FC = () => {
     const { surahList, navigateTo, savedSections } = useApp();
     const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
+    const titleRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        if (!activeList) {
+            const timer = setTimeout(() => {
+                titleRef.current?.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [activeList]);
 
     const surahMap = useMemo(() => new Map(surahList.map(s => [s.number, s.name])), [surahList]);
 
@@ -35,25 +45,14 @@ export const IndexPage: React.FC = () => {
         setActiveList(div);
     };
     
-    const handleBack = () => {
-        if(activeList) {
-            setActiveList(null);
-        } else {
-            navigateTo('home');
-        }
-    }
-    
     const listAnimation = { initial: { opacity: 0, x: 10 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -10 } };
     const indexAnimation = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
 
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="flex items-center gap-4 mb-6">
-                <button onClick={handleBack} aria-label="الرجوع" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
+             <header className="mb-6">
                 <div>
-                     <h1 className="text-3xl md:text-4xl font-bold">فهرس القرآن</h1>
+                     <h1 ref={titleRef} tabIndex={-1} className="text-3xl md:text-4xl font-bold focus:outline-none">فهرس القرآن</h1>
                      <p className="text-slate-600 dark:text-slate-400">تصفح حسب السور، الأجزاء، الصفحات، والمزيد.</p>
                 </div>
             </header>
@@ -87,6 +86,14 @@ const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: Divi
 
 // List View for a selected division
 const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }> = ({ list, onBack, navigateTo, surahMap }) => {
+    const listTitleRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            listTitleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleItemClick = (item: any) => {
         if (list.id === 'surahs') {
@@ -101,7 +108,7 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
 
     return (
         <div>
-            <h2 className="text-2xl font-bold mb-4">{list.title}</h2>
+            <h2 ref={listTitleRef} tabIndex={-1} className="text-2xl font-bold mb-4 focus:outline-none">{list.title}</h2>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                 {list.items.map((item: any, index: number) => (
                     <button key={`${list.id}-${item.number || index}`} onClick={() => handleItemClick(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">

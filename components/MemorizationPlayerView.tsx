@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Ayah, SavedSection } from '../types';
@@ -41,10 +42,18 @@ export const MemorizationPlayerView: React.FC<{ playlist: PlayerPlaylist, onBack
     const waveformContainerRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<number | undefined>(undefined);
     const repetitionCounterRef = useRef(1);
+    const titleRef = useRef<HTMLHeadingElement>(null);
     
     // New refs for event-based error handling
     const audioSourcesRef = useRef<{ sources: string[], index: number }>({ sources: [], index: 0 });
     const currentAyahForErrorHandlerRef = useRef<Ayah | null>(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
     
     const playAyah = useCallback((index: number) => {
         const ws = wavesurferRef.current;
@@ -190,14 +199,9 @@ export const MemorizationPlayerView: React.FC<{ playlist: PlayerPlaylist, onBack
     
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)]">
-             <header className="flex items-center gap-4 mb-4 flex-shrink-0">
-                <button onClick={onBack} aria-label="الرجوع للاختيار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
-                <div>
-                     <h1 className="text-2xl font-bold">{section.name}</h1>
-                     <p className="text-slate-600 dark:text-slate-400">الآية {currentAyahIndex + 1} من {ayahs.length} | التكرار {repetitionCount} من {repetitions}</p>
-                </div>
+             <header className="mb-4 flex-shrink-0">
+                 <h1 ref={titleRef} tabIndex={-1} className="text-2xl font-bold focus:outline-none">{section.name}</h1>
+                 <p className="text-slate-600 dark:text-slate-400">الآية {currentAyahIndex + 1} من {ayahs.length} | التكرار {repetitionCount} من {repetitions}</p>
             </header>
             
             <div className="flex-grow flex flex-col justify-center p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-inner">
@@ -208,12 +212,16 @@ export const MemorizationPlayerView: React.FC<{ playlist: PlayerPlaylist, onBack
              </div>
             
             <div className="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 mt-4 space-y-4">
-                 <div className="flex items-center justify-center gap-4">
-                     <button onClick={handlePrevious} aria-label="السابق" disabled={currentAyahIndex === 0} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><PreviousIcon className="w-6 h-6"/></button>
-                    <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="p-4 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-4">
-                        {isPlaying ? <PauseIcon className="w-10 h-10"/> : <PlayIcon className="w-10 h-10"/>}
-                    </button>
-                    <button onClick={handleNext} aria-label="التالي" disabled={currentAyahIndex >= ayahs.length - 1} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><NextIcon className="w-6 h-6"/></button>
+                 <div className="flex items-center justify-between">
+                     <button onClick={onBack} aria-label="الرجوع للاختيار" className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><ArrowRightIcon className="w-6 h-6 transform -scale-x-100"/></button>
+                     <div className="flex items-center justify-center gap-4">
+                        <button onClick={handlePrevious} aria-label="السابق" disabled={currentAyahIndex === 0} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><PreviousIcon className="w-6 h-6"/></button>
+                        <button onClick={handlePlayPause} aria-label={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'} className="p-4 rounded-full bg-green-600 text-white hover:bg-green-700 transition mx-4">
+                            {isPlaying ? <PauseIcon className="w-10 h-10"/> : <PlayIcon className="w-10 h-10"/>}
+                        </button>
+                        <button onClick={handleNext} aria-label="التالي" disabled={currentAyahIndex >= ayahs.length - 1} className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 transition"><NextIcon className="w-6 h-6"/></button>
+                    </div>
+                    <div className="w-12 h-12" />
                 </div>
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-4 grid grid-cols-3 gap-3 text-sm">
                     <SettingSelect id="repetitions" label="التكرار" value={String(repetitions)} onChange={(e) => setRepetitions(parseInt(e.target.value, 10))}>

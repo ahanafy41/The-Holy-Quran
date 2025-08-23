@@ -10,7 +10,7 @@ import { OfflineManager } from './OfflineManager';
 import { ManualInstallInstructions } from './ManualInstallInstructions';
 
 export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const { settings, updateSettings, reciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
+    const { settings, updateSettings, memorizationReciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
     const modalRef = useRef<HTMLDivElement>(null);
     const [localApiKey, setLocalApiKey] = useState(apiKey || '');
 
@@ -60,8 +60,8 @@ export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                             )}
                         </div>
                     )}
-                     <SettingSelect id="reciter" label="القارئ" value={settings.reciter} onChange={(e) => updateSettings({ reciter: e.target.value })}>
-                        {reciters.map(r => <option key={r.identifier} value={r.identifier}>{r.name}</option>)}
+                     <SettingSelect id="memorizationReciter" label="قارئ الحفظ والآيات" value={settings.memorizationReciter} onChange={(e) => updateSettings({ memorizationReciter: e.target.value })}>
+                        {memorizationReciters.map(r => <option key={r.identifier} value={r.identifier}>{r.name}</option>)}
                      </SettingSelect>
                      <SettingSelect id="tafsir" label="التفسير" value={settings.tafsir} onChange={(e) => updateSettings({ tafsir: e.target.value })}>
                         {tafsirInfoList.map(t => <option key={t.identifier} value={t.identifier}>{t.name}</option>)}
