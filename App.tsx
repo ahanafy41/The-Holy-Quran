@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter } from './types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation } from './types';
 import * as api from './services/quranApi';
 import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
+import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
 import { DivisionView } from './components/DivisionView';
 import { AIAssistantModal } from './components/AIAssistantModal';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem('quranUserApiKey'));
   const [memorizationReciters, setMemorizationReciters] = useState<Reciter[]>([]);
   const [listeningReciters, setListeningReciters] = useState<ListeningReciter[]>([]);
+  const [radioStations, setRadioStations] = useState<RadioStation[]>([]);
   const [tafsirInfoList, setTafsirInfoList] = useState<TafsirInfo[]>([]);
   const [surahList, setSurahList] = useState<SurahSimple[]>([]);
   const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
@@ -254,15 +256,17 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [sList, vReciters, lReciters, tList] = await Promise.all([
+      const [sList, vReciters, lReciters, tList, rStations] = await Promise.all([
         api.getSurahList(), 
         api.getVerseByVerseReciters(),
         api.getListeningReciters(),
         api.getTafsirInfo(),
+        api.getRadioStations(),
       ]);
       setSurahList(sList);
       setMemorizationReciters(vReciters);
       setListeningReciters(lReciters);
+      setRadioStations(rStations);
       setTafsirInfoList(tList.filter(t => t.language === 'ar'));
       
     } catch (e) {
@@ -348,12 +352,12 @@ const App: React.FC = () => {
   const canInstall = !!installPromptEvent && !isStandalone;
 
   const appContextValue = useMemo(() => ({
-    settings, updateSettings, memorizationReciters, listeningReciters, tafsirInfoList, surahList, currentSurah, loadSurah,
+    settings, updateSettings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah,
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view, scrollToTop,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
     isStandalone, canInstall, triggerInstall,
-  }), [settings, memorizationReciters, listeningReciters, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop]);
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop]);
 
   const renderView = () => {
     switch (view) {
@@ -361,6 +365,7 @@ const App: React.FC = () => {
         case 'index': return <IndexPage />;
         case 'reader': return <QuranView />;
         case 'listen': return <ListenPage />;
+        case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         default: return <HomePage />;

@@ -1,18 +1,19 @@
 
 import { createContext, useContext } from 'react';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection, ListeningReciter } from '../types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection, ListeningReciter, RadioStation } from '../types';
 
 export interface DivisionInfo extends QuranDivision {
     title: string;
 }
 
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization';
+export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio';
 
 export interface AppContextType {
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   memorizationReciters: Reciter[];
   listeningReciters: ListeningReciter[];
+  radioStations: RadioStation[];
   tafsirInfoList: TafsirInfo[];
   surahList: SurahSimple[];
   currentSurah: Surah | null;

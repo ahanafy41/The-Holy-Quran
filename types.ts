@@ -49,6 +49,12 @@ export interface ListeningReciter {
   surah_list?: string; // Optional: comma-separated list of available surah numbers
 }
 
+export interface RadioStation {
+  id: number;
+  name: string;
+  url: string;
+}
+
 export interface Tafsir {
   id: number;
   name: string;

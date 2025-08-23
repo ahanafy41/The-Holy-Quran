@@ -1,13 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { HomeIcon, BookOpenIcon, SearchIcon, CogIcon, ArrowRightIcon, HeadphonesIcon, FlowerIcon } from './Icons';
+import { HomeIcon, BookOpenIcon, SearchIcon, ArrowRightIcon, HeadphonesIcon, FlowerIcon, RadioIcon } from './Icons';
+
+const MotionNav = motion.nav as any;
 
 export const BottomNavBar = () => {
-    const { view, navigateTo, showSearch, showSettings } = useApp();
+    const { view, navigateTo, showSearch } = useApp();
 
     const isReadingView = ['index', 'reader', 'division'].includes(view);
     const isListenView = view === 'listen';
+    const isRadioView = view === 'radio';
     const isMemorizationView = view === 'memorization';
     const isNestedReadingView = ['reader', 'division'].includes(view);
 
@@ -39,6 +42,12 @@ export const BottomNavBar = () => {
             isActive: isListenView
         },
         {
+            label: 'راديو',
+            icon: RadioIcon,
+            action: () => navigateTo('radio'),
+            isActive: isRadioView
+        },
+        {
             label: 'حفظ',
             icon: FlowerIcon,
             action: () => navigateTo('memorization'),
@@ -52,7 +61,7 @@ export const BottomNavBar = () => {
     ];
 
     return (
-        <motion.nav
+        <MotionNav
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
@@ -68,7 +77,7 @@ export const BottomNavBar = () => {
                         key={item.label}
                         onClick={item.action}
                         aria-label={item.label}
-                        className={`flex flex-col items-center justify-center w-1/5 h-16 rounded-xl transition-colors duration-200 focus:outline-none focus:bg-green-100/50 dark:focus:bg-green-900/50 ${
+                        className={`flex flex-col items-center justify-center flex-1 h-16 rounded-xl transition-colors duration-200 focus:outline-none focus:bg-green-100/50 dark:focus:bg-green-900/50 ${
                             item.isActive
                                 ? 'text-green-600 dark:text-green-400'
                                 : 'text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400'
@@ -79,6 +88,6 @@ export const BottomNavBar = () => {
                     </button>
                 ))}
             </div>
-        </motion.nav>
+        </MotionNav>
     );
 };

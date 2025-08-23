@@ -4,6 +4,9 @@ import FocusTrap from 'focus-trap-react';
 import { useApp } from '../context/AppContext';
 import { SparklesIcon, XMarkIcon, ArrowRightIcon, HomeIcon, SearchIcon, ArrowUpIcon } from './Icons';
 
+const MotionDiv = motion.div as any;
+const MotionButton = motion.button as any;
+
 export const QuickAccessMenu = () => {
     const { view, navigateTo, showSearch, scrollToTop } = useApp();
     const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +88,7 @@ export const QuickAccessMenu = () => {
                         initialFocus: false, // Let framer-motion handle the animation first
                     }}
                 >
-                    <motion.div
+                    <MotionDiv
                         variants={menuVariants}
                         initial="closed"
                         animate={isOpen ? 'open' : 'closed'}
@@ -95,7 +98,7 @@ export const QuickAccessMenu = () => {
                         aria-hidden={!isOpen}
                     >
                         {menuItems.map((item, index) => (
-                            <motion.div key={item.label} variants={itemVariants} className="flex items-center gap-3">
+                            <MotionDiv key={item.label} variants={itemVariants} className="flex items-center gap-3">
                                 <button
                                     onClick={item.action}
                                     className="w-12 h-12 bg-white dark:bg-slate-700 rounded-full shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/50 hover:text-green-600 dark:hover:text-green-400 transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -108,12 +111,12 @@ export const QuickAccessMenu = () => {
                                 <div className="px-3 py-1 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-md shadow-md">
                                     {item.label}
                                 </div>
-                            </motion.div>
+                            </MotionDiv>
                         ))}
-                    </motion.div>
+                    </MotionDiv>
                 </FocusTrap>
 
-                <motion.button
+                <MotionButton
                     ref={fabRef}
                     onClick={() => setIsOpen(!isOpen)}
                     variants={fabVariants}
@@ -125,10 +128,10 @@ export const QuickAccessMenu = () => {
                     aria-haspopup="true"
                     aria-expanded={isOpen}
                 >
-                    <motion.div animate={{ rotate: isOpen ? 45 : 0 }}>
+                    <MotionDiv animate={{ rotate: isOpen ? 45 : 0 }}>
                          <SparklesIcon className="w-8 h-8"/>
-                    </motion.div>
-                </motion.button>
+                    </MotionDiv>
+                </MotionButton>
             </div>
         </>
     );

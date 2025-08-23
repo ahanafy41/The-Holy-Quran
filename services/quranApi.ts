@@ -1,8 +1,10 @@
 
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter } from '../types';
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation } from '../types';
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
 const MP3QURAN_API_URL = 'https://www.mp3quran.net/api/v3';
+const RADIO_BROWSER_API_URL = 'https://de1.api.radio-browser.info/json';
+
 
 // For mp3quran.net API
 interface MP3QuranReciter {
@@ -107,6 +109,64 @@ export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
 
     return listeningReciters;
 };
+
+export const getRadioStations = async (): Promise<RadioStation[]> => {
+    // First, fetch the original list of stations from mp3quran.net as a base.
+    let stations: RadioStation[] = [];
+    try {
+        const response = await fetch(`${MP3QURAN_API_URL}/radios?language=ar`);
+        if (response.ok) {
+            const data = await response.json();
+            stations = data.radios as RadioStation[];
+        } else {
+            console.error(`mp3quran.net radio API call failed: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Failed to fetch from mp3quran.net API:', error);
+    }
+    
+    // Then, fetch the Cairo station from the reliable radio-browser API to ensure it's always present and working.
+    try {
+        const radioBrowserResponse = await fetch(`${RADIO_BROWSER_API_URL}/stations/search?name=إذاعة القرآن الكريم من القاهرة&limit=5`);
+        if (radioBrowserResponse.ok) {
+            const cairoStationsFromApi = await radioBrowserResponse.json();
+            
+            // Find the best match, often the one with the highest vote count and a working URL.
+            const cairoStationData = cairoStationsFromApi.find(
+                (s: any) => s.name.includes('إذاعة القرآن الكريم من القاهرة') && s.url_resolved
+            );
+
+            if (cairoStationData) {
+                const cairoStation: RadioStation = {
+                    // Use part of the UUID to generate a semi-unique ID to avoid key collisions.
+                    id: parseInt(cairoStationData.stationuuid.substring(0, 8), 16) || 99999,
+                    name: 'إذاعة القرآن الكريم من القاهرة', // Use a clean, consistent name.
+                    url: cairoStationData.url_resolved,
+                };
+                
+                // Remove any existing (potentially broken) version from the original list.
+                const otherStations = stations.filter(station => !station.name.includes('إذاعة القرآن الكريم من القاهرة'));
+                
+                // Prepend the new, reliable station to the list for prominence.
+                return [cairoStation, ...otherStations];
+            }
+        }
+    } catch (error) {
+        console.error("Failed to fetch from Radio Browser API, will proceed with the original list.", error);
+    }
+
+    // Fallback: If the new API fails or doesn't find the station, just return the original list.
+    // The previous logic to find and move the Cairo station from the original list is kept as a final backup.
+    const cairoStationName = 'إذاعة القرآن الكريم من القاهرة';
+    const cairoStationInOriginalList = stations.find(station => station.name === cairoStationName);
+    if (cairoStationInOriginalList) {
+        const otherStations = stations.filter(station => station.name !== cairoStationName);
+        return [cairoStationInOriginalList, ...otherStations];
+    }
+
+    return stations;
+};
+
 
 // Helper to add a fallback audio URL from a more reliable CDN (everyayah.com)
 const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifier: string): Ayah => {

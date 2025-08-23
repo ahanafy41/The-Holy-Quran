@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { BookOpenIcon, HeadphonesIcon, FlowerIcon, SearchIcon, CogIcon, SunIcon, MoonIcon } from './Icons';
+import { BookOpenIcon, HeadphonesIcon, FlowerIcon, SearchIcon, CogIcon, SunIcon, MoonIcon, RadioIcon } from './Icons';
 
 export const HomePage: React.FC = () => {
     const { navigateTo, showSearch, showSettings, settings, updateSettings } = useApp();
@@ -30,6 +30,13 @@ export const HomePage: React.FC = () => {
             color: 'text-amber-500',
         },
         {
+            title: "الراديو",
+            description: "استمع لإذاعات القرآن الكريم",
+            icon: RadioIcon,
+            action: () => navigateTo('radio'),
+            color: 'text-rose-500',
+        },
+        {
             title: "الحفظ والمراجعة",
             description: "نظّم وردك اليومي",
             icon: FlowerIcon,
@@ -55,12 +62,12 @@ export const HomePage: React.FC = () => {
                 <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">رفيقك لدراسة وتدبر القرآن</p>
             </header>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                {menuItems.map((item) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {menuItems.map((item, index) => (
                     <button 
                         key={item.title}
                         onClick={item.action}
-                        className="group p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-right hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50 dark:focus:ring-green-400/50"
+                        className={`group p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-right hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${index === 4 && 'lg:col-span-3'}`}
                     >
                         <item.icon className={`w-10 h-10 mb-3 ${item.color}`} />
                         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{item.title}</h2>
@@ -69,7 +76,7 @@ export const HomePage: React.FC = () => {
                 ))}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 md:gap-6">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                  <button 
                     onClick={showSettings}
                     className="group p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-right flex items-center gap-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50 dark:focus:ring-green-400/50"
