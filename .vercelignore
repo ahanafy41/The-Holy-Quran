@@ -1,6 +1,0 @@
-# Ignore files and directories not needed for the production build
-.git
-.github
-.vscode
-node_modules
-README.md

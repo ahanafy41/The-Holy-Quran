@@ -1,5 +1,25 @@
+
+export interface Surah {
+  number: number;
+  name: string;
+  englishName: string;
+  englishNameTranslation: string;
+  revelationType: 'Meccan' | 'Medinan';
+  ayahs: Ayah[];
+}
+
+export interface SurahSimple {
+  number: number;
+  name: string;
+  englishName: string;
+  numberOfAyahs: number;
+  revelationType: 'Meccan' | 'Medinan';
+}
+
 export interface Ayah {
   number: number;
+  audio: string;
+  audioSecondarys: string[];
   text: string;
   numberInSurah: number;
   juz: number;
@@ -7,69 +27,92 @@ export interface Ayah {
   page: number;
   ruku: number;
   hizbQuarter: number;
-  sajda: boolean;
-  audio: string;
-  audioSecondary: string[];
-  surahId: number;
+  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
+  surah?: SurahSimple;
 }
 
-export interface Surah {
-  number: number;
+export interface Reciter {
+  identifier: string;
+  language: string;
   name: string;
   englishName: string;
-  englishNameTranslation: string;
-  revelationType: string;
-  verses: Ayah[];
+  format: 'audio/mpeg';
+  type: 'surah' | 'versebyverse';
 }
 
-export interface QuranData {
-  surahs: Surah[];
+// From mp3quran.net API
+export interface ListeningReciter {
+  identifier: string; // combination of id and moshaf id
+  name: string;
+  rewaya: string;
+  server: string; // The base URL for audio files
+  surah_list?: string; // Optional: comma-separated list of available surah numbers
 }
 
-export interface SurahSimple {
-  number: number;
+export interface RadioStation {
+  id: number;
+  name: string;
+  url: string;
+}
+
+export interface Tafsir {
+  id: number;
+  name: string;
+  language: string;
+  author: string;
+  text: string;
+}
+
+export interface TafsirInfo {
+  identifier: string;
+  language: string;
   name: string;
   englishName: string;
-  englishNameTranslation: string;
-  numberOfAyahs: number;
-  revelationType: string;
+}
+
+export interface AppSettings {
+  darkMode: boolean;
+  memorizationReciter: string; // for verse-by-verse
+  tafsir: string; 
 }
 
 export interface SavedSection {
   id: string;
   name: string;
-  startSurah: number;
+  surahNumber: number;
   startAyah: number;
-  endSurah: number;
   endAyah: number;
-  ayahs: Ayah[];
 }
 
 export interface QuranDivision {
-  id: number;
-  name: string;
-  type: "juz" | "hizb" | "ruku";
-  start: number;
-  end: number;
+  number: number;
+  start: { surah: number; ayah: number };
+  end: { surah: number; ayah: number };
+  startSurahName?: string;
 }
 
-export interface ListeningReciter {
-  id: number;
-  name: string;
-  server: string;
+export interface QuranAyah {
+  surah: number;
+  ayah: number;
+  text: string;
+  normalizedText: string;
+  normalizedTextNoSpaces: string;
 }
 
-export interface Reciter extends ListeningReciter {}
+export type SearchResult = QuranAyah;
 
-export interface AdhkarCategory {
-    id: string;
-    category: string;
-    sections: {
-        id: string;
-        section: string;
-        content: {
-            text: string;
-            count: number | string;
-        }[];
-    }[];
+export interface HisnDhikr {
+  id: number;
+  text: string;
+  count: number;
+  audio: string;
+  filename: string;
+}
+
+export interface HisnCategory {
+  id: number;
+  category: string;
+  audio: string;
+  filename: string;
+  array: HisnDhikr[];
 }
