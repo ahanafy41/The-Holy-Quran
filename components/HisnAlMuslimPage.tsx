@@ -1,6 +1,8 @@
 import React from 'react';
-import { hisnAlMuslimAdhkar } from '../data/hisnAlMuslimContent'; // Import the Hisn Al Muslim adhkar data
-import { IonPage, IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonCard, IonCardContent } from '@ionic/react';
+import { adhkar } from '../data/adhkar'; // استيراد الأذكار من الملف الجديد
+import { AdhkarCategory } from '../types'; // استيراد الـ Type الجديد
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
+import './HisnAlMuslimPage.css'; // تأكد إن الملف ده موجود للتنسيق أو اعمل واحد جديد لو محتاج
 
 const HisnAlMuslimPage: React.FC = () => {
   return (
@@ -11,26 +13,25 @@ const HisnAlMuslimPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen className="ion-padding">
-        <h2 className="text-xl font-bold mb-4 text-center dark:text-gray-200">أذكار حصن المسلم</h2>
-        <IonList>
-          {hisnAlMuslimAdhkar.length > 0 ? (
-            hisnAlMuslimAdhkar.map((dhikr, index) => (
-              <IonCard key={index} className="mb-4 dark:bg-gray-800">
-                <IonCardContent>
-                  <p className="text-right text-lg leading-relaxed dark:text-gray-200">
-                    {dhikr}
-                  </p>
-                </IonCardContent>
-              </IonCard>
-            ))
-          ) : (
-            <IonItem>
-              <IonLabel className="text-center text-gray-600 dark:text-gray-400">
-                جاري تحميل أذكار حصن المسلم أو لا يوجد أذكار لعرضها.
-              </IonLabel>
-            </IonItem>
-          )}
-        </IonList>
+        <div className="hisn-al-muslim-container">
+          {adhkar.map((category: AdhkarCategory) => (
+            <div key={category.id} className="adhkar-category-card ion-margin-bottom">
+              <h2 className="adhkar-category-title ion-padding-horizontal ion-padding-top">
+                {category.category}
+              </h2>
+              <div className="adhkar-items-list ion-padding-horizontal ion-padding-bottom">
+                {category.sections.map(item => (
+                  <div key={item.id} className="adhkar-item-card ion-margin-vertical">
+                    <p className="adhkar-text">{item.text}</p>
+                    {item.count && <span className="adhkar-count"> ({item.count} مرة)</span>}
+                    {item.explanation && <p className="adhkar-explanation">الشرح: {item.explanation}</p>}
+                    {item.reference && <p className="adhkar-reference">المرجع: {item.reference}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </IonContent>
     </IonPage>
   );
