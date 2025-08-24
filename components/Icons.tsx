@@ -1,96 +1,33 @@
-import React, { SVGProps } from 'react';
+import React from 'react';
 
-export const QuranIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M4 22h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z" />
-    <path d="M6 18h12" />
-    <path d="M6 14h12" />
-    <path d="M6 10h12" />
-    <path d="M6 6h12" />
+const IconWrapper = ({ children, className = "w-6 h-6" }: { children: React.ReactNode, className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    {children}
   </svg>
 );
 
-export const ListIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <line x1="8" x2="21" y1="6" y2="6" />
-    <line x1="8" x2="21" y1="12" y2="12" />
-    <line x1="8" x2="21" y1="18" y2="18" />
-    <line x1="3" x2="3.01" y1="6" y2="6" />
-    <line x1="3" x2="3.01" y1="12" y2="12" />
-    <line x1="3" x2="3.01" y1="18" y2="18" />
-  </svg>
-);
-
-export const MemorizeIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M20 12H4" />
-        <path d="m14 6-6 6 6 6" />
-    </svg>
-);
-
-export const ListenIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-    <path d="m9 12 6-3v6l-6-3z" />
-  </svg>
-);
-
-export const RadioIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
-        <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
-        <circle cx="12" cy="12" r="2" />
-        <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
-        <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
-    </svg>
-);
-
-export const HomeIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-);
-
-export const ArrowLeftIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="m12 19-7-7 7-7" />
-        <path d="M19 12H5" />
-    </svg>
-);
-
-export const SearchIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-    </svg>
-);
-
-export const SettingsIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-        <circle cx="12" cy="12" r="3" />
-    </svg>
-);
-
-export const DownloadIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" x2="12" y1="15" y2="3" />
-    </svg>
-);
-
-export const XIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M18 6 6 18" />
-        <path d="m6 6 12 12" />
-    </svg>
-);
-
-export const BookOpenIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-);
+export const XMarkIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></IconWrapper>;
+export const PaperAirplaneIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></IconWrapper>;
+export const SparklesIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 13.5l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.035-.259a3.375 3.375 0 002.456-2.456L18 13.5z" /></IconWrapper>;
+export const PlayIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></IconWrapper>;
+export const PauseIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></IconWrapper>;
+export const ClipboardIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.5 0L14.25 3l-2.25 1.5M12 9.75l.026 6.375m0 0l-3.026-3.026m3.026 3.026L15 13.125" /></IconWrapper>;
+export const ShareIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.186 2.25 2.25 0 00-3.933 2.186z" /></IconWrapper>;
+export const ArrowRightIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" /></IconWrapper>;
+export const HeadphonesIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75a2.25 2.25 0 012.25 2.25v3.75a2.25 2.25 0 01-2.25 2.25H18M10.5 6H2.25A2.25 2.25 0 000 8.25v3.75a2.25 2.25 0 002.25 2.25h1.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75H3.75m7.5 0v-4.5M3.75 12.75h7.5" /></IconWrapper>;
+export const FlowerIcon = () => <IconWrapper><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></IconWrapper>;
+export const CogIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.04 1.11-1.212l1.268-.317a1.724 1.724 0 012.164 2.164l-.317 1.268c-.172.55-.67 1.02-1.212 1.11M16.06 9.657c.596.096 1.045.54 1.212 1.11l.317 1.268a1.724 1.724 0 01-2.164 2.164l-1.268.317c-.55.172-1.02.67-1.11 1.212M12 15.562V18m0 3.375v-2.812M12 2.25v2.812m-3.938 4.281l-2.032.508a1.724 1.724 0 01-2.164-2.164l.508-2.032a1.724 1.724 0 012.164-2.164l2.032-.508a1.724 1.724 0 012.164 2.164l-.508 2.032a1.724 1.724 0 01-2.164 2.164zm10.5 2.125l2.032.508a1.724 1.724 0 012.164-2.164l-.508-2.032a1.724 1.724 0 01-2.164-2.164l-2.032-.508a1.724 1.724 0 01-2.164 2.164l.508 2.032a1.724 1.724 0 012.164 2.164zM12 12a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" /></IconWrapper>;
+export const SunIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.95-4.243l-1.591 1.591M5.25 12H3m4.243-4.95l-1.591-1.591M12 12a4.5 4.5 0 00-4.5 4.5v.008c0 .003 0 .006.002.008.002.002.004.004.006.006h8.984a.008.008 0 01.006-.006.008.008 0 01.002-.008v-.008A4.5 4.5 0 0012 12z" /></IconWrapper>;
+export const MoonIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></IconWrapper>;
+export const FolderIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.75h16.5m-16.5 0a2.25 2.25 0 01-2.25-2.25V6.75c0-1.242 1.008-2.25 2.25-2.25h3.75a2.25 2.25 0 011.591.659l2.109 2.109c.43.43.998.68 1.591.68h3.75a2.25 2.25 0 012.25 2.25v2.25a2.25 2.25 0 01-2.25 2.25m-16.5 0v6.75c0 1.242 1.008 2.25 2.25 2.25h12c1.242 0 2.25-1.008 2.25-2.25v-6.75" /></IconWrapper>;
+export const ChevronLeftIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></IconWrapper>;
+export const SpeakerWaveIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 7.5l-.412-.412a.75.75 0 010-1.061.75.75 0 011.061 0l.412.412M8.25 7.5a.75.75 0 000 1.061l.412.412a.75.75 0 001.061 0 .75.75 0 000-1.061l-.412-.412m6 0l-.412-.412a.75.75 0 010-1.061.75.75 0 011.061 0l.412.412m-3.393 3.393a.75.75 0 011.061 0l.412.412a.75.75 0 010 1.061l-.412.412a.75.75 0 01-1.061 0l-.412-.412a.75.75 0 010-1.061z M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></IconWrapper>;
+export const PreviousIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" /></IconWrapper>;
+export const NextIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l7.5 7.5-7.5 7.5" /></IconWrapper>;
+export const ArrowDownTrayIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></IconWrapper>;
+export const ThreeDotsVerticalIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></IconWrapper>;
+export const TrashIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></IconWrapper>;
+export const MicrophoneIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 013-3 3 3 0 013 3v8.25a3 3 0 01-3 3z" /></IconWrapper>;
+export const CheckCircleIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></IconWrapper>;
+export const ArrowUpIcon = () => <IconWrapper><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" /></IconWrapper>;
+export const XIcon = () => XMarkIcon();
