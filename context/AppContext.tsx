@@ -1,154 +1,128 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Surah, Ayah, Division, RadioStation, Tafsir, Reciter, AppSettings, Section } from '../types';
-import { getSurah } from '../services/quranApi';
-import { getOfflineStatus, downloadSurah, deleteSurahAudio } from '../services/offlineService';
-import { quranicDivisions } from '../data/quranicDivisions';
-
-export type Tab = 'quran' | 'index' | 'adhkar' | 'listen' | 'radio' | 'settings' | 'memorization' | 'hisn-al-muslim';
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { Ayah, SurahSimple, ListeningReciter, SavedSection, Reciter } from "../types";
+import { quran } from "../data/quran-text";
 
 interface AppContextType {
-  surahs: Surah[];
-  setSurahs: React.Dispatch<React.SetStateAction<Surah[]>>;
-  currentSurah: Surah | null;
-  setCurrentSurah: (surah: Surah | null) => void;
-  currentAyah: Ayah | null;
-  setCurrentAyah: (ayah: Ayah | null) => void;
-  divisions: Division[];
-  setDivisions: React.Dispatch<React.SetStateAction<Division[]>>;
-  activeTab: Tab;
-  setActiveTab: (tab: Tab) => void;
-  settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
-  isOfflineAvailable: boolean;
-  offlineStatus: { [key: number]: boolean };
-  downloadSurahAudio: (surahNumber: number) => Promise<void>;
-  deleteSurahAudio: (surahNumber: number) => Promise<void>;
-  isDownloading: { [key: number]: boolean };
-  showSettingsModal: boolean;
-  setShowSettingsModal: (show: boolean) => void;
   showTafsirModal: boolean;
   setShowTafsirModal: (show: boolean) => void;
-  selectedAyahForTafsir: Ayah | null;
-  setSelectedAyahForTafsir: (ayah: Ayah | null) => void;
+  showSettingsModal: boolean;
+  setShowSettingsModal: (show: boolean) => void;
+  showQuickAccessMenu: boolean;
+  setShowQuickAccessMenu: (show: boolean) => void;
+  showAIAssistantModal: boolean;
+  setShowAIAssistantModal: (show: boolean) => void;
+  selectedAyah: Ayah | null;
+  setSelectedAyah: (ayah: Ayah | null) => void;
+  quran: any; 
+  surahsSimple: SurahSimple[];
+  reciters: ListeningReciter[];
+  selectedReciter: ListeningReciter;
+  setSelectedReciter: (reciter: ListeningReciter) => void;
+  savedSections: SavedSection[];
+  addSavedSection: (section: Omit<SavedSection, 'id' | 'ayahs'>) => void;
+  deleteSavedSection: (id: string) => void;
+  currentTheme: "light" | "dark";
+  setCurrentTheme: (theme: "light" | "dark") => void;
+  selectedSurah: SurahSimple | null;
+  setSelectedSurah: (surah: SurahSimple | null) => void;
+  selectedRadio: any; 
+  setSelectedRadio: (radio: any) => void;
+  isRadioPlaying: boolean;
+  setIsRadioPlaying: (playing: boolean) => void;
+  selectedRecitersForOffline: Reciter[];
+  setSelectedRecitersForOffline: (reciters: Reciter[]) => void;
+  downloadedSurahs: any;
+  setDownloadedSurahs: (surahs: any) => void;
+  selectedSavedSection: SavedSection | null;
+  setSelectedSavedSection: (section: SavedSection | null) => void;
+  fontSize: number;
+  setFontSize: (size: number) => void;
 }
 
-export const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [surahs, setSurahs] = useState<Surah[]>([]);
-  const [currentSurah, setCurrentSurahState] = useState<Surah | null>(null);
-  const [currentAyah, setCurrentAyah] = useState<Ayah | null>(null);
-  const [divisions, setDivisions] = useState<Division[]>(quranicDivisions);
-  const [activeTab, setActiveTab] = useState<Tab>('quran');
-  const [settings, setSettings] = useState<AppSettings>({
-    theme: 'light',
-    qari: 'ar.alafasy',
-    translation: 'en.sahih',
-    fontSize: 18,
-  });
-  const [isOfflineAvailable, setIsOfflineAvailable] = useState(false);
-  const [offlineStatus, setOfflineStatus] = useState<{ [key: number]: boolean }>({});
-  const [isDownloading, setIsDownloading] = useState<{ [key: number]: boolean }>({});
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showTafsirModal, setShowTafsirModal] = useState(false);
-  const [selectedAyahForTafsir, setSelectedAyahForTafsir] = useState<Ayah | null>(null);
+export const AppProvider = ({ children }: { children: ReactNode }) => {
+    const [showTafsirModal, setShowTafsirModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [showQuickAccessMenu, setShowQuickAccessMenu] = useState(false);
+    const [showAIAssistantModal, setShowAIAssistantModal] = useState(false);
+    const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
+    const [surahsSimple, setSurahsSimple] = useState<SurahSimple[]>([]);
+    const [reciters] = useState<ListeningReciter[]>([]);
+    const [selectedReciter, setSelectedReciter] = useState<ListeningReciter>({ id: 7, name: "Mishary Rashid Alafasy", server: "https://server7.mp3quran.net/afs/" });
+    const [savedSections, setSavedSections] = useState<SavedSection[]>([]);
+    const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
+    const [selectedSurah, setSelectedSurah] = useState<SurahSimple | null>(null);
+    const [selectedRadio, setSelectedRadio] = useState(null);
+    const [isRadioPlaying, setIsRadioPlaying] = useState(false);
+    const [selectedRecitersForOffline, setSelectedRecitersForOffline] = useState<Reciter[]>([]);
+    const [downloadedSurahs, setDownloadedSurahs] = useState({});
+    const [selectedSavedSection, setSelectedSavedSection] = useState<SavedSection | null>(null);
+    const [fontSize, setFontSize] = useState(20);
 
+    useEffect(() => {
+        const surahs = quran.surahs.map((s: any) => ({
+            number: s.number,
+            name: s.name,
+            englishName: s.englishName,
+            englishNameTranslation: s.englishNameTranslation,
+            numberOfAyahs: s.verses.length,
+            revelationType: s.revelationType,
+        }));
+        setSurahsSimple(surahs);
+    }, []);
 
-  useEffect(() => {
-    const fetchSurahs = async () => {
-      const allSurahs = [];
-      for (let i = 1; i <= 114; i++) {
-        // In a real app, you might lazy load this, but for simplicity we fetch all.
-        const surah = await getSurah(i, settings.translation);
-        allSurahs.push(surah);
-      }
-      setSurahs(allSurahs);
-      const lastReadSurah = localStorage.getItem('lastReadSurah');
-      if (lastReadSurah) {
-        setCurrentSurah(allSurahs[parseInt(lastReadSurah) - 1]);
-      } else {
-        setCurrentSurah(allSurahs[0]);
-      }
+    const addSavedSection = (section: Omit<SavedSection, 'id' | 'ayahs'>) => {
+        console.log('Adding section', section);
     };
-    fetchSurahs();
-    
-    setIsOfflineAvailable('serviceWorker' in navigator);
+    const deleteSavedSection = (id: string) => {
+        console.log('Deleting section', id);
+    };
 
-    const savedSettings = localStorage.getItem('quranAppSettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOfflineAvailable) {
-      const checkAllStatus = async () => {
-        const statuses: { [key: number]: boolean } = {};
-        for (let i = 1; i <= 114; i++) {
-          statuses[i] = await getOfflineStatus(i);
-        }
-        setOfflineStatus(statuses);
-      };
-      checkAllStatus();
-    }
-  }, [isOfflineAvailable]);
-  
-  const setCurrentSurah = (surah: Surah | null) => {
-    setCurrentSurahState(surah);
-    if (surah) {
-        localStorage.setItem('lastReadSurah', surah.number.toString());
-    }
-  };
-
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings(prev => {
-      const updatedSettings = { ...prev, ...newSettings };
-      localStorage.setItem('quranAppSettings', JSON.stringify(updatedSettings));
-      return updatedSettings;
-    });
-  };
-  
-  const handleDownload = async (surahNumber: number) => {
-    setIsDownloading(prev => ({...prev, [surahNumber]: true}));
-    await downloadSurah(surahNumber, settings.qari);
-    setOfflineStatus(prev => ({...prev, [surahNumber]: true}));
-    setIsDownloading(prev => ({...prev, [surahNumber]: false}));
-  };
-  
-  const handleDelete = async (surahNumber: number) => {
-    await deleteSurahAudio(surahNumber);
-    setOfflineStatus(prev => ({...prev, [surahNumber]: false}));
-  };
-
-  return (
-    <AppContext.Provider
-      value={{
-        surahs,
-        setSurahs,
-        currentSurah,
-        setCurrentSurah,
-        currentAyah,
-        setCurrentAyah,
-        divisions,
-        setDivisions,
-        activeTab,
-        setActiveTab,
-        settings,
-        updateSettings,
-        isOfflineAvailable,
-        offlineStatus,
-        downloadSurahAudio: handleDownload,
-        deleteSurahAudio: handleDelete,
-        isDownloading,
-        showSettingsModal,
-        setShowSettingsModal,
+    const value = {
         showTafsirModal,
         setShowTafsirModal,
-        selectedAyahForTafsir,
-        setSelectedAyahForTafsir,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
-  );
+        showSettingsModal,
+        setShowSettingsModal,
+        showQuickAccessMenu,
+        setShowQuickAccessMenu,
+        showAIAssistantModal,
+        setShowAIAssistantModal,
+        selectedAyah,
+        setSelectedAyah,
+        quran,
+        surahsSimple,
+        reciters,
+        selectedReciter,
+        setSelectedReciter,
+        savedSections,
+        addSavedSection,
+        deleteSavedSection,
+        currentTheme,
+        setCurrentTheme,
+        selectedSurah,
+        setSelectedSurah,
+        selectedRadio,
+        setSelectedRadio,
+        isRadioPlaying,
+        setIsRadioPlaying,
+        selectedRecitersForOffline,
+        setSelectedRecitersForOffline,
+        downloadedSurahs,
+        setDownloadedSurahs,
+        selectedSavedSection,
+        setSelectedSavedSection,
+        fontSize,
+        setFontSize,
+    };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+};
+
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error("useAppContext must be used within an AppProvider");
+  }
+  return context;
 };
