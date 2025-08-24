@@ -1,102 +1,58 @@
-
-export interface Surah {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  revelationType: 'Meccan' | 'Medinan';
-  ayahs: Ayah[];
-}
-
-export interface SurahSimple {
-  number: number;
-  name: string;
-  englishName: string;
-  numberOfAyahs: number;
-  revelationType: 'Meccan' | 'Medinan';
-}
+export type Page = 'home' | 'index' | 'listen' | 'radio' | 'memorization_and_sections' | 'adhkar';
 
 export interface Ayah {
-  number: number;
-  audio: string;
-  audioSecondarys: string[];
-  text: string;
-  numberInSurah: number;
-  juz: number;
-  manzil: number;
-  page: number;
-  ruku: number;
-  hizbQuarter: number;
-  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
-  surah?: SurahSimple;
+    number: number;
+    text: string;
+    numberInSurah: number;
+    juz: number;
+    manzil: number;
+    page: number;
+    ruku: number;
+    hizbQuarter: number;
+    sajda: boolean | {
+        id: number;
+        recommended: boolean;
+        obligatory: boolean;
+    };
+    audio?: string;
+    audioSecondary?: string[];
 }
 
-export interface Reciter {
-  identifier: string;
-  language: string;
-  name: string;
-  englishName: string;
-  format: 'audio/mpeg';
-  type: 'surah' | 'versebyverse';
+export interface Surah {
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation: string;
+    revelationType: string;
+    numberOfAyahs: number;
+    ayahs: Ayah[];
 }
 
-// From mp3quran.net API
-export interface ListeningReciter {
-  identifier: string; // combination of id and moshaf id
-  name: string;
-  rewaya: string;
-  server: string; // The base URL for audio files
-  surah_list?: string; // Optional: comma-separated list of available surah numbers
-}
-
-export interface RadioStation {
-  id: number;
-  name: string;
-  url: string;
+export interface QuranData {
+    surahs: Surah[];
 }
 
 export interface Tafsir {
-  id: number;
-  name: string;
-  language: string;
-  author: string;
-  text: string;
+    tafsir_id: number;
+    tafsir_name: string;
+    ayah_url: string;
+    ayah_number: number;
+    text: string;
 }
 
-export interface TafsirInfo {
-  identifier: string;
-  language: string;
-  name: string;
-  englishName: string;
+export interface Section {
+    id: string;
+    name: string;
+    startSurah: number;
+    startAyah: number;
+    endSurah: number;
+    endAyah: number;
 }
 
-export interface AppSettings {
-  darkMode: boolean;
-  memorizationReciter: string; // for verse-by-verse
-  tafsir: string; 
+export interface QuranicDivision {
+    type: 'juz' | 'hizb' | 'ruku';
+    number: number;
+    name: string;
+    surah: number;
+    ayah: number;
 }
-
-export interface SavedSection {
-  id: string;
-  name: string;
-  surahNumber: number;
-  startAyah: number;
-  endAyah: number;
-}
-
-export interface QuranDivision {
-  number: number;
-  start: { surah: number; ayah: number };
-  end: { surah: number; ayah: number };
-  startSurahName?: string;
-}
-
-export interface QuranAyah {
-  surah: number;
-  ayah: number;
-  text: string;
-  normalizedText: string;
-  normalizedTextNoSpaces: string;
-}
-
-export type SearchResult = QuranAyah;
