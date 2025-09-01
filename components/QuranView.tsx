@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
 import { AyahActionModal } from './AyahActionModal';
@@ -10,11 +10,13 @@ import { ArrowRightIcon } from './Icons';
 
 
 export const QuranView: React.FC = () => {
-    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo } = useApp();
+    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition } = useApp();
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const titleRef = useRef<HTMLHeadingElement>(null);
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         ayahRefs.current.clear();
@@ -36,6 +38,53 @@ export const QuranView: React.FC = () => {
     const handleModalClose = () => {
         setSelectedAyah(null);
     };
+
+    const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+        if (lastReadTimeoutRef.current) {
+            clearTimeout(lastReadTimeoutRef.current);
+        }
+
+        lastReadTimeoutRef.current = setTimeout(() => {
+            const topEntry = entries.reduce((max, entry) => 
+                (entry.intersectionRatio > max.intersectionRatio) ? entry : max, 
+                entries[0]
+            );
+
+            if (topEntry && topEntry.isIntersecting && currentSurah) {
+                const ayahNumber = parseInt(topEntry.target.getAttribute('data-ayah-number') || '0', 10);
+                if (ayahNumber) {
+                    updateLastReadPosition(currentSurah.number, ayahNumber);
+                }
+            }
+        }, 500); // Debounce to avoid rapid updates
+
+    }, [currentSurah, updateLastReadPosition]);
+
+    useEffect(() => {
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(handleIntersection, {
+            root: null, // viewport
+            rootMargin: '0px',
+            threshold: 0.5 // Trigger when 50% of the element is visible
+        });
+
+        const observer = observerRef.current;
+        ayahRefs.current.forEach(el => {
+            if (el) observer.observe(el);
+        });
+
+        return () => {
+            if (observer) {
+                observer.disconnect();
+            }
+            if (lastReadTimeoutRef.current) {
+                clearTimeout(lastReadTimeoutRef.current);
+            }
+        };
+    }, [currentSurah, handleIntersection]);
 
     useEffect(() => {
         if (targetAyah && currentSurah) {
@@ -88,18 +137,18 @@ export const QuranView: React.FC = () => {
             </header>
             <div className="space-y-1">
                 {currentSurah.ayahs.map(ayah => (
-                    <AyahItem 
-                        key={ayah.number} 
-                        ayah={ayah}
-                        isSelected={selectedAyah?.number === ayah.number}
-                        isHighlighted={highlightedAyah === ayah.numberInSurah}
-                        onSelect={() => handleAyahSelect(ayah)}
-                        layoutIdPrefix="quran"
-                        ref={(el: HTMLDivElement | null) => {
-                            if (el) ayahRefs.current.set(ayah.numberInSurah, el);
-                            else ayahRefs.current.delete(ayah.numberInSurah);
-                        }}
-                    />
+                    <div key={ayah.number} data-ayah-number={ayah.numberInSurah} ref={(el) => {
+                        if (el) ayahRefs.current.set(ayah.numberInSurah, el);
+                        else ayahRefs.current.delete(ayah.numberInSurah);
+                    }}>
+                        <AyahItem 
+                            ayah={ayah}
+                            isSelected={selectedAyah?.number === ayah.number}
+                            isHighlighted={highlightedAyah === ayah.numberInSurah}
+                            onSelect={() => handleAyahSelect(ayah)}
+                            layoutIdPrefix="quran"
+                        />
+                    </div>
                 ))}
             </div>
 

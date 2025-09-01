@@ -1,6 +1,6 @@
 {
   "name": "القرآن الكريم",
-  "short_name": "Quran",
+  "short_name": "القرآن الكريم",
   "description": "Your companion for studying and pondering the Quran.",
   "start_url": "/",
   "display": "standalone",

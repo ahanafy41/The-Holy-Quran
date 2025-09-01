@@ -237,3 +237,9 @@ export const ShieldIcon: React.FC<IconProps> = ({ className }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75c-3.14 0-6-1.49-6-3V6c0-1.036.864-2 2-2h8c1.136 0 2 .964 2 2v12.75c0 1.51-2.86 3-6 3Z" />
   </svg>
 );
+
+export const ClockIcon: React.FC<IconProps> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+);

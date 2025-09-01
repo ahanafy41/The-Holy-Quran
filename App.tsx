@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation } from './types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark } from './types';
 import * as api from './services/quranApi';
 import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
@@ -10,6 +10,8 @@ import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
 import { HisnAlMuslimPage } from './components/HisnAlMuslimPage';
+import { HadithPage } from './components/HadithPage';
+import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
@@ -69,6 +71,16 @@ const App: React.FC = () => {
   
   const [savedSections, setSavedSections] = useState<SavedSection[]>(() => {
     const saved = localStorage.getItem('quranAppSavedSections');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [lastReadPosition, setLastReadPosition] = useState<LastReadPosition | null>(() => {
+    const saved = localStorage.getItem('quranAppLastRead');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
+    const saved = localStorage.getItem('quranAppBookmarks');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -150,6 +162,16 @@ const App: React.FC = () => {
   }, [savedSections]);
 
   useEffect(() => {
+    if (lastReadPosition) {
+      localStorage.setItem('quranAppLastRead', JSON.stringify(lastReadPosition));
+    }
+  }, [lastReadPosition]);
+
+  useEffect(() => {
+    localStorage.setItem('quranAppBookmarks', JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  useEffect(() => {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -218,6 +240,24 @@ const App: React.FC = () => {
   const removeSavedSection = useCallback((sectionId: string) => {
       setSavedSections(prev => prev.filter(s => s.id !== sectionId));
   }, []);
+
+  const updateLastReadPosition = useCallback((surahNumber: number, ayahNumber: number) => {
+    setLastReadPosition({ surahNumber, ayahNumber, timestamp: Date.now() });
+  }, []);
+
+  const addBookmark = useCallback((bookmark: Omit<Bookmark, 'id' | 'timestamp'>) => {
+    const newBookmark: Bookmark = {
+        ...bookmark,
+        id: `bookmark-${Date.now()}`,
+        timestamp: Date.now()
+    };
+    setBookmarks(prev => [...prev, newBookmark]);
+    setSuccessMessage('تم إضافة العلامة المرجعية بنجاح.');
+  }, []);
+
+  const removeBookmark = useCallback((bookmarkId: string) => {
+      setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+  }, []);
   
   const loadSurah = useCallback(async (surahNumber: number) => {
     setIsLoading(true);
@@ -225,7 +265,7 @@ const App: React.FC = () => {
     try {
       const surahData = await api.getSurah(surahNumber, settings.memorizationReciter);
       setCurrentSurah(surahData);
-      localStorage.setItem('lastReadSurah', String(surahNumber));
+      updateLastReadPosition(surahNumber, 1); // Default to first ayah
       document.title = `${surahData.name} - Quran Study App`;
     } catch (e) {
       setError(`فشل تحميل السورة ${surahNumber}.`);
@@ -233,7 +273,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [settings.memorizationReciter]);
+  }, [settings.memorizationReciter, updateLastReadPosition]);
   
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
     setTargetAyah(params?.ayahNumber ?? null);
@@ -323,7 +363,7 @@ const App: React.FC = () => {
       if (!ayah.surah) return;
       const tafsirInfo = tafsirInfoList.find(t => t.identifier === settings.tafsir);
       setIsTafsirOpen(true);
-      setTafsirContent({ 
+      setTafsirContent({
           ayah, tafsir: null, surahNumber: ayah.surah.number, surahName: ayah.surah.englishName, 
           tafsirName: tafsirInfo?.name, isLoading: true
       });
@@ -358,7 +398,9 @@ const App: React.FC = () => {
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view, scrollToTop,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
     isStandalone, canInstall, triggerInstall,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop]);
+    lastReadPosition, updateLastReadPosition,
+    bookmarks, addBookmark, removeBookmark,
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
 
   const renderView = () => {
     switch (view) {
@@ -369,7 +411,9 @@ const App: React.FC = () => {
         case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
         case 'hisn-al-muslim': return <HisnAlMuslimPage />;
+        case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
+        case 'bookmarks': return <BookmarksPage />;
         default: return <HomePage />;
     }
   };

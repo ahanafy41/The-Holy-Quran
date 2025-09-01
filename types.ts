@@ -116,3 +116,47 @@ export interface HisnCategory {
   filename: string;
   array: HisnDhikr[];
 }
+
+export interface Hadith {
+  id: number;
+  idInBook: number;
+  chapterId: number;
+  bookId: number;
+  arabic: string;
+  english: {
+    narrator: string;
+    text: string;
+  };
+}
+
+export interface HadithChapter {
+  id: number;
+  bookId: number;
+  arabic: string;
+  english: string;
+}
+
+export interface HadithBook {
+  id: string;
+  arabic: string;
+  english: string;
+}
+
+export interface HadithCollection {
+  chapters: HadithBook[];
+  hadiths: Hadith[];
+}
+
+export interface LastReadPosition {
+  surahNumber: number;
+  ayahNumber: number;
+  timestamp: number;
+}
+
+export interface Bookmark {
+  id: string;
+  name: string;
+  surahNumber: number;
+  ayahNumber: number;
+  timestamp: number;
+}
