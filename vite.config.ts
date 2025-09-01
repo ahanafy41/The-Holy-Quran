@@ -10,9 +10,11 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         VitePWA({
-          registerType: 'autoUpdate',
-          // Caches essential assets for offline use
-          includeAssets: ['icon-192x192.png', 'icon-512x512.png', 'icon-maskable-512x512.png'],
+          registerType: 'prompt',
+          injectRegister: false, // We register the service worker manually in App.tsx
+          strategies: 'injectManifest',
+          srcDir: '.',
+          filename: 'sw.js',
           manifest: {
             name: 'القرآن الكريم',
             short_name: 'القرآن الكريم',

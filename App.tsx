@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark } from './types';
 import * as api from './services/quranApi';
 import { HomePage } from './components/HomePage';
@@ -24,7 +24,6 @@ import { QuickAccessMenu } from './components/QuickAccessMenu';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ======== MAIN APP COMPONENT ======== //
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('quranAppSettings');
@@ -35,7 +34,6 @@ const App: React.FC = () => {
     };
      if (saved) {
         const parsed = JSON.parse(saved);
-        // Migration from old setting key
         if(parsed.reciter && !parsed.memorizationReciter) {
             parsed.memorizationReciter = parsed.reciter;
             delete parsed.reciter;
@@ -60,7 +58,6 @@ const App: React.FC = () => {
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   
-  // Wavesurfer state for simple, global playback
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const wavesurferContainerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -94,35 +91,34 @@ const App: React.FC = () => {
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(window.matchMedia('(display-mode: standalone)').matches);
 
-
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  // Initialize headless Wavesurfer instance
+  const { offlineReady: [offlineReady, setOfflineReady], needRefresh: [needRefresh, setNeedRefresh], updateServiceWorker } = useRegisterSW();
+
+  const closeNeedRefresh = () => {
+    setNeedRefresh(false);
+  };
+
   useEffect(() => {
     if (!wavesurferContainerRef.current) return;
-    console.log('[Global Player DEBUG] Initializing headless WaveSurfer instance.');
     const ws = WaveSurfer.create({
         container: wavesurferContainerRef.current,
-        height: 0, // Visually hidden
+        height: 0,
         mediaControls: false,
     });
     wavesurferRef.current = ws;
 
     const onReady = () => {
-        console.log('[Global Player DEBUG] Event: ready. Playing audio.');
         ws.play();
     };
 
     const onError = (err: Error) => {
-        console.error(`[Global Player DEBUG] Event: error on source index ${audioSourcesRef.current.index}:`, err);
         audioSourcesRef.current.index++;
         const { sources, index } = audioSourcesRef.current;
         if (index < sources.length) {
-            console.log(`[Global Player DEBUG] Trying next source ${index + 1}/${sources.length}: ${sources[index]}`);
             ws.load(sources[index]);
         } else {
             const errorMsg = `فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`;
-            console.error(`[Global Player DEBUG] ${errorMsg}`);
             setError(errorMsg);
             setActiveAyah(null);
             setIsPlaying(false);
@@ -131,22 +127,14 @@ const App: React.FC = () => {
 
     ws.on('ready', onReady);
     ws.on('error', onError);
-    ws.on('play', () => {
-        console.log('[Global Player DEBUG] Event: play');
-        setIsPlaying(true);
-    });
-    ws.on('pause', () => {
-        console.log('[Global Player DEBUG] Event: pause');
-        setIsPlaying(false);
-    });
+    ws.on('play', () => setIsPlaying(true));
+    ws.on('pause', () => setIsPlaying(false));
     ws.on('finish', () => {
-        console.log('[Global Player DEBUG] Event: finish');
         setIsPlaying(false);
         setActiveAyah(null);
     });
 
     return () => {
-        console.log('[Global Player DEBUG] Destroying headless WaveSurfer instance.');
         ws.destroy();
     };
   }, []);
@@ -172,22 +160,7 @@ const App: React.FC = () => {
   }, [bookmarks]);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
-        console.log('`beforeinstallprompt` event fired, offering PWA installation.');
         event.preventDefault();
         setInstallPromptEvent(event);
     };
@@ -203,10 +176,7 @@ const App: React.FC = () => {
       installPromptEvent.prompt();
       const { outcome } = await installPromptEvent.userChoice;
       if (outcome === 'accepted') {
-          console.log('User accepted the install prompt');
           setIsStandalone(true);
-      } else {
-          console.log('User dismissed the install prompt');
       }
       setInstallPromptEvent(null);
   }, [installPromptEvent]);
@@ -265,11 +235,10 @@ const App: React.FC = () => {
     try {
       const surahData = await api.getSurah(surahNumber, settings.memorizationReciter);
       setCurrentSurah(surahData);
-      updateLastReadPosition(surahNumber, 1); // Default to first ayah
+      updateLastReadPosition(surahNumber, 1);
       document.title = `${surahData.name} - Quran Study App`;
     } catch (e) {
       setError(`فشل تحميل السورة ${surahNumber}.`);
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -312,7 +281,6 @@ const App: React.FC = () => {
       
     } catch (e) {
       setError('فشل تحميل البيانات الأولية. يرجى التحقق من اتصالك بالإنترنت.');
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -332,26 +300,20 @@ const App: React.FC = () => {
   const playAyah = useCallback((ayah: Ayah) => {
     const wavesurfer = wavesurferRef.current;
     if (!wavesurfer) return;
-    console.log(`[Global Player DEBUG] playAyah called for ayah ${ayah.surah?.name} ${ayah.numberInSurah}`, ayah);
 
-    // Stop any other complex players if they are active
-    console.log('[Global Player DEBUG] Dispatching global-player-stop event.');
     window.dispatchEvent(new CustomEvent('global-player-stop'));
 
     setActiveAyah(ayah);
     activeAyahRef.current = ayah;
 
     const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
-    console.log('[Global Player DEBUG] Audio sources:', sources);
     if (sources.length === 0) {
         const errorMsg = `لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`;
-        console.error(`[Global Player DEBUG] ${errorMsg}`);
         setError(errorMsg);
         return;
     }
 
     audioSourcesRef.current = { sources: sources, index: 0 };
-    console.log(`[Global Player DEBUG] Loading source 1/${sources.length}: ${sources[0]}`);
     wavesurfer.load(sources[0]);
   }, [setError]);
 
@@ -424,6 +386,30 @@ const App: React.FC = () => {
       <AnimatePresence>
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
+        {needRefresh && (
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-24 right-4 z-50"
+          >
+            <div className="p-4 bg-gray-800 text-white rounded-lg shadow-lg flex items-center space-x-4 space-x-reverse">
+              <span>يوجد تحديث جديد متوفر!</span>
+              <button
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded"
+                onClick={() => updateServiceWorker(true)}
+              >
+                تحديث
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded"
+                onClick={closeNeedRefresh}
+              >
+                إغلاق
+              </button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
