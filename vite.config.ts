@@ -1,57 +1,18 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      base: '/', // Use absolute path for routing and assets
-      plugins: [
-        react(),
-        VitePWA({
-          registerType: 'prompt',
-          injectRegister: false, // We register the service worker manually in App.tsx
-          strategies: 'injectManifest',
-          srcDir: '.',
-          filename: 'sw.js',
-          manifest: {
-            name: 'القرآن الكريم',
-            short_name: 'القرآن الكريم',
-            description: 'Your companion for studying and pondering the Quran.',
-            theme_color: '#16a34a',
-            background_color: '#f1f5f9',
-            display: 'standalone',
-            start_url: '/',
-            icons: [
-              {
-                src: '/icon-192x192.png',
-                sizes: '192x192',
-                type: 'image/png'
-              },
-              {
-                src: '/icon-512x512.png',
-                sizes: '512x512',
-                type: 'image/png'
-              },
-              {
-                src: '/icon-maskable-512x512.png',
-                sizes: '512x512',
-                type: 'image/png',
-                purpose: 'maskable'
-              }
-            ]
-          }
-        })
-      ],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024, // 50 MB
+        // لو عندك أي إعدادات تانية للـ Workbox، ممكن تضيفها هنا.
       },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
+      // لو عندك أي إعدادات تانية للـ PWA (زي الـ manifest أو devOptions)، ممكن تضيفها هنا.
+      // لو كان عندك VitePWA plugin متضاف قبل كده، يرجى دمج الـ 'workbox' property دي مع الإعدادات الموجودة.
+    }),
+  ],
 });
