@@ -1,0 +1,19 @@
+{
+  "tirmidhi": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/tirmidhi.json",
+  "shamail_muhammadiyah": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/shamail_muhammadiyah.json",
+  "shahwaliullah40": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/shahwaliullah40.json",
+  "riyad_assalihin": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/riyad_assalihin.json",
+  "qudsi40": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/qudsi40.json",
+  "nawawi40": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/nawawi40.json",
+  "nasai": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/nasai.json",
+  "muslim": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/muslim.json",
+  "mishkat_almasabih": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/mishkat_almasabih.json",
+  "malik": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/malik.json",
+  "ibnmajah": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/ibnmajah.json",
+  "darimi": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/darimi.json",
+  "bulugh_almaram": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/bulugh_almaram.json",
+  "bukhari": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/bukhari.json",
+  "aladab_almufrad": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/aladab_almufrad.json",
+  "ahmed": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/ahmed.json",
+  "abudawud": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/abudawud.json"
+}
