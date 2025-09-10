@@ -61,6 +61,12 @@ export const BottomNavBar = () => {
             action: () => navigateTo('hisn-al-muslim'),
             isActive: isHisnAlMuslimView,
         },
+        {
+            label: 'أذكار',
+            icon: ShieldIcon, // Placeholder icon
+            action: () => navigateTo('azkar'),
+            isActive: view === 'azkar',
+        },
     ];
 
     return (

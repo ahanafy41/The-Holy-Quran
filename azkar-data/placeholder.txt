@@ -1,0 +1,5 @@
+Please add the Hisn al-Muslim Azkar files (text and audio) to this directory.
+
+For example:
+- azkar.json (for the text)
+- audio/ (a directory for the audio files)
