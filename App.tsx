@@ -8,7 +8,6 @@ import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-import { AzkarPage } from './components/AzkarPage';
 
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
@@ -374,8 +373,7 @@ const App: React.FC = () => {
         case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
-        case 'azkar': return <AzkarPage />;
-        default: return <HomePage />;
+        default: return <IndexPage />;
     }
   };
 
@@ -424,7 +422,7 @@ const App: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'azkar'].includes(view) && (
+        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization'].includes(view) && (
           <BottomNavBar />
         )}
       </AnimatePresence>
