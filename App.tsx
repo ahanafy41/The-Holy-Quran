@@ -9,8 +9,7 @@ import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-import { AzkarPage } from './components/AzkarPage';
-
+import AzkarPage from './components/AzkarPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
