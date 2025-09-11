@@ -43,11 +43,10 @@ export const AzkarDetailPage: React.FC = () => {
     }
 
     const handlePlayPause = (audioPath: string) => {
-        const fullAudioPath = `/azkar-data${audioPath}`;
-        if (activeAzkarAudio === fullAudioPath && isPlaying) {
+        if (activeAzkarAudio === audioPath && isPlaying) {
             stopAzkarAudio();
         } else {
-            playAzkarAudio(fullAudioPath, fullAudioPath);
+            playAzkarAudio(audioPath, audioPath);
         }
     };
 
@@ -87,7 +86,7 @@ export const AzkarDetailPage: React.FC = () => {
                                 className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 aria-label="تشغيل الصوت"
                             >
-                                {activeAzkarAudio === `/azkar-data${zikr.audio}` && isPlaying ? (
+                                {activeAzkarAudio === zikr.audio && isPlaying ? (
                                     <PauseIcon className="w-6 h-6 text-blue-500" />
                                 ) : (
                                     <PlayIcon className="w-6 h-6 text-blue-500" />
