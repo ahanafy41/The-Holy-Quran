@@ -3,17 +3,16 @@ import WaveSurfer from 'wavesurfer.js';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark } from './types';
 import * as api from './services/quranApi';
-import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-import { AzkarPage } from './components/AzkarPage';
-
+import { HisnAlMuslimPage } from './components/HisnAlMuslimPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
+import MorePage from './components/MorePage';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
@@ -21,7 +20,6 @@ import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
 import { BottomNavBar } from './components/BottomNavBar';
-import { QuickAccessMenu } from './components/QuickAccessMenu';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -55,7 +53,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>('index');
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   
@@ -367,18 +365,17 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (view) {
-        case 'home': return <HomePage />;
         case 'index': return <IndexPage />;
         case 'reader': return <QuranView />;
         case 'listen': return <ListenPage />;
         case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
-        
+        case 'hisn-al-muslim': return <HisnAlMuslimPage />;
         case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
-        case 'azkar': return <AzkarPage />;
-        default: return <HomePage />;
+        case 'more': return <MorePage />;
+        default: return <IndexPage />;
     }
   };
 
@@ -427,11 +424,8 @@ const App: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {view !== 'home' && (
-          <>
-            <BottomNavBar />
-            <QuickAccessMenu />
-          </>
+        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more'].includes(view) && (
+          <BottomNavBar />
         )}
       </AnimatePresence>
     </AppContext.Provider>
