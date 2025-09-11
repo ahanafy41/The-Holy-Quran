@@ -8,10 +8,11 @@ import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-
+import { HisnAlMuslimPage } from './components/HisnAlMuslimPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
+import MorePage from './components/MorePage';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
@@ -369,10 +370,11 @@ const App: React.FC = () => {
         case 'listen': return <ListenPage />;
         case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
-        
+        case 'hisn-al-muslim': return <HisnAlMuslimPage />;
         case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
+        case 'more': return <MorePage />;
         default: return <IndexPage />;
     }
   };
@@ -422,7 +424,7 @@ const App: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization'].includes(view) && (
+        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more'].includes(view) && (
           <BottomNavBar />
         )}
       </AnimatePresence>

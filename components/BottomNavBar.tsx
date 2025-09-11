@@ -37,8 +37,8 @@ export const BottomNavBar = () => {
         {
             label: 'المزيد',
             icon: MenuIcon,
-            action: showSettings, // Placeholder action: opens settings. A real "More" page would be a new view.
-            targetView: 'more', // This view doesn't exist, so it won't be active.
+            action: () => navigateTo('more'),
+            targetView: 'more',
         },
     ];
 
