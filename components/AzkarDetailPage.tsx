@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import azkarData from '../azkar-data/azkar.json';
 import { ChevronRightIcon, PlayIcon, PauseIcon } from './Icons';
@@ -21,7 +21,7 @@ interface AzkarCategory {
 }
 
 export const AzkarDetailPage: React.FC = () => {
-    const { navigateTo, viewParams, playAzkarAudio, stopAzkarAudio, activeAzkarAudio, isPlaying } = useApp() as any; // Using 'as any' for now
+    const { navigateTo, viewParams, playAzkarAudio, stopAzkarAudio, activeAzkarAudio, isPlaying } = useApp() as any;
     const [category, setCategory] = useState<AzkarCategory | null>(null);
 
     useEffect(() => {
@@ -30,6 +30,19 @@ export const AzkarDetailPage: React.FC = () => {
             setCategory(cat || null);
         }
     }, [viewParams]);
+
+    const zikrList = useMemo(() => {
+        if (!category) return [];
+        return category.array.map(zikr => {
+            try {
+                const audioUrl = new URL(`../azkar-data/audio/${zikr.filename}.mp3`, import.meta.url).href;
+                return { ...zikr, resolvedAudioUrl: audioUrl };
+            } catch (e) {
+                console.error(`Failed to resolve audio URL for ${zikr.filename}.mp3`, e);
+                return { ...zikr, resolvedAudioUrl: null };
+            }
+        });
+    }, [category]);
 
     if (!category) {
         return (
@@ -42,11 +55,12 @@ export const AzkarDetailPage: React.FC = () => {
         );
     }
 
-    const handlePlayPause = (audioPath: string) => {
-        if (activeAzkarAudio === audioPath && isPlaying) {
+    const handlePlayPause = (audioUrl: string | null) => {
+        if (!audioUrl) return;
+        if (activeAzkarAudio === audioUrl && isPlaying) {
             stopAzkarAudio();
         } else {
-            playAzkarAudio(audioPath, audioPath);
+            playAzkarAudio(audioUrl, audioUrl);
         }
     };
 
@@ -66,7 +80,7 @@ export const AzkarDetailPage: React.FC = () => {
             </header>
 
             <div className="space-y-4">
-                {category.array.map((zikr, index) => (
+                {zikrList.map((zikr, index) => (
                     <motion.div
                         key={zikr.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -81,17 +95,19 @@ export const AzkarDetailPage: React.FC = () => {
                             <span className="font-bold text-blue-500 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 px-3 py-1 rounded-full">
                                 يقرأ {zikr.count} مرات
                             </span>
-                            <button
-                                onClick={() => handlePlayPause(zikr.audio)}
-                                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                aria-label="تشغيل الصوت"
-                            >
-                                {activeAzkarAudio === zikr.audio && isPlaying ? (
-                                    <PauseIcon className="w-6 h-6 text-blue-500" />
-                                ) : (
-                                    <PlayIcon className="w-6 h-6 text-blue-500" />
-                                )}
-                            </button>
+                            {zikr.resolvedAudioUrl && (
+                                <button
+                                    onClick={() => handlePlayPause(zikr.resolvedAudioUrl)}
+                                    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    aria-label="تشغيل الصوت"
+                                >
+                                    {activeAzkarAudio === zikr.resolvedAudioUrl && isPlaying ? (
+                                        <PauseIcon className="w-6 h-6 text-blue-500" />
+                                    ) : (
+                                        <PlayIcon className="w-6 h-6 text-blue-500" />
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 ))}
