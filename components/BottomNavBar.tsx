@@ -1,71 +1,44 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { HomeIcon, BookOpenIcon, SearchIcon, ArrowRightIcon, HeadphonesIcon, FlowerIcon, RadioIcon, ShieldIcon } from './Icons';
+import { BookOpenIcon, HeadphonesIcon, ShieldIcon, MenuIcon, BookmarkIcon } from './Icons'; // Assuming Hadith uses BookOpenIcon, Hisn uses ShieldIcon
 
 const MotionNav = motion.nav as any;
 
 export const BottomNavBar = () => {
-    const { view, navigateTo, showSearch } = useApp();
+    const { view, navigateTo, showSettings } = useApp();
 
-    const isReadingView = ['index', 'reader', 'division'].includes(view);
-    const isListenView = view === 'listen';
-    const isRadioView = view === 'radio';
-    const isMemorizationView = view === 'memorization';
-    const isHisnAlMuslimView = view === 'hisn-al-muslim';
-    const isNestedReadingView = ['reader', 'division'].includes(view);
-
-    const handlePrimaryAction = () => {
-        if (isNestedReadingView) {
-            navigateTo('index');
-        } else {
-            navigateTo('home');
-        }
-    };
-    
+    // Define the navigation items based on the final agreed-upon design
     const navItems = [
         {
-            label: isNestedReadingView ? 'رجوع' : 'الرئيسية',
-            icon: isNestedReadingView ? ArrowRightIcon : HomeIcon,
-            action: handlePrimaryAction,
-            className: isNestedReadingView ? 'transform -scale-x-100' : ''
-        },
-        {
-            label: 'تصفح',
+            label: 'القرآن',
             icon: BookOpenIcon,
             action: () => navigateTo('index'),
-            isActive: isReadingView
+            targetView: 'index',
         },
         {
-            label: 'استماع',
+            label: 'الاستماع',
             icon: HeadphonesIcon,
             action: () => navigateTo('listen'),
-            isActive: isListenView
+            targetView: 'listen',
         },
         {
-            label: 'راديو',
-            icon: RadioIcon,
-            action: () => navigateTo('radio'),
-            isActive: isRadioView
+            label: 'الحديث',
+            icon: BookOpenIcon, // Re-using BookOpenIcon for Hadith
+            action: () => navigateTo('hadith'),
+            targetView: 'hadith',
         },
         {
-            label: 'حفظ',
-            icon: FlowerIcon,
-            action: () => navigateTo('memorization'),
-            isActive: isMemorizationView
-        },
-        {
-            label: 'الحصن',
+            label: 'حصن المسلم',
             icon: ShieldIcon,
             action: () => navigateTo('hisn-al-muslim'),
-            isActive: isHisnAlMuslimView,
+            targetView: 'hisn-al-muslim',
         },
         {
-            label: 'أذكار',
-            icon: ShieldIcon, // Placeholder icon
-            action: () => navigateTo('azkar'),
-            isActive: view === 'azkar',
+            label: 'المزيد',
+            icon: MenuIcon,
+            action: showSettings, // Placeholder action: opens settings. A real "More" page would be a new view.
+            targetView: 'more', // This view doesn't exist, so it won't be active.
         },
     ];
 
@@ -81,30 +54,27 @@ export const BottomNavBar = () => {
             aria-label="شريط التنقل السفلي"
         >
             <div className="max-w-4xl mx-auto flex justify-around p-1">
-                {navItems.map(item => (
-                    <button
-                        key={item.label}
-                        onClick={item.action}
-                        aria-label={item.label}
-                        className={`flex flex-col items-center justify-center flex-1 h-16 rounded-xl transition-colors duration-200 focus:outline-none focus:bg-green-100/50 dark:focus:bg-green-900/50 ${
-                            item.isActive
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400'
-                        }`}
-                    >
-                        <item.icon className={`w-6 h-6 mb-1 ${item.className || ''}`} />
-                        <span className="text-xs font-semibold">{item.label}</span>
-                    </button>
-                ))}
-                <button
-                    key="بحث"
-                    onClick={showSearch}
-                    aria-label="بحث"
-                    className="flex flex-col items-center justify-center flex-1 h-16 rounded-xl transition-colors duration-200 focus:outline-none focus:bg-green-100/50 dark:focus:bg-green-900/50 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400"
-                >
-                    <SearchIcon className="w-6 h-6 mb-1" />
-                    <span className="text-xs font-semibold">بحث</span>
-                </button>
+                {navItems.map(item => {
+                    // This logic determines which views should light up the 'index' (Quran) tab.
+                    const isReadingRelatedView = ['index', 'reader', 'division'].includes(view);
+                    const isActive = item.targetView === 'index' ? isReadingRelatedView : view === item.targetView;
+
+                    return (
+                        <button
+                            key={item.label}
+                            onClick={item.action}
+                            aria-label={item.label}
+                            className={`flex flex-col items-center justify-center flex-1 h-16 rounded-xl transition-colors duration-200 focus:outline-none focus:bg-green-100/50 dark:focus:bg-green-900/50 ${
+                                isActive
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400'
+                            }`}
+                        >
+                            <item.icon className="w-6 h-6 mb-1" />
+                            <span className="text-xs font-semibold">{item.label}</span>
+                        </button>
+                    );
+                })}
             </div>
         </MotionNav>
     );
