@@ -13,7 +13,6 @@ export const BottomNavBar = () => {
     const isListenView = view === 'listen';
     const isRadioView = view === 'radio';
     const isMemorizationView = view === 'memorization';
-    const isHisnAlMuslimView = view === 'hisn-al-muslim';
     const isNestedReadingView = ['reader', 'division'].includes(view);
 
     const handlePrimaryAction = () => {
@@ -54,18 +53,6 @@ export const BottomNavBar = () => {
             icon: FlowerIcon,
             action: () => navigateTo('memorization'),
             isActive: isMemorizationView
-        },
-        {
-            label: 'الحصن',
-            icon: ShieldIcon,
-            action: () => navigateTo('hisn-al-muslim'),
-            isActive: isHisnAlMuslimView,
-        },
-        {
-            label: 'أذكار',
-            icon: ShieldIcon, // Placeholder icon
-            action: () => navigateTo('azkar'),
-            isActive: view === 'azkar',
         },
     ];
 

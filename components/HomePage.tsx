@@ -49,10 +49,10 @@ export const HomePage: React.FC = () => {
             color: 'text-emerald-500',
         },
         {
-            title: "حصن المسلم",
+            title: "أذكار حصن المسلم",
             description: "أذكار وأدعية مختارة",
             icon: ShieldIcon,
-            action: () => navigateTo('hisn-al-muslim'),
+            action: () => navigateTo('azkar-hisn-al-muslim'),
             color: 'text-blue-500',
         },
         {

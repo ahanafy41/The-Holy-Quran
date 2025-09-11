@@ -6,7 +6,7 @@ export interface DivisionInfo extends QuranDivision {
     title: string;
 }
 
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hisn-al-muslim';
+export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hadith' | 'bookmarks' | 'azkar-hisn-al-muslim' | 'azkar-detail';
 
 export interface AppContextType {
   settings: AppSettings;
@@ -28,7 +28,11 @@ export interface AppContextType {
   playAyah: (ayah: Ayah) => void;
   pauseAyah: () => void;
   isPlaying: boolean;
-  navigateTo: (view: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => void;
+  navigateTo: (view: View, params?: any) => void;
+  viewParams: any;
+  activeAzkarAudio: string | null;
+  playAzkarAudio: (audioUrl: string, id: string) => void;
+  stopAzkarAudio: () => void;
   showTafsir: (ayah: Ayah) => void;
   showAIAssistant: (ayah: Ayah) => void;
   showSearch: () => void;

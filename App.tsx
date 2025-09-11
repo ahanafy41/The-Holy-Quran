@@ -9,8 +9,8 @@ import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-import { AzkarPage } from './components/AzkarPage';
-
+import { AzkarHisnAlMuslimPage } from './components/AzkarHisnAlMuslimPage';
+import { AzkarDetailPage } from './components/AzkarDetailPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
@@ -56,8 +56,10 @@ const App: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [view, setView] = useState<View>('home');
+  const [viewParams, setViewParams] = useState<any>(null);
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
+  const [activeAzkarAudio, setActiveAzkarAudio] = useState<string | null>(null);
   
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const wavesurferContainerRef = useRef<HTMLDivElement>(null);
@@ -119,9 +121,10 @@ const App: React.FC = () => {
         if (index < sources.length) {
             ws.load(sources[index]);
         } else {
-            const errorMsg = `فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`;
+            const errorMsg = `فشل تحميل الصوت.`;
             setError(errorMsg);
             setActiveAyah(null);
+            setActiveAzkarAudio(null);
             setIsPlaying(false);
         }
     };
@@ -133,6 +136,7 @@ const App: React.FC = () => {
     ws.on('finish', () => {
         setIsPlaying(false);
         setActiveAyah(null);
+        setActiveAzkarAudio(null);
     });
 
     return () => {
@@ -245,7 +249,8 @@ const App: React.FC = () => {
     }
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
-  const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
+  const navigateTo = useCallback(async (targetView: View, params?: any) => {
+    setViewParams(params);
     setTargetAyah(params?.ayahNumber ?? null);
     if (targetView === 'reader' && params?.surahNumber) {
         if (currentSurah?.number !== params.surahNumber) {
@@ -304,6 +309,7 @@ const App: React.FC = () => {
 
     window.dispatchEvent(new CustomEvent('global-player-stop'));
 
+    setActiveAzkarAudio(null);
     setActiveAyah(ayah);
     activeAyahRef.current = ayah;
 
@@ -321,6 +327,24 @@ const App: React.FC = () => {
   const pauseAyah = useCallback(() => {
     wavesurferRef.current?.pause();
   }, []);
+
+  const playAzkarAudio = useCallback((audioUrl: string, id: string) => {
+    const wavesurfer = wavesurferRef.current;
+    if (!wavesurfer) return;
+
+    window.dispatchEvent(new CustomEvent('global-player-stop'));
+
+    setActiveAyah(null);
+    setActiveAzkarAudio(id);
+    audioSourcesRef.current = { sources: [audioUrl], index: 0 };
+    wavesurfer.load(audioUrl);
+  }, []);
+
+  const stopAzkarAudio = useCallback(() => {
+    wavesurferRef.current?.stop();
+    setActiveAzkarAudio(null);
+  }, []);
+
 
   const showTafsir = async (ayah: Ayah) => {
       if (!ayah.surah) return;
@@ -363,7 +387,8 @@ const App: React.FC = () => {
     isStandalone, canInstall, triggerInstall,
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
+    viewParams, playAzkarAudio, stopAzkarAudio, activeAzkarAudio,
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark, viewParams, playAzkarAudio, stopAzkarAudio, activeAzkarAudio]);
 
   const renderView = () => {
     switch (view) {
@@ -373,11 +398,11 @@ const App: React.FC = () => {
         case 'listen': return <ListenPage />;
         case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
-        
         case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
-        case 'azkar': return <AzkarPage />;
+        case 'azkar-hisn-al-muslim': return <AzkarHisnAlMuslimPage />;
+        case 'azkar-detail': return <AzkarDetailPage />;
         default: return <HomePage />;
     }
   };
