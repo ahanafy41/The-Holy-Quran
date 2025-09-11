@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import azkarData from '../azkar-data/azkar.json';
 import { ChevronRightIcon, PlayIcon, PauseIcon } from './Icons';
@@ -20,6 +20,8 @@ interface AzkarCategory {
     array: Zikr[];
 }
 
+const baseUrl = 'https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/azkar-data';
+
 export const AzkarDetailPage: React.FC = () => {
     const { navigateTo, viewParams, playAzkarAudio, stopAzkarAudio, activeAzkarAudio, isPlaying } = useApp() as any;
     const [category, setCategory] = useState<AzkarCategory | null>(null);
@@ -30,19 +32,6 @@ export const AzkarDetailPage: React.FC = () => {
             setCategory(cat || null);
         }
     }, [viewParams]);
-
-    const zikrList = useMemo(() => {
-        if (!category) return [];
-        return category.array.map(zikr => {
-            try {
-                const audioUrl = new URL(`../azkar-data/audio/${zikr.filename}.mp3`, import.meta.url).href;
-                return { ...zikr, resolvedAudioUrl: audioUrl };
-            } catch (e) {
-                console.error(`Failed to resolve audio URL for ${zikr.filename}.mp3`, e);
-                return { ...zikr, resolvedAudioUrl: null };
-            }
-        });
-    }, [category]);
 
     if (!category) {
         return (
@@ -55,12 +44,12 @@ export const AzkarDetailPage: React.FC = () => {
         );
     }
 
-    const handlePlayPause = (audioUrl: string | null) => {
-        if (!audioUrl) return;
-        if (activeAzkarAudio === audioUrl && isPlaying) {
+    const handlePlayPause = (audioPath: string) => {
+        const fullUrl = baseUrl + audioPath;
+        if (activeAzkarAudio === fullUrl && isPlaying) {
             stopAzkarAudio();
         } else {
-            playAzkarAudio(audioUrl, audioUrl);
+            playAzkarAudio(fullUrl, fullUrl);
         }
     };
 
@@ -80,37 +69,38 @@ export const AzkarDetailPage: React.FC = () => {
             </header>
 
             <div className="space-y-4">
-                {zikrList.map((zikr, index) => (
-                    <motion.div
-                        key={zikr.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6"
-                    >
-                        <p className="text-xl leading-relaxed text-slate-800 dark:text-slate-200 mb-4 font-arabic" style={{direction: 'rtl'}}>
-                            {zikr.text}
-                        </p>
-                        <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                            <span className="font-bold text-blue-500 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 px-3 py-1 rounded-full">
-                                يقرأ {zikr.count} مرات
-                            </span>
-                            {zikr.resolvedAudioUrl && (
+                {category.array.map((zikr, index) => {
+                    const fullUrl = baseUrl + zikr.audio;
+                    return (
+                        <motion.div
+                            key={zikr.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6"
+                        >
+                            <p className="text-xl leading-relaxed text-slate-800 dark:text-slate-200 mb-4 font-arabic" style={{direction: 'rtl'}}>
+                                {zikr.text}
+                            </p>
+                            <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                                <span className="font-bold text-blue-500 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 px-3 py-1 rounded-full">
+                                    يقرأ {zikr.count} مرات
+                                </span>
                                 <button
-                                    onClick={() => handlePlayPause(zikr.resolvedAudioUrl)}
+                                    onClick={() => handlePlayPause(zikr.audio)}
                                     className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     aria-label="تشغيل الصوت"
                                 >
-                                    {activeAzkarAudio === zikr.resolvedAudioUrl && isPlaying ? (
+                                    {activeAzkarAudio === fullUrl && isPlaying ? (
                                         <PauseIcon className="w-6 h-6 text-blue-500" />
                                     ) : (
                                         <PlayIcon className="w-6 h-6 text-blue-500" />
                                     )}
                                 </button>
-                            )}
-                        </div>
-                    </motion.div>
-                ))}
+                            </div>
+                        </motion.div>
+                    )
+                })}
             </div>
         </div>
     );
