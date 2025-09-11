@@ -121,7 +121,7 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
             audioRef.current?.pause();
         } else {
             if (audioRef.current) {
-                audioRef.current.src = `/azkar-data${dhikr.audio}`;
+                audioRef.current.src = dhikr.audio;
                 audioRef.current.play().catch(e => console.error("Audio play failed:", e));
                 setPlayingDhikrId(dhikr.id);
             }
