@@ -28,25 +28,41 @@ const AzkarPage: React.FC = () => {
   }, []);
 
   const playAudio = (audioPath: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    // If the same audio is already playing, pause it.
+    if (isPlaying && currentAudio === audioPath) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+      return;
     }
-    const fullPath = `/data/data/com.termux/files/home/downloads/The-Holy-Quran/azkar-data${audioPath}`;
-    audioRef.current = new Audio(fullPath);
-    audioRef.current.play();
-    setCurrentAudio(audioPath);
-    setIsPlaying(true);
-    audioRef.current.onended = () => {
-      setIsPlaying(false);
-      setCurrentAudio(null);
-    };
-  };
 
-  const pauseAudio = () => {
+    // If a different audio is playing, stop it before starting the new one.
     if (audioRef.current) {
       audioRef.current.pause();
-      setIsPlaying(false);
+    }
+
+    try {
+      const audioUrl = new URL(`../azkar-data${audioPath}`, import.meta.url).href;
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.play().catch(e => console.error("Error playing audio:", e));
+
+      setCurrentAudio(audioPath);
+      setIsPlaying(true);
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        setCurrentAudio(null);
+      };
+      audio.onerror = (e) => {
+        console.error(`Error with audio playback:`, e);
+        setIsPlaying(false);
+        setCurrentAudio(null);
+      }
+    } catch (error) {
+      console.error('Error creating audio URL:', error);
     }
   };
 
