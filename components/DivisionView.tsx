@@ -112,7 +112,14 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
 
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6 text-center">
+             <header className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6 text-center relative">
+                <button
+                    onClick={() => window.history.back()}
+                    className="absolute top-1/2 -translate-y-1/2 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    aria-label="الرجوع"
+                >
+                    <ArrowRightIcon className="w-6 h-6" />
+                </button>
                 <h2 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold mb-2 focus:outline-none">{division.title}</h2>
                  {division.startSurahName && 
                     <p className="text-lg text-slate-600 dark:text-slate-300">
