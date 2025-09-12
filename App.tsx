@@ -244,7 +244,14 @@ const App: React.FC = () => {
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
+    const state = { view: targetView, params };
+    // Only push state if it's different from the current one to avoid duplicate entries
+    if (window.history.state?.view !== targetView || JSON.stringify(window.history.state?.params) !== JSON.stringify(params)) {
+      window.history.pushState(state, '', `/${targetView}`);
+    }
+
     setTargetAyah(params?.ayahNumber ?? null);
+
     if (targetView === 'reader' && params?.surahNumber) {
         if (currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
@@ -254,7 +261,35 @@ const App: React.FC = () => {
         document.title = `${params.division.title} - Quran Study App`;
     }
     setView(targetView);
-    mainContentRef.current?.scrollTo(0,0);
+    mainContentRef.current?.scrollTo(0, 0);
+  }, [loadSurah, currentSurah]);
+
+  useEffect(() => {
+    const handlePopState = async (event: PopStateEvent) => {
+      if (event.state) {
+        const { view: targetView, params } = event.state;
+        setTargetAyah(params?.ayahNumber ?? null);
+        if (targetView === 'reader' && params?.surahNumber) {
+          if (currentSurah?.number !== params.surahNumber) {
+            await loadSurah(params.surahNumber);
+          }
+        } else if (targetView === 'division' && params?.division) {
+          setCurrentDivision(params.division);
+        }
+        setView(targetView);
+      } else {
+        // Initial state, go to index
+        setView('index');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    // Set the initial state
+    window.history.replaceState({ view: 'index', params: {} }, '', '/index');
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [loadSurah, currentSurah]);
   
   const scrollToTop = useCallback(() => {

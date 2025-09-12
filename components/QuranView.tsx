@@ -125,8 +125,15 @@ export const QuranView: React.FC = () => {
     
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="mb-6 text-center">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
+             <header className="mb-6 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
+                <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="absolute top-1/2 -translate-y-1/2 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        aria-label="الرجوع"
+                    >
+                        <ArrowRightIcon className="w-6 h-6" />
+                    </button>
                     <h2 ref={titleRef} tabIndex={-1} className="font-quran text-4xl md:text-5xl font-bold mb-2 focus:outline-none">{currentSurah.name}</h2>
                     <p className="text-lg text-slate-600 dark:text-slate-300">{currentSurah.englishName}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{currentSurah.revelationType} - {currentSurah.ayahs.length} آيات</p>
