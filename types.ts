@@ -50,7 +50,7 @@ export interface ListeningReciter {
 }
 
 export interface RadioStation {
-  id: number;
+  id: string;
   name: string;
   url: string;
 }

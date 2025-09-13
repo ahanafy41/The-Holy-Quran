@@ -111,33 +111,37 @@ export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
 };
 
 export const getRadioStations = async (): Promise<RadioStation[]> => {
-    let stations: RadioStation[] = [];
-
-    // Define the Cairo station with a known good URL.
-    const cairoStation: RadioStation = {
-        id: 999, // Assign a unique, high ID to avoid collisions
-        name: 'إذاعة القرآن الكريم من القاهرة',
-        url: 'http://n0e.radiojar.com/quran.mp3',
-    };
-
     try {
-        // Fetch the main list of stations
-        const response = await fetch(`${MP3QURAN_API_URL}/radios?language=ar`);
-        if (response.ok) {
-            const data = await response.json();
-            // Filter out any existing Cairo station to avoid duplicates
-            stations = (data.radios as RadioStation[]).filter(
-                station => !station.name.includes('القرآن الكريم من القاهرة')
-            );
-        } else {
-            console.error(`mp3quran.net radio API call failed: ${response.statusText}`);
+        const response = await fetch(`${RADIO_BROWSER_API_URL}/stations/search?tag=quran&hidebroken=true&limit=500`);
+        if (!response.ok) {
+            console.error("Radio Browser API call failed:", response.statusText);
+            return [];
         }
-    } catch (error) {
-        console.error('Failed to fetch from mp3quran.net API, will only show the hardcoded station.', error);
-    }
 
-    // Prepend the verified Cairo station to the list so it's always first.
-    return [cairoStation, ...stations];
+        const data: any[] = await response.json();
+
+        let stations: RadioStation[] = data.map(station => ({
+            id: station.stationuuid,
+            name: station.name,
+            url: station.url_resolved || station.url,
+        }));
+
+        // Find and prioritize the Cairo station
+        const cairoStationName = "إذاعة القرآن الكريم من القاهرة";
+        const cairoStationIndex = stations.findIndex(s => s.name.includes(cairoStationName));
+
+        if (cairoStationIndex > -1) {
+            const cairoStation = stations[cairoStationIndex];
+            stations.splice(cairoStationIndex, 1); // Remove from original position
+            stations.unshift(cairoStation); // Add to the beginning
+        }
+
+        return stations;
+
+    } catch (error) {
+        console.error("Failed to fetch from Radio Browser API:", error);
+        return []; // Return an empty array on error
+    }
 };
 
 
