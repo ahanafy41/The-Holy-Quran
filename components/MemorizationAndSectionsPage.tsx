@@ -224,36 +224,34 @@ const SectionListView: React.FC<{
             ) : (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                     {savedSections.map(section => (
-                        <div key={section.id} className="relative">
-                            <button onClick={() => onStartListening(section)} className="w-full text-right p-4 flex items-center justify-between gap-4 group hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors">
-                                <div className="flex-grow">
-                                    <h3 className="font-bold text-lg text-green-600 dark:text-green-500">{section.name}</h3>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                                        سورة {surahMap.get(section.surahNumber) || '...'} | الآيات: {section.startAyah} - {section.endAyah}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                     <button
-                                        onClick={(e) => handleMenuToggle(e, section.id)}
-                                        aria-label={`خيارات مقطع ${section.name}`}
-                                        className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors">
-                                        <ThreeDotsVerticalIcon className="w-5 h-5"/>
-                                    </button>
-                                </div>
+                        <div key={section.id} className="relative p-4 flex items-center justify-between gap-4 group hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <button onClick={() => onStartListening(section)} className="text-right flex-grow">
+                                <h3 className="font-bold text-lg text-green-600 dark:text-green-500">{section.name}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                    سورة {surahMap.get(section.surahNumber) || '...'} | الآيات: {section.startAyah} - {section.endAyah}
+                                </p>
                             </button>
-                            <AnimatePresence>
-                                {openMenuId === section.id && (
-                                    <motion.div initial={{opacity: 0, y: -10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -10}}>
-                                        <OptionsMenu
-                                            section={section}
-                                            onRead={() => { onReadSection(section); setOpenMenuId(null); }}
-                                            onSamia={() => { onStartSamia(section); setOpenMenuId(null); }}
-                                            onRemove={() => { onRemoveSection(section.id); setOpenMenuId(null); }}
-                                            onClose={() => setOpenMenuId(null)}
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            <div className="relative flex items-center gap-2 flex-shrink-0">
+                                 <button
+                                    onClick={(e) => handleMenuToggle(e, section.id)}
+                                    aria-label={`خيارات مقطع ${section.name}`}
+                                    className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors">
+                                    <ThreeDotsVerticalIcon className="w-5 h-5"/>
+                                </button>
+                                <AnimatePresence>
+                                    {openMenuId === section.id && (
+                                        <motion.div initial={{opacity: 0, y: -10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -10}} className="absolute top-full right-0">
+                                            <OptionsMenu
+                                                section={section}
+                                                onRead={() => { onReadSection(section); setOpenMenuId(null); }}
+                                                onSamia={() => { onStartSamia(section); setOpenMenuId(null); }}
+                                                onRemove={() => { onRemoveSection(section.id); setOpenMenuId(null); }}
+                                                onClose={() => setOpenMenuId(null)}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     ))}
                 </div>
