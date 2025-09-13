@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Ayah, SavedSection, SurahSimple } from '../types';
 import * as api from '../services/quranApi';
 import { useApp } from '../context/AppContext';
-import { FlowerIcon, PlayIcon, ArrowRightIcon, BookOpenIcon, TrashIcon, MicrophoneIcon } from './Icons';
+import { FlowerIcon, BookOpenIcon, TrashIcon, MicrophoneIcon, ThreeDotsVerticalIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SamiaSessionModal } from './SamiaSessionModal';
 import { Spinner } from './Spinner';
@@ -136,6 +136,47 @@ export const MemorizationAndSectionsPage: React.FC = () => {
     );
 };
 
+const OptionsMenu: React.FC<{
+    section: SavedSection;
+    onRead: () => void;
+    onSamia: () => void;
+    onRemove: () => void;
+    onClose: () => void;
+}> = ({ section, onRead, onSamia, onRemove, onClose }) => {
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onClose]);
+
+    return (
+        <div ref={menuRef} className="absolute z-10 left-4 mt-2 w-48 bg-white dark:bg-slate-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                <button onClick={onRead} className="w-full text-right flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600" role="menuitem">
+                    <BookOpenIcon className="w-5 h-5" />
+                    <span>قراءة</span>
+                </button>
+                <button onClick={onSamia} className="w-full text-right flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600" role="menuitem">
+                    <MicrophoneIcon className="w-5 h-5" />
+                    <span>تسميع</span>
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-600 my-1" />
+                <button onClick={onRemove} className="w-full text-right flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/40" role="menuitem">
+                    <TrashIcon className="w-5 h-5" />
+                    <span>حذف</span>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
 const SectionListView: React.FC<{
     savedSections: SavedSection[];
     onStartListening: (section: SavedSection) => void;
@@ -145,7 +186,8 @@ const SectionListView: React.FC<{
     onRemoveSection: (id: string) => void;
 }> = ({ savedSections, onStartListening, onStartSamia, onReadSection, onAddSection, onRemoveSection }) => {
     
-    const { surahList, navigateTo } = useApp();
+    const { surahList } = useApp();
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const surahMap = useMemo(() => new Map(surahList.map(s => [s.number, s.name])), [surahList]);
     const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -155,6 +197,11 @@ const SectionListView: React.FC<{
         }, 100);
         return () => clearTimeout(timer);
     }, []);
+
+    const handleMenuToggle = (event: React.MouseEvent, sectionId: string) => {
+        event.stopPropagation();
+        setOpenMenuId(prevId => (prevId === sectionId ? null : sectionId));
+    };
 
     return (
         <div className="space-y-6">
@@ -177,32 +224,33 @@ const SectionListView: React.FC<{
             ) : (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                     {savedSections.map(section => (
-                        <div key={section.id} className="p-4 flex flex-wrap items-center justify-between gap-4 group">
-                             <div className="text-right flex-grow">
+                        <div key={section.id} className="relative p-4 flex items-center justify-between gap-4 group hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <button onClick={() => onStartListening(section)} className="text-right flex-grow">
                                 <h3 className="font-bold text-lg text-green-600 dark:text-green-500">{section.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-400">
                                     سورة {surahMap.get(section.surahNumber) || '...'} | الآيات: {section.startAyah} - {section.endAyah}
                                 </p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <button onClick={() => onRemoveSection(section.id)} aria-label={`حذف مقطع ${section.name}`}
-                                    className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                                    <TrashIcon className="w-5 h-5"/>
-                                </button>
-                                <button onClick={() => onReadSection(section)} aria-label={`قراءة مقطع ${section.name}`}
+                            </button>
+                            <div className="relative flex items-center gap-2 flex-shrink-0">
+                                 <button
+                                    onClick={(e) => handleMenuToggle(e, section.id)}
+                                    aria-label={`خيارات مقطع ${section.name}`}
                                     className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors">
-                                    <BookOpenIcon className="w-5 h-5"/>
+                                    <ThreeDotsVerticalIcon className="w-5 h-5"/>
                                 </button>
-                                 <button onClick={() => onStartSamia(section)} aria-label={`تسميع مقطع ${section.name}`}
-                                    className="px-3 py-2 text-sm font-semibold flex items-center gap-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors">
-                                    <MicrophoneIcon className="w-4 h-4" />
-                                    <span>تسميع</span>
-                                </button>
-                                <button onClick={() => onStartListening(section)} aria-label={`بدء الحفظ لمقطع ${section.name}`}
-                                    className="px-3 py-2 text-sm font-semibold flex items-center gap-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 dark:bg-green-500/20 dark:text-green-300 dark:hover:bg-green-500/30 transition-colors">
-                                    <PlayIcon className="w-4 h-4" />
-                                    <span>استماع</span>
-                                </button>
+                                <AnimatePresence>
+                                    {openMenuId === section.id && (
+                                        <motion.div initial={{opacity: 0, y: -10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -10}} className="absolute top-full right-0">
+                                            <OptionsMenu
+                                                section={section}
+                                                onRead={() => { onReadSection(section); setOpenMenuId(null); }}
+                                                onSamia={() => { onStartSamia(section); setOpenMenuId(null); }}
+                                                onRemove={() => { onRemoveSection(section.id); setOpenMenuId(null); }}
+                                                onClose={() => setOpenMenuId(null)}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     ))}

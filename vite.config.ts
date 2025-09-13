@@ -1,10 +1,20 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
   plugins: [
     react(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'azkar-data/audio',
+          dest: ''
+        }
+      ]
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -15,4 +25,9 @@ export default defineConfig({
       // لو كان عندك VitePWA plugin متضاف قبل كده، يرجى دمج الـ 'workbox' property دي مع الإعدادات الموجودة.
     }),
   ],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+  },
 });
