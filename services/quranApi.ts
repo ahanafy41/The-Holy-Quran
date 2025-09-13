@@ -117,7 +117,7 @@ export const getRadioStations = async (): Promise<RadioStation[]> => {
     const cairoStation: RadioStation = {
         id: 999, // Assign a unique, high ID to avoid collisions
         name: 'إذاعة القرآن الكريم من القاهرة',
-        url: 'https://stream.zeno.fm/tv0x28xvyc9uv',
+        url: 'http://stream.zeno.fm/tv0x28xvyc9uv',
     };
 
     try {
