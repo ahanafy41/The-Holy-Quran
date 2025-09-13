@@ -11,7 +11,7 @@ import { ListenPlayerView } from './ListenPlayerView';
 type View = 'reciters' | 'surahs' | 'player';
 
 export const ListenPage: React.FC = () => {
-    const { listeningReciters, surahList, isLoading } = useApp();
+    const { listeningReciters, surahList } = useApp();
     const [view, setView] = useState<View>('reciters');
     const [selectedReciter, setSelectedReciter] = useState<ListeningReciter | null>(null);
     const [selectedSurah, setSelectedSurah] = useState<SurahSimple | null>(null);
@@ -60,7 +60,7 @@ export const ListenPage: React.FC = () => {
         if (view === 'surahs' && selectedReciter) {
             return <SurahListView reciter={selectedReciter} surahs={availableSurahsForSelectedReciter} onSelect={handleSurahSelect} onBack={handleBack} />;
         }
-        return <ReciterListView reciters={listeningReciters} onSelect={handleReciterSelect} isLoading={isLoading} />;
+        return <ReciterListView reciters={listeningReciters} onSelect={handleReciterSelect} />;
     };
     
     const viewAnimation = {
@@ -84,7 +84,7 @@ export const ListenPage: React.FC = () => {
     );
 };
 
-const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void, isLoading: boolean}> = ({ reciters, onSelect, isLoading }) => {
+const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}> = ({ reciters, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -104,17 +104,8 @@ const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: Lis
         );
     }, [reciters, searchQuery]);
 
-    if (isLoading) {
-        return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل القراء...</div>;
-    }
-
     if (reciters.length === 0 && !searchQuery) {
-        return (
-            <div className="text-center p-10">
-                <h2 className="text-xl font-semibold mb-2">لم يتم العثور على قراء</h2>
-                <p className="text-slate-500">قد تكون هناك مشكلة في الاتصال بالإنترنت.</p>
-            </div>
-        );
+        return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل القراء...</div>;
     }
     
     return (

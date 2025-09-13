@@ -10,7 +10,7 @@ import { RadioPlayerView } from './RadioPlayerView';
 type View = 'list' | 'player';
 
 export const RadioPage: React.FC = () => {
-    const { radioStations, isLoading } = useApp();
+    const { radioStations } = useApp();
     const [view, setView] = useState<View>('list');
     const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null);
 
@@ -28,7 +28,7 @@ export const RadioPage: React.FC = () => {
         if (view === 'player' && selectedStation) {
             return <RadioPlayerView station={selectedStation} onBack={handleBack} />;
         }
-        return <RadioListView stations={radioStations} onSelect={handleStationSelect} isLoading={isLoading} />;
+        return <RadioListView stations={radioStations} onSelect={handleStationSelect} />;
     };
     
     const viewAnimation = {
@@ -52,7 +52,7 @@ export const RadioPage: React.FC = () => {
     );
 };
 
-const RadioListView: React.FC<{stations: RadioStation[], onSelect: (r: RadioStation) => void, isLoading: boolean}> = ({ stations, onSelect, isLoading }) => {
+const RadioListView: React.FC<{stations: RadioStation[], onSelect: (r: RadioStation) => void}> = ({ stations, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -72,17 +72,8 @@ const RadioListView: React.FC<{stations: RadioStation[], onSelect: (r: RadioStat
         );
     }, [stations, searchQuery]);
 
-    if (isLoading) {
-        return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل الإذاعات...</div>;
-    }
-
     if (stations.length === 0 && !searchQuery) {
-        return (
-            <div className="text-center p-10">
-                <h2 className="text-xl font-semibold mb-2">لم يتم العثور على إذاعات</h2>
-                <p className="text-slate-500">قد تكون هناك مشكلة في الاتصال بالإنترنت أو أن الـ API لا يستجيب.</p>
-            </div>
-        );
+        return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل الإذاعات...</div>;
     }
     
     return (

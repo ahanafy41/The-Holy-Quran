@@ -1,87 +1,53 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { getRadioStations, _clearRadioServerCache } from './quranApi';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { getRadioStations } from './quranApi';
 
 // Mock the global fetch function
 global.fetch = vi.fn();
 
-describe('getRadioStations with Resilient API Logic', () => {
+describe('getRadioStations', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    beforeEach(() => {
-        vi.resetAllMocks();
-        _clearRadioServerCache();
+  it('should always prepend the Cairo Quran Radio station to the list', async () => {
+    // Mock a successful API response from mp3quran.net
+    const mockStations = {
+      radios: [
+        { id: 1, name: 'Test Radio 1', url: 'http://test1.com' },
+        { id: 2, name: 'Test Radio 2', url: 'http://test2.com' },
+      ],
+    };
+
+    (fetch as any).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockStations),
     });
 
-    const mockServers = [ { name: 'server1.com' }, { name: 'server2.com' } ];
-    const mockStations = [
-        { stationuuid: '1', name: 'Other Quran Radio', url: 'http://other.com', url_resolved: 'http://other.com/resolved' },
-        { stationuuid: '2', name: 'إذاعة القرآن الكريم من القاهرة', url: 'http://cairo.com', url_resolved: 'http://cairo.com/resolved' },
-    ];
+    const stations = await getRadioStations();
 
-    it('should fetch servers and then stations successfully on the first try', async () => {
-        (fetch as any).mockImplementation((url: string) => {
-            if (url.includes('servers')) {
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockServers) });
-            }
-            if (url.includes('stations')) {
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockStations) });
-            }
-            return Promise.reject(new Error('Unknown fetch call'));
-        });
+    // 1. Check that the list is not empty and has the correct total number of stations
+    expect(stations.length).toBe(3);
 
-        const stations = await getRadioStations();
-        expect(fetch).toHaveBeenCalledTimes(2);
-        expect(stations.length).toBe(2);
-        expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
-    });
+    // 2. Check that the first station is always the Cairo Quran Radio
+    expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
+    expect(stations[0].url).toBe('https://dmxleo.dailymotion.com/cdn/manifest/video/x84wyku.m3u8');
+    expect(stations[0].id).toBe(999);
 
-    it('should try the next server if the first one fails', async () => {
-        let serverCallCount = 0;
-        (fetch as any).mockImplementation((url: string) => {
-            if (url.includes('servers')) {
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockServers) });
-            }
-            if (url.includes('stations')) {
-                serverCallCount++;
-                if (serverCallCount === 1) {
-                    return Promise.reject(new Error('First server failed'));
-                }
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockStations) });
-            }
-            return Promise.reject(new Error('Unknown fetch call'));
-        });
+    // 3. Check that the other stations are still present
+    expect(stations[1].name).toBe('Test Radio 1');
+  });
 
-        const stations = await getRadioStations();
-        expect(fetch).toHaveBeenCalledTimes(3); // 1 for servers, 2 for stations
-        expect(stations.length).toBe(2);
-    });
+  it('should still return the Cairo station even if the fetch fails', async () => {
+    // Mock a failed API response
+    (fetch as any).mockRejectedValue(new Error('API is down'));
 
-    it('should return an empty array if all servers fail', async () => {
-        (fetch as any).mockImplementation((url: string) => {
-            if (url.includes('servers')) {
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockServers) });
-            }
-            return Promise.reject(new Error('All servers failed'));
-        });
+    const stations = await getRadioStations();
 
-        const stations = await getRadioStations();
-        expect(fetch).toHaveBeenCalledTimes(3); // 1 for servers, 2 for stations
-        expect(stations).toEqual([]);
-    });
+    // 1. Check that the list contains only the hardcoded Cairo station
+    expect(stations.length).toBe(1);
 
-    it('should use the fallback server if the server list API fails', async () => {
-        (fetch as any).mockImplementation((url: string) => {
-            if (url.includes('servers')) {
-                return Promise.reject(new Error('Server list API down'));
-            }
-            if (url.includes('stations')) {
-                return Promise.resolve({ ok: true, json: () => Promise.resolve(mockStations) });
-            }
-            return Promise.reject(new Error('Unknown fetch call'));
-        });
-
-        const stations = await getRadioStations();
-        expect(fetch).toHaveBeenCalledTimes(2);
-        expect(fetch).toHaveBeenCalledWith('https://de1.api.radio-browser.info/json/stations/search?tag=quran&hidebroken=true&limit=500');
-        expect(stations.length).toBe(2);
-    });
+    // 2. Check that the station is the Cairo Quran Radio
+    expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
+    expect(stations[0].url).toBe('https://dmxleo.dailymotion.com/cdn/manifest/video/x84wyku.m3u8');
+  });
 });
