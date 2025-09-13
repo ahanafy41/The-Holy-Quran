@@ -5,6 +5,37 @@ const BASE_URL = 'https://api.alquran.cloud/v1';
 const MP3QURAN_API_URL = 'https://www.mp3quran.net/api/v3';
 const RADIO_BROWSER_API_URL = 'https://de1.api.radio-browser.info/json';
 
+let radioBrowserApiServers: string[] = [];
+
+// For testing purposes only
+export const _clearRadioServerCache = () => {
+    radioBrowserApiServers = [];
+}
+
+// Function to fetch and cache a list of available Radio Browser servers
+async function getApiServers(): Promise<string[]> {
+    if (radioBrowserApiServers.length > 0) {
+        return radioBrowserApiServers;
+    }
+
+    try {
+        // This endpoint is http-only as per the API documentation example.
+        const response = await fetch('http://all.api.radio-browser.info/json/servers');
+        if (!response.ok) {
+            // Fallback to the hardcoded server if the server list fails
+            return [RADIO_BROWSER_API_URL];
+        }
+        const servers = await response.json();
+        // Map to full URLs and shuffle the array to distribute load
+        radioBrowserApiServers = servers.map((s: any) => `https://${s.name}`).sort(() => Math.random() - 0.5);
+        return radioBrowserApiServers;
+    } catch (error) {
+        console.error("Could not fetch Radio Browser server list:", error);
+        // Fallback to the hardcoded server on any error
+        return [RADIO_BROWSER_API_URL];
+    }
+}
+
 
 // For mp3quran.net API
 interface MP3QuranReciter {
@@ -111,37 +142,44 @@ export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
 };
 
 export const getRadioStations = async (): Promise<RadioStation[]> => {
-    try {
-        const response = await fetch(`${RADIO_BROWSER_API_URL}/stations/search?tag=quran&hidebroken=true&limit=500`);
-        if (!response.ok) {
-            console.error("Radio Browser API call failed:", response.statusText);
-            return [];
+    const servers = await getApiServers();
+
+    for (const server of servers) {
+        try {
+            const response = await fetch(`${server}/stations/search?tag=quran&hidebroken=true&limit=500`);
+            if (!response.ok) {
+                console.error(`Radio Browser API call to ${server} failed:`, response.statusText);
+                continue; // Try the next server
+            }
+
+            const data: any[] = await response.json();
+
+            let stations: RadioStation[] = data.map(station => ({
+                id: station.stationuuid,
+                name: station.name.trim(),
+                url: station.url_resolved || station.url,
+            }));
+
+            // Find and prioritize the Cairo station
+            const cairoStationName = "إذاعة القرآن الكريم من القاهرة";
+            const cairoStationIndex = stations.findIndex(s => s.name === cairoStationName);
+
+            if (cairoStationIndex > -1) {
+                const cairoStation = stations[cairoStationIndex];
+                stations.splice(cairoStationIndex, 1);
+                stations.unshift(cairoStation);
+            }
+
+            return stations; // Success, return the stations
+
+        } catch (error) {
+            console.error(`Failed to fetch from Radio Browser server ${server}:`, error);
+            // This error is expected if a server is down, so we just continue to the next one.
         }
-
-        const data: any[] = await response.json();
-
-        let stations: RadioStation[] = data.map(station => ({
-            id: station.stationuuid,
-            name: station.name,
-            url: station.url_resolved || station.url,
-        }));
-
-        // Find and prioritize the Cairo station
-        const cairoStationName = "إذاعة القرآن الكريم من القاهرة";
-        const cairoStationIndex = stations.findIndex(s => s.name.includes(cairoStationName));
-
-        if (cairoStationIndex > -1) {
-            const cairoStation = stations[cairoStationIndex];
-            stations.splice(cairoStationIndex, 1); // Remove from original position
-            stations.unshift(cairoStation); // Add to the beginning
-        }
-
-        return stations;
-
-    } catch (error) {
-        console.error("Failed to fetch from Radio Browser API:", error);
-        return []; // Return an empty array on error
     }
+
+    console.error("All Radio Browser API servers failed.");
+    return []; // Return an empty array if all servers failed
 };
 
 

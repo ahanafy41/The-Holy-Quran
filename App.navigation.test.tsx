@@ -1,7 +1,19 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import App from './App';
 import React from 'react';
+
+// Mock the entire services module to prevent real API calls during navigation tests
+vi.mock('./services/quranApi', () => ({
+    getSurahList: vi.fn().mockResolvedValue([{ number: 1, name: 'الفاتحة', englishName: 'Al-Fatiha', numberOfAyahs: 7 }]),
+    getVerseByVerseReciters: vi.fn().mockResolvedValue([]),
+    getListeningReciters: vi.fn().mockResolvedValue([
+        { identifier: '1', name: 'Test Reciter', rewaya: 'Hafs', server: 'server.com' }
+    ]),
+    getTafsirInfo: vi.fn().mockResolvedValue([]),
+    getRadioStations: vi.fn().mockResolvedValue([]),
+    getSurah: vi.fn().mockResolvedValue({ ayahs: [] }),
+}));
 
 // Mock the IntersectionObserver
 const mockIntersectionObserver = vi.fn();
@@ -39,8 +51,10 @@ describe('App Navigation', () => {
     fireEvent.click(listenButton);
 
     // 3. Verify we are on the ListenPage
-    const listenHeading = await screen.findByRole('heading', { name: /اختر القارئ/i });
-    expect(listenHeading).toBeInTheDocument();
+    await waitFor(() => {
+        const listenHeading = screen.getByRole('heading', { name: /اختر القارئ/i });
+        expect(listenHeading).toBeInTheDocument();
+    });
 
     // 4. Simulate the user pressing the back button
     fireEvent.popState(window, {
