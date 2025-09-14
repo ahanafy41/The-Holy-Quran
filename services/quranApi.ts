@@ -117,7 +117,7 @@ export const getRadioStations = async (): Promise<RadioStation[]> => {
     const cairoStation: RadioStation = {
         id: 999, // Assign a unique, high ID to avoid collisions
         name: 'إذاعة القرآن الكريم من القاهرة',
-        url: 'https://dmxleo.dailymotion.com/cdn/manifest/video/x84wyku.m3u8',
+        url: 'https://stream.radiojar.com/8s5u5tpdtwzuv',
     };
 
     try {
