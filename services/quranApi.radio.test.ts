@@ -30,7 +30,7 @@ describe('getRadioStations', () => {
 
     // 2. Check that the first station is always the Cairo Quran Radio
     expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
-    expect(stations[0].url).toBe('https://dmxleo.dailymotion.com/cdn/manifest/video/x84wyku.m3u8');
+    expect(stations[0].url).toBe('https://stream.radiojar.com/8s5u5tpdtwzuv');
     expect(stations[0].id).toBe(999);
 
     // 3. Check that the other stations are still present
@@ -48,6 +48,6 @@ describe('getRadioStations', () => {
 
     // 2. Check that the station is the Cairo Quran Radio
     expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
-    expect(stations[0].url).toBe('https://dmxleo.dailymotion.com/cdn/manifest/video/x84wyku.m3u8');
+    expect(stations[0].url).toBe('https://stream.radiojar.com/8s5u5tpdtwzuv');
   });
 });
