@@ -16,15 +16,18 @@ export const QuranView: React.FC = () => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const initialFocusSet = useRef(false);
 
     useEffect(() => {
         ayahRefs.current.clear();
+        initialFocusSet.current = false;
     }, [currentSurah]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (currentSurah && titleRef.current) {
+            if (currentSurah && titleRef.current && !initialFocusSet.current) {
                 titleRef.current.focus();
+                initialFocusSet.current = true;
             }
         }, 100);
         return () => clearTimeout(timer);
