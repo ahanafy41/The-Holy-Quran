@@ -11,7 +11,7 @@ interface AyahItemProps {
     layoutIdPrefix: string; // To ensure unique layoutIds across different views
 }
 
-export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, isHighlighted, onSelect, layoutIdPrefix }, ref) => {
+const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, isHighlighted, onSelect, layoutIdPrefix }, ref) => {
     const { activeAyah } = useApp();
     const isPlaying = activeAyah?.number === ayah.number;
     const descriptionId = `desc-${layoutIdPrefix}-${ayah.number}`;
@@ -53,3 +53,5 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
         </div>
     );
 });
+
+export const AyahItem = React.memo(AyahItemComponent);
