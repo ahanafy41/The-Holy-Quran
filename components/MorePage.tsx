@@ -1,11 +1,18 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { BookmarkIcon, RadioIcon, FlowerIcon, CogIcon, ShieldIcon, BookOpenIcon, ChevronLeftIcon } from './Icons';
+import { BookmarkIcon, RadioIcon, FlowerIcon, CogIcon, ShieldIcon, BookOpenIcon, ChevronLeftIcon, SearchIcon } from './Icons';
 
 const MorePage: React.FC = () => {
-    const { navigateTo, showSettings } = useApp();
+    const { navigateTo, showSettings, showSearch } = useApp();
 
     const menuItems = [
+        {
+            title: "البحث",
+            description: "ابحث في القرآن الكريم",
+            icon: SearchIcon,
+            action: () => showSearch(),
+            color: 'text-purple-500',
+        },
         {
             title: "العلامات المرجعية",
             description: "العودة إلى آياتك المحفوظة",

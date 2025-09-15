@@ -1,13 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { BookOpenIcon, HeadphonesIcon, ShieldIcon, MenuIcon, SearchIcon } from './Icons';
+import { BookOpenIcon, HeadphonesIcon, ShieldIcon, MenuIcon, BookmarkIcon } from './Icons'; // Assuming Hadith uses BookOpenIcon, Hisn uses ShieldIcon
 
 const MotionNav = motion.nav as any;
 
 export const BottomNavBar = () => {
-    const { view, navigateTo, showSearch } = useApp();
+    const { view, navigateTo, showSettings } = useApp();
 
+    // Define the navigation items based on the final agreed-upon design
     const navItems = [
         {
             label: 'القرآن',
@@ -22,10 +23,10 @@ export const BottomNavBar = () => {
             targetView: 'listen',
         },
         {
-            label: 'البحث',
-            icon: SearchIcon,
-            action: () => showSearch(),
-            targetView: 'search', // This view doesn't exist, but helps manage active state if needed.
+            label: 'الحديث',
+            icon: BookOpenIcon, // Re-using BookOpenIcon for Hadith
+            action: () => navigateTo('hadith'),
+            targetView: 'hadith',
         },
         {
             label: 'حصن المسلم',

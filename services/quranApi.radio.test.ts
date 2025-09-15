@@ -48,6 +48,8 @@ describe('getRadioStations', () => {
 
     // 2. Check that the station is the Cairo Quran Radio
     expect(stations[0].name).toBe('إذاعة القرآن الكريم من القاهرة');
+    // Note: The URL for the Cairo station was updated to a more reliable stream.
+    // This test is updated to reflect the new URL.
     expect(stations[0].url).toBe('https://stream.radiojar.com/8s5u5tpdtwzuv');
   });
 });
