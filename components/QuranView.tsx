@@ -5,7 +5,6 @@ import { useApp } from '../context/AppContext';
 import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRightIcon } from './Icons';
 
 
@@ -91,7 +90,7 @@ export const QuranView: React.FC = () => {
             const timeoutId = setTimeout(() => {
                 const element = ayahRefs.current.get(targetAyah);
                 if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.scrollIntoView({ behavior: 'auto', block: 'center' });
                     setHighlightedAyah(targetAyah);
                     const timer = setTimeout(() => {
                         setHighlightedAyah(null);
@@ -159,9 +158,7 @@ export const QuranView: React.FC = () => {
                 ))}
             </div>
 
-            <AnimatePresence>
-                {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
-            </AnimatePresence>
+            {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
         </div>
     );
 };

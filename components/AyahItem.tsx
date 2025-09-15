@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
 
@@ -23,13 +22,6 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
         </div>
     );
 
-    const outlineAnimation = {
-        layoutId: `outline-${layoutIdPrefix}-${ayah.number}`,
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 }
-    };
-
     return (
         <div
             ref={ref}
@@ -49,14 +41,11 @@ export const AyahItem = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah,
             }`}
         >
             <span id={descriptionId} className="sr-only">للمزيد من الخيارات، اضغط Enter.</span>
-            <AnimatePresence>
             {(isSelected || isPlaying) && (
-                <motion.div 
-                    {...outlineAnimation}
+                <div
                     className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"
                 />
             )}
-            </AnimatePresence>
             {ayahNumberCircle}
             <p dir="rtl" className="font-quran text-3xl md:text-4xl leading-loose text-right pr-14" aria-hidden="true">
                 {ayah.text}
