@@ -58,10 +58,10 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
     const isNestedReadingView = ['reader', 'division'].includes(view);
 
     const menuItems = [
-        { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); } },
-        { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); } },
+        { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); onClose(); } },
+        { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); onClose(); } },
         { label: 'إضافة علامة مرجعية', icon: BookmarkIcon, action: () => setIsBookmarkModalOpen(true) },
-        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); } },
+        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
         { 
@@ -73,7 +73,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
             },
             iconClassName: isNestedReadingView ? 'transform -scale-x-100' : ''
         },
-        { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); } },
+        { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); onClose(); } },
     ];
 
     return (

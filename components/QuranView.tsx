@@ -138,9 +138,6 @@ export const QuranView: React.FC = () => {
                     <h2 ref={titleRef} tabIndex={-1} className="font-quran text-4xl md:text-5xl font-bold mb-2 focus:outline-none">{currentSurah.name}</h2>
                     <p className="text-lg text-slate-600 dark:text-slate-300">{currentSurah.englishName}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{currentSurah.revelationType} - {currentSurah.ayahs.length} آيات</p>
-                     {currentSurah.number !== 1 && currentSurah.number !== 9 && (
-                        <p className="font-quran text-2xl mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
-                    )}
                 </div>
             </header>
             <div className="space-y-1">
