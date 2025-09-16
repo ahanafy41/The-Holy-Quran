@@ -29,7 +29,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(e); }}
             tabIndex={0}
             role="button"
-            aria-label={`${ayah.text} - الآية رقم ${ayah.numberInSurah} من سورة ${ayah.surah?.name}.`}
+            aria-label={`${ayah.text} - ${ayah.numberInSurah}`}
             aria-describedby={descriptionId}
             aria-haspopup="dialog"
             aria-expanded={isSelected}
