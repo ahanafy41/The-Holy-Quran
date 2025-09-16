@@ -257,3 +257,5 @@ This section outlines the plan to integrate the "Hisn al-Muslim" (Fortress of th
 -   [ ] Add more features to the AI assistant.
 -   [ ] Add more Hadith books.
 -   [ ] Implement end-to-end testing.
+
+<!-- Preparing for merge to main -->

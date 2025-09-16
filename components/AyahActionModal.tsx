@@ -4,7 +4,6 @@ import FocusTrap from 'focus-trap-react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
 import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon, BookmarkIcon } from './Icons';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AddBookmarkModal } from './AddBookmarkModal';
 
 
@@ -69,13 +68,6 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); } },
     ];
 
-    const modalAnimation = {
-        initial: { scale: 0.9, opacity: 0 },
-        animate: { scale: 1, opacity: 1 },
-        exit: { scale: 0.9, opacity: 0 },
-        transition: { type: 'spring', damping: 15, stiffness: 200 }
-    } as const;
-
     return (
         <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="presentation">
@@ -86,8 +78,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                         clickOutsideDeactivates: false,
                     }}
                 >
-                    <motion.div
-                        {...modalAnimation}
+                    <div
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
                         role="dialog"
@@ -122,12 +113,10 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
                                 ))}
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 </FocusTrap>
             </div>
-            <AnimatePresence>
-                {isBookmarkModalOpen && <AddBookmarkModal ayah={ayah} onClose={() => { setIsBookmarkModalOpen(false); onClose(); }} />}
-            </AnimatePresence>
+            {isBookmarkModalOpen && <AddBookmarkModal ayah={ayah} onClose={() => { setIsBookmarkModalOpen(false); onClose(); }} />}
         </>
     );
 };

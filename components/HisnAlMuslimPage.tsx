@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HisnCategory, HisnDhikr } from '../types';
-import { hisnAlMuslimCategories } from '../data/hisnAlMuslimData';
+import hisnAlMuslimCategories from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
 

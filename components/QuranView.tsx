@@ -5,7 +5,6 @@ import { useApp } from '../context/AppContext';
 import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRightIcon } from './Icons';
 
 
@@ -17,19 +16,21 @@ export const QuranView: React.FC = () => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastFocusedSurah = useRef<number | null>(null);
 
     useEffect(() => {
         ayahRefs.current.clear();
-    }, [currentSurah]);
+    }, [currentSurah?.number]);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (currentSurah && titleRef.current) {
-                titleRef.current.focus();
-            }
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [currentSurah]);
+        if (currentSurah && titleRef.current && lastFocusedSurah.current !== currentSurah.number) {
+            const timer = setTimeout(() => {
+                titleRef.current?.focus();
+                lastFocusedSurah.current = currentSurah.number;
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [currentSurah?.number]);
 
     const handleAyahSelect = (ayah: Ayah) => {
         setSelectedAyah(ayah);
@@ -91,7 +92,7 @@ export const QuranView: React.FC = () => {
             const timeoutId = setTimeout(() => {
                 const element = ayahRefs.current.get(targetAyah);
                 if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.scrollIntoView({ behavior: 'auto', block: 'center' });
                     setHighlightedAyah(targetAyah);
                     const timer = setTimeout(() => {
                         setHighlightedAyah(null);
@@ -125,8 +126,15 @@ export const QuranView: React.FC = () => {
     
     return (
         <div className="max-w-4xl mx-auto">
-             <header className="mb-6 text-center">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
+             <header className="mb-6 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
+                <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="absolute top-1/2 -translate-y-1/2 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        aria-label="الرجوع"
+                    >
+                        <ArrowRightIcon className="w-6 h-6" />
+                    </button>
                     <h2 ref={titleRef} tabIndex={-1} className="font-quran text-4xl md:text-5xl font-bold mb-2 focus:outline-none">{currentSurah.name}</h2>
                     <p className="text-lg text-slate-600 dark:text-slate-300">{currentSurah.englishName}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{currentSurah.revelationType} - {currentSurah.ayahs.length} آيات</p>
@@ -152,9 +160,7 @@ export const QuranView: React.FC = () => {
                 ))}
             </div>
 
-            <AnimatePresence>
-                {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
-            </AnimatePresence>
+            {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
         </div>
     );
 };

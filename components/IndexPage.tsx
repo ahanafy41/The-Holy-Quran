@@ -108,7 +108,12 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
 
     return (
         <div>
-            <h2 ref={listTitleRef} tabIndex={-1} className="text-2xl font-bold mb-4 focus:outline-none">{list.title}</h2>
+            <header className="flex items-center gap-4 mb-4">
+                <button onClick={onBack} aria-label="الرجوع إلى الفهرس" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <ArrowRightIcon className="w-6 h-6" />
+                </button>
+                <h2 ref={listTitleRef} tabIndex={-1} className="text-2xl font-bold focus:outline-none">{list.title}</h2>
+            </header>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                 {list.items.map((item: any, index: number) => (
                     <button key={`${list.id}-${item.number || index}`} onClick={() => handleItemClick(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">

@@ -6,7 +6,7 @@ export interface DivisionInfo extends QuranDivision {
     title: string;
 }
 
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hisn-al-muslim';
+export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hisn-al-muslim' | 'hadith' | 'bookmarks' | 'more';
 
 export interface AppContextType {
   settings: AppSettings;

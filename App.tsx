@@ -3,17 +3,16 @@ import WaveSurfer from 'wavesurfer.js';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark } from './types';
 import * as api from './services/quranApi';
-import { HomePage } from './components/HomePage';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
 import { ListenPage } from './components/ListenPage';
 import { RadioPage } from './components/RadioPage';
 import { MemorizationAndSectionsPage } from './components/MemorizationAndSectionsPage';
-import { AzkarPage } from './components/AzkarPage';
-
+import { HisnAlMuslimPage } from './components/HisnAlMuslimPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
+import MorePage from './components/MorePage';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
@@ -21,7 +20,6 @@ import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
 import { BottomNavBar } from './components/BottomNavBar';
-import { QuickAccessMenu } from './components/QuickAccessMenu';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -55,7 +53,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>('index');
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   
@@ -246,7 +244,14 @@ const App: React.FC = () => {
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
+    const state = { view: targetView, params };
+    // Only push state if it's different from the current one to avoid duplicate entries
+    if (window.history.state?.view !== targetView || JSON.stringify(window.history.state?.params) !== JSON.stringify(params)) {
+      window.history.pushState(state, '', `/${targetView}`);
+    }
+
     setTargetAyah(params?.ayahNumber ?? null);
+
     if (targetView === 'reader' && params?.surahNumber) {
         if (currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
@@ -256,7 +261,35 @@ const App: React.FC = () => {
         document.title = `${params.division.title} - Quran Study App`;
     }
     setView(targetView);
-    mainContentRef.current?.scrollTo(0,0);
+    mainContentRef.current?.scrollTo(0, 0);
+  }, [loadSurah, currentSurah]);
+
+  useEffect(() => {
+    const handlePopState = async (event: PopStateEvent) => {
+      if (event.state) {
+        const { view: targetView, params } = event.state;
+        setTargetAyah(params?.ayahNumber ?? null);
+        if (targetView === 'reader' && params?.surahNumber) {
+          if (currentSurah?.number !== params.surahNumber) {
+            await loadSurah(params.surahNumber);
+          }
+        } else if (targetView === 'division' && params?.division) {
+          setCurrentDivision(params.division);
+        }
+        setView(targetView);
+      } else {
+        // Initial state, go to index
+        setView('index');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    // Set the initial state
+    window.history.replaceState({ view: 'index', params: {} }, '', '/index');
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [loadSurah, currentSurah]);
   
   const scrollToTop = useCallback(() => {
@@ -367,18 +400,17 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (view) {
-        case 'home': return <HomePage />;
         case 'index': return <IndexPage />;
         case 'reader': return <QuranView />;
         case 'listen': return <ListenPage />;
         case 'radio': return <RadioPage />;
         case 'memorization': return <MemorizationAndSectionsPage />;
-        
+        case 'hisn-al-muslim': return <HisnAlMuslimPage />;
         case 'hadith': return <HadithPage />;
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
-        case 'azkar': return <AzkarPage />;
-        default: return <HomePage />;
+        case 'more': return <MorePage />;
+        default: return <IndexPage />;
     }
   };
 
@@ -427,11 +459,8 @@ const App: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {view !== 'home' && (
-          <>
-            <BottomNavBar />
-            <QuickAccessMenu />
-          </>
+        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more'].includes(view) && (
+          <BottomNavBar />
         )}
       </AnimatePresence>
     </AppContext.Provider>
