@@ -15,6 +15,14 @@ interface AyahActionModalProps {
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError, view, navigateTo, showSearch } = useApp();
     const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
+    const [isFocusTrapActive, setIsFocusTrapActive] = useState(false);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsFocusTrapActive(true);
+        }, 50); // Short delay to allow the modal to render and prevent focus racing issues on some devices.
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleCopy = async () => {
         const textToCopy = `${ayah.text} (سورة ${ayah.surah?.name}: ${ayah.numberInSurah})`;
@@ -72,10 +80,10 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="presentation">
                 <FocusTrap
-                    active
+                    active={isFocusTrapActive}
                     focusTrapOptions={{
                         onDeactivate: onClose,
-                        clickOutsideDeactivates: false,
+                        clickOutsideDeactivates: true,
                     }}
                 >
                     <div

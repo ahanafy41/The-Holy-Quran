@@ -17,7 +17,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
     const descriptionId = `desc-${layoutIdPrefix}-${ayah.number}`;
     
     const ayahNumberCircle = (
-        <div className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
+        <div aria-hidden="true" className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
             {ayah.numberInSurah}
         </div>
     );
