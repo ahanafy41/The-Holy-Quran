@@ -28,10 +28,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
             onClick={onSelect}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(e); }}
             tabIndex={0}
-            role="button"
             aria-label={`${ayah.text} - ${ayah.numberInSurah}`}
-            aria-describedby={descriptionId}
-            aria-haspopup="dialog"
             className={`group p-4 rounded-xl transition-all duration-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${
                 isSelected ? 'bg-green-50 dark:bg-green-500/10' :
                 isHighlighted ? 'bg-yellow-100 dark:bg-yellow-400/10 ring-2 ring-yellow-400/50' :
@@ -39,7 +36,6 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
                 'hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
         >
-            <span id={descriptionId} className="sr-only">للمزيد من الخيارات، اضغط Enter.</span>
             {(isSelected || isPlaying) && (
                 <div
                     className="absolute inset-0 ring-2 ring-green-500 rounded-xl pointer-events-none"
