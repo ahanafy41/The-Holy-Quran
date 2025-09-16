@@ -119,9 +119,13 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
                     <button key={`${list.id}-${item.number || index}`} onClick={() => handleItemClick(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
                         <div>
                             <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                              {`${list.itemLabel} ${item.number}`}
-                              {list.id === 'surahs' && ` - ${item.name}`}
+                              {list.id === 'surahs' ? item.name : `${list.itemLabel} ${item.number}`}
                             </p>
+                            {list.id === 'surahs' && (
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    {item.revelationType === 'Medinan' ? 'مدنية' : 'مكية'} - {item.numberOfAyahs} آيات
+                                </p>
+                            )}
                             {list.id !== 'surahs' && list.id !== 'pages' && item.start && (
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
                                     يبدأ من: سورة {surahMap.get(item.start.surah)}، آية {item.start.ayah}

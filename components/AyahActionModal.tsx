@@ -15,6 +15,14 @@ interface AyahActionModalProps {
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError, view, navigateTo, showSearch } = useApp();
     const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
+    const [isFocusTrapActive, setIsFocusTrapActive] = useState(false);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsFocusTrapActive(true);
+        }, 50); // Short delay to allow the modal to render and prevent focus racing issues on some devices.
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleCopy = async () => {
         const textToCopy = `${ayah.text} (سورة ${ayah.surah?.name}: ${ayah.numberInSurah})`;
@@ -50,10 +58,10 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
     const isNestedReadingView = ['reader', 'division'].includes(view);
 
     const menuItems = [
-        { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); } },
-        { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); } },
+        { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); onClose(); } },
+        { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); onClose(); } },
         { label: 'إضافة علامة مرجعية', icon: BookmarkIcon, action: () => setIsBookmarkModalOpen(true) },
-        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); } },
+        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
         { 
@@ -65,17 +73,17 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
             },
             iconClassName: isNestedReadingView ? 'transform -scale-x-100' : ''
         },
-        { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); } },
+        { label: 'بحث', icon: SearchIcon, action: () => { showSearch(); onClose(); } },
     ];
 
     return (
         <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="presentation">
                 <FocusTrap
-                    active
+                    active={isFocusTrapActive}
                     focusTrapOptions={{
                         onDeactivate: onClose,
-                        clickOutsideDeactivates: false,
+                        clickOutsideDeactivates: true,
                     }}
                 >
                     <div
