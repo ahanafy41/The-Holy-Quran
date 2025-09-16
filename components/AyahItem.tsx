@@ -32,7 +32,6 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
             aria-label={`${ayah.text} - ${ayah.numberInSurah}`}
             aria-describedby={descriptionId}
             aria-haspopup="dialog"
-            aria-expanded={isSelected}
             className={`group p-4 rounded-xl transition-all duration-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${
                 isSelected ? 'bg-green-50 dark:bg-green-500/10' :
                 isHighlighted ? 'bg-yellow-100 dark:bg-yellow-400/10 ring-2 ring-yellow-400/50' :
