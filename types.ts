@@ -164,13 +164,30 @@ export interface Bookmark {
 export interface ApiWord {
   id: number;
   position: number;
-  text_uthmani: string;
-  meaning:string;
+  audio_url: string | null;
   char_type_name: 'word' | 'end';
+  text_uthmani: string;
+  translation: {
+    text: string;
+    language_name: string;
+  };
+  transliteration: {
+    text: string | null;
+    language_name: string;
+  };
+  meaning?: string; // Optional field for our merged Arabic meaning
 }
 
 export interface ApiVerse {
+  id: number;
   verse_number: number;
   verse_key: string;
+  text_uthmani: string;
   words: ApiWord[];
+}
+
+export interface WordMeaning {
+  verse: string;
+  word: string;
+  meaning:string;
 }

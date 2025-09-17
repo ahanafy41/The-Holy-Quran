@@ -1,16 +1,85 @@
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation, ApiVerse } from '../types';
-import quranData from '../data/quran_data_complete.json';
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation, ApiVerse, WordMeaning, ApiWord } from '../types';
+import localMeaningsData from '../data/quran_data.json';
 
-// Type assertion to inform TypeScript about the structure of the JSON data
-const typedQuranData: { [key: string]: ApiVerse[] } = quranData;
+const typedLocalMeanings: { [key: string]: WordMeaning[] } = localMeaningsData;
 
-// This function will now read from the pre-generated complete data file.
+// This function now fetches live data and merges it with local meanings.
 export const getWordMeaningsForSurah = async (surahNumber: number): Promise<ApiVerse[]> => {
-    // Return a promise to keep the async signature consistent with other API calls
-    return new Promise((resolve) => {
-        const surahData = typedQuranData[String(surahNumber)] || [];
-        resolve(surahData);
-    });
+    // 1. Create a quick lookup map from the local data for the current surah
+    const meaningsMap = new Map<string, string>();
+    if (typedLocalMeanings[String(surahNumber)]) {
+        for (const item of typedLocalMeanings[String(surahNumber)]) {
+            meaningsMap.set(item.word, item.meaning);
+        }
+    }
+
+    // 2. Fetch the full word data from the API
+    const apiUrl = `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?words=true&per_page=300&fields=text_uthmani`;
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.statusText}`);
+        }
+        const apiData = await response.json();
+
+        // 3. Merge the local meanings into the API data
+        const processedVerses: ApiVerse[] = apiData.verses.map((verse: any) => {
+            const processedWords: ApiWord[] = verse.words.map((word: any) => {
+                const arabicWord = word.text_uthmani;
+                const meaning = meaningsMap.get(arabicWord) || ''; // Default to empty if not found
+                return { ...word, meaning: meaning };
+            });
+
+            // A second pass to handle multi-word phrases from the original data
+            const verseText = processedWords.map(w => w.text_uthmani).join(' ');
+            for (const [phrase, meaning] of meaningsMap.entries()) {
+                if (phrase.includes(' ') && verseText.includes(phrase)) {
+                    const wordIndicesToUpdate: number[] = [];
+                    let matchIndex = verseText.indexOf(phrase);
+                    if (matchIndex !== -1) {
+                       const phraseWords = phrase.split(' ');
+                       let currentWordIndex = -1;
+                       let searchIndex = 0;
+
+                       for(let i=0; i<processedWords.length; i++){
+                           const wordText = processedWords[i].text_uthmani;
+                           const foundPos = verseText.indexOf(wordText, searchIndex);
+                           if(foundPos === matchIndex){
+                               currentWordIndex = i;
+                               break;
+                           }
+                           searchIndex = foundPos + wordText.length;
+                       }
+
+                       if(currentWordIndex !== -1){
+                           let phraseMatch = true;
+                           for(let j=0; j<phraseWords.length; j++){
+                               if((currentWordIndex + j) >= processedWords.length || processedWords[currentWordIndex+j].text_uthmani !== phraseWords[j]){
+                                   phraseMatch = false;
+                                   break;
+                               }
+                           }
+                           if(phraseMatch){
+                               for(let j=0; j<phraseWords.length; j++){
+                                   processedWords[currentWordIndex+j].meaning = (j === 0) ? meaning : ' '; // Assign meaning to first word, blank to others
+                               }
+                           }
+                       }
+                    }
+                }
+            }
+
+
+            return { ...verse, words: processedWords };
+        });
+
+        return processedVerses;
+
+    } catch (error) {
+        console.error(`Could not load or process word meanings for surah ${surahNumber}:`, error);
+        return [];
+    }
 };
 
 
