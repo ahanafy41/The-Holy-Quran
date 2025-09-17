@@ -161,8 +161,16 @@ export interface Bookmark {
   timestamp: number;
 }
 
-export interface WordMeaning {
-  verse: string;
-  word: string;
+export interface ApiWord {
+  id: number;
+  position: number;
+  text_uthmani: string;
   meaning:string;
+  char_type_name: 'word' | 'end';
+}
+
+export interface ApiVerse {
+  verse_number: number;
+  verse_key: string;
+  words: ApiWord[];
 }

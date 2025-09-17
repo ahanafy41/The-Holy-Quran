@@ -1,16 +1,15 @@
-
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation, WordMeaning } from '../types';
-import wordMeaningsData from '../data/quran_data.json';
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation, ApiVerse } from '../types';
+import quranData from '../data/quran_data_complete.json';
 
 // Type assertion to inform TypeScript about the structure of the JSON data
-const typedWordMeaningsData: { [key: string]: WordMeaning[] } = wordMeaningsData;
+const typedQuranData: { [key: string]: ApiVerse[] } = quranData;
 
-
-export const getWordMeaningsForSurah = async (surahNumber: number): Promise<WordMeaning[]> => {
-    // Return a promise to keep it consistent with other async functions in this service
+// This function will now read from the pre-generated complete data file.
+export const getWordMeaningsForSurah = async (surahNumber: number): Promise<ApiVerse[]> => {
+    // Return a promise to keep the async signature consistent with other API calls
     return new Promise((resolve) => {
-        const meanings = typedWordMeaningsData[String(surahNumber)] || [];
-        resolve(meanings);
+        const surahData = typedQuranData[String(surahNumber)] || [];
+        resolve(surahData);
     });
 };
 
