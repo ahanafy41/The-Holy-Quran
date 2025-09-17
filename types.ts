@@ -160,3 +160,9 @@ export interface Bookmark {
   ayahNumber: number;
   timestamp: number;
 }
+
+export interface WordMeaning {
+  verse: string;
+  word: string;
+  meaning:string;
+}

@@ -1,5 +1,19 @@
 
-import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation } from '../types';
+import { Surah, SurahSimple, Reciter, TafsirInfo, Tafsir, Ayah, SearchResult, ListeningReciter, RadioStation, WordMeaning } from '../types';
+import wordMeaningsData from '../data/quran_data.json';
+
+// Type assertion to inform TypeScript about the structure of the JSON data
+const typedWordMeaningsData: { [key: string]: WordMeaning[] } = wordMeaningsData;
+
+
+export const getWordMeaningsForSurah = async (surahNumber: number): Promise<WordMeaning[]> => {
+    // Return a promise to keep it consistent with other async functions in this service
+    return new Promise((resolve) => {
+        const meanings = typedWordMeaningsData[String(surahNumber)] || [];
+        resolve(meanings);
+    });
+};
+
 
 const BASE_URL = 'https://api.alquran.cloud/v1';
 const MP3QURAN_API_URL = 'https://www.mp3quran.net/api/v3';
