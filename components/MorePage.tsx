@@ -14,6 +14,13 @@ const MorePage: React.FC = () => {
             color: 'text-purple-500',
         },
         {
+            title: "معاني كلمات القرآن",
+            description: "تصفح معاني من كتاب السراج في غريب القرآن",
+            icon: BookOpenIcon,
+            action: () => navigateTo('word-meanings'),
+            color: 'text-sky-500',
+        },
+        {
             title: "العلامات المرجعية",
             description: "العودة إلى آياتك المحفوظة",
             icon: BookmarkIcon,
