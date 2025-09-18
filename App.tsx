@@ -13,6 +13,7 @@ import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
 import MorePage from './components/MorePage';
+import { WordMeaningsPage } from './components/WordMeaningsPage';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
@@ -410,6 +411,7 @@ const App: React.FC = () => {
         case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
         case 'more': return <MorePage />;
+        case 'word-meanings': return <WordMeaningsPage />;
         default: return <IndexPage />;
     }
   };
