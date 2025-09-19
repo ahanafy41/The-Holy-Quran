@@ -64,7 +64,7 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
             <NavButton onClick={onPrev} disabled={!division || division.number === 1} aria-label={`${label} السابق`}>
                 <PreviousIcon className="w-5 h-5" />
             </NavButton>
-            <div className="text-center text-xs font-semibold w-20" aria-live="polite">
+            <div className="text-center text-xs font-semibold w-20">
                 <span className="text-slate-500">{label}</span>
                 <p className="font-bold text-slate-800 dark:text-slate-200">{division?.number || '...'}</p>
             </div>
@@ -89,7 +89,7 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
                     >
                         <ChevronRightIcon className="w-6 h-6" />
                     </NavButton>
-                    <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold" aria-live="polite">
+                    <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold">
                         <p>صفحة {currentPage?.number || '...'}/604</p>
                     </div>
                     <NavButton
