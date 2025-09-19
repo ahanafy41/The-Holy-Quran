@@ -5,7 +5,6 @@ import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
 import { QuranDivision, SurahSimple, SavedSection } from '../types';
 import { BookOpenIcon, FolderIcon, ChevronLeftIcon, ArrowRightIcon, FlowerIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NavigationContext } from '../context/AppContext';
 
 
 // Define types for clarity
@@ -19,7 +18,7 @@ interface DivisionConfig {
 }
 
 export const IndexPage: React.FC = () => {
-    const { surahList, navigateTo, savedSections, setNavigationContext } = useApp();
+    const { surahList, navigateTo, savedSections } = useApp();
     const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
     const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -60,7 +59,7 @@ export const IndexPage: React.FC = () => {
             <AnimatePresence mode="wait">
                 {activeList ? (
                     <motion.div key="list" {...listAnimation}>
-                        <ListView list={activeList} onBack={() => setActiveList(null)} navigateTo={navigateTo as any} surahMap={surahMap} setNavigationContext={setNavigationContext} />
+                        <ListView list={activeList} onBack={() => setActiveList(null)} navigateTo={navigateTo as any} surahMap={surahMap} />
                     </motion.div>
                 ) : (
                     <motion.div key="index" {...indexAnimation}>
@@ -86,7 +85,7 @@ const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: Divi
 );
 
 // List View for a selected division
-const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; setNavigationContext: (context: NavigationContext) => void; }> = ({ list, onBack, navigateTo, surahMap, setNavigationContext }) => {
+const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }> = ({ list, onBack, navigateTo, surahMap }) => {
     const listTitleRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
@@ -97,18 +96,8 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
     }, []);
 
     const handleItemClick = (item: any) => {
-        const contextMap: { [key: string]: NavigationContext } = {
-            'surahs': 'page',
-            'juzs': 'juz',
-            'hizbs': 'hizb',
-            'rubs': 'rub',
-            'pages': 'page'
-        };
-        const context = contextMap[list.id];
         const surahNumber = list.id === 'surahs' ? item.number : item.start.surah;
         const ayahNumber = list.id === 'surahs' ? 1 : item.start.ayah;
-
-        setNavigationContext(context);
 
         navigateTo('reader', {
             surahNumber,

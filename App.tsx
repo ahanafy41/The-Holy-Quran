@@ -20,11 +20,10 @@ import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
 import { BottomNavBar } from './components/BottomNavBar';
-import { AppContext, useApp, View, DivisionInfo, NavigationSource, NavigationContext } from './context/AppContext';
+import { AppContext, useApp, View, DivisionInfo, NavigationSource } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
-  const [navigationContext, setNavigationContext] = useState<NavigationContext>('page');
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('quranAppSettings');
     const defaultSettings: AppSettings = {
@@ -394,8 +393,7 @@ const App: React.FC = () => {
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
     navigationSource, setNavigationSource,
-    navigationContext, setNavigationContext,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark, navigationSource, navigationContext]);
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark, navigationSource]);
 
   const renderView = () => {
     switch (view) {

@@ -3,17 +3,14 @@ import { createContext, useContext } from 'react';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection, ListeningReciter, RadioStation } from '../types';
 
 export type NavigationSource = 'footer' | 'index' | 'division' | 'bookmark' | 'last_read' | 'search' | null;
-export type NavigationContext = 'page' | 'juz' | 'hizb' | 'rub' | null;
 
 export interface DivisionInfo extends QuranDivision {
     title: string;
 }
 
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hisn-al-muslim' | 'hadith' | 'bookmarks' | 'more' | 'word-meanings';
+export type View = 'home' | 'index' | 'reader' | 'listen' | 'memorization' | 'radio' | 'hisn-al-muslim' | 'hadith' | 'bookmarks' | 'more' | 'word-meanings';
 
 export interface AppContextType {
-  navigationContext: NavigationContext;
-  setNavigationContext: (context: NavigationContext) => void;
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   memorizationReciters: Reciter[];
