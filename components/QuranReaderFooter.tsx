@@ -52,7 +52,7 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
         <button
             onClick={onClick}
             disabled={disabled}
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             {...props}
         >
             {children}

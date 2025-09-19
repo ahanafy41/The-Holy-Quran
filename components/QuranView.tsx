@@ -97,6 +97,12 @@ export const QuranView: React.FC = () => {
                 if (element) {
                     element.scrollIntoView({ behavior: 'auto', block: 'center' });
                     setHighlightedAyah(targetAyah);
+
+                    // Set focus to the surah title for screen reader context after navigation
+                    if (titleRef.current) {
+                        titleRef.current.focus();
+                    }
+
                     const timer = setTimeout(() => {
                         setHighlightedAyah(null);
                         setTargetAyah(null);
@@ -162,7 +168,7 @@ export const QuranView: React.FC = () => {
 
             {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
 
-            <QuranReaderFooter surah={currentSurah} visibleAyah={visibleAyahInSurah} />
+            {currentSurah && <QuranReaderFooter surah={currentSurah} visibleAyah={visibleAyahInSurah} />}
         </div>
     );
 };
