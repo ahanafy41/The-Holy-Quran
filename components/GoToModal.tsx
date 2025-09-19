@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 import { juzs, hizbs, pages } from '../data/quranicDivisions';
-import { CloseIcon } from './Icons';
+import { XMarkIcon as CloseIcon } from './Icons';
 
 interface GoToModalProps {
     onClose: () => void;

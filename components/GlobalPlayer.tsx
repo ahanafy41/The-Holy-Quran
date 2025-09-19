@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { PlayIcon, PauseIcon, PreviousIcon, NextIcon, CloseIcon } from './Icons';
+import { PlayIcon, PauseIcon, PreviousIcon, NextIcon, XMarkIcon as CloseIcon } from './Icons';
 
 export const GlobalPlayer: React.FC = () => {
     const {
