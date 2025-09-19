@@ -12,31 +12,31 @@
   "dependencies": {
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3",
-    "@google/genai": "latest",
-    "@tanstack/react-virtual": "^3.0.0-beta.54",
-    "focus-trap-react": "^10.2.3",
-    "framer-motion": "^11.0.0",
+    "@google/genai": "^1.20.0",
+    "@tanstack/react-virtual": "^3.7.0",
+    "focus-trap-react": "^11.0.4",
+    "framer-motion": "^12.23.16",
     "node-fetch": "^3.3.2",
     "quran-meta": "^5.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-use-measure": "latest",
-    "wavesurfer.js": "7"
+    "react-use-measure": "^2.1.1",
+    "wavesurfer.js": "^7.7.14"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
-    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.2",
-    "jsdom": "^26.1.0",
-    "typescript": "~5.8.2",
-    "vite": "^4.0.0",
-    "vite-plugin-pwa": "^1.0.3",
-    "vite-plugin-static-copy": "^0.17.0",
-    "vitest": "^3.2.4"
+    "@types/node": "^24.5.2",
+    "@vitejs/plugin-react": "^5.0.3",
+    "jsdom": "27.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^5.3.5",
+    "vite-plugin-pwa": "^0.20.5",
+    "vite-plugin-static-copy": "^3.1.2",
+    "vitest": "3.2.4"
   },
   "optionalDependencies": {
-    "@rollup/rollup-android-arm64": "^4.49.0"
+    "@rollup/rollup-android-arm64": "^4.52.0"
   }
 }
