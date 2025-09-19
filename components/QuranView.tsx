@@ -10,7 +10,7 @@ import { QuranReaderFooter } from './QuranReaderFooter';
 
 
 export const QuranView: React.FC = () => {
-    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition } = useApp();
+    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition, navigationSource, setNavigationSource } = useApp();
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
     const [visibleAyahInSurah, setVisibleAyahInSurah] = useState<number>(1);
@@ -99,8 +99,10 @@ export const QuranView: React.FC = () => {
                     setHighlightedAyah(targetAyah);
 
                     // Set focus to the surah title for screen reader context after navigation
-                    if (titleRef.current) {
+                    if (navigationSource && titleRef.current) {
                         titleRef.current.focus();
+                        // Reset the navigation source so focus isn't hijacked on other re-renders
+                        setNavigationSource(null);
                     }
 
                     const timer = setTimeout(() => {
@@ -114,7 +116,7 @@ export const QuranView: React.FC = () => {
             }, 100);
             return () => clearTimeout(timeoutId);
         }
-    }, [targetAyah, currentSurah, setTargetAyah]);
+    }, [targetAyah, currentSurah, setTargetAyah, navigationSource, setNavigationSource]);
 
     if (isLoading && !currentSurah) {
         return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري التحميل...</div>;

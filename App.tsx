@@ -11,7 +11,6 @@ import { MemorizationAndSectionsPage } from './components/MemorizationAndSection
 import { HisnAlMuslimPage } from './components/HisnAlMuslimPage';
 import { HadithPage } from './components/HadithPage';
 import { BookmarksPage } from './components/BookmarksPage';
-import { DivisionView } from './components/DivisionView';
 import MorePage from './components/MorePage';
 import { WordMeaningsPage } from './components/WordMeaningsPage';
 import { AIAssistantModal } from './components/AIAssistantModal';
@@ -21,10 +20,11 @@ import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
 import { BottomNavBar } from './components/BottomNavBar';
-import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
+import { AppContext, useApp, View, DivisionInfo, NavigationSource, NavigationContext } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
+  const [navigationContext, setNavigationContext] = useState<NavigationContext>('page');
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('quranAppSettings');
     const defaultSettings: AppSettings = {
@@ -55,7 +55,6 @@ const App: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [view, setView] = useState<View>('index');
-  const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -65,6 +64,7 @@ const App: React.FC = () => {
   const audioSourcesRef = useRef<{ sources: string[], index: number }>({ sources: [], index: 0 });
   
   const [targetAyah, setTargetAyah] = useState<number | null>(null);
+  const [navigationSource, setNavigationSource] = useState<NavigationSource>(null);
   
   const [savedSections, setSavedSections] = useState<SavedSection[]>(() => {
     const saved = localStorage.getItem('quranAppSavedSections');
@@ -244,22 +244,20 @@ const App: React.FC = () => {
     }
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
-  const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
+  const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo, source?: NavigationSource }) => {
     const state = { view: targetView, params };
     // Only push state if it's different from the current one to avoid duplicate entries
     if (window.history.state?.view !== targetView || JSON.stringify(window.history.state?.params) !== JSON.stringify(params)) {
       window.history.pushState(state, '', `/${targetView}`);
     }
 
+    setNavigationSource(params?.source ?? null);
     setTargetAyah(params?.ayahNumber ?? null);
 
     if (targetView === 'reader' && params?.surahNumber) {
         if (currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
         }
-    } else if (targetView === 'division' && params?.division) {
-        setCurrentDivision(params.division);
-        document.title = `${params.division.title} - Quran Study App`;
     }
     setView(targetView);
     mainContentRef.current?.scrollTo(0, 0);
@@ -274,8 +272,6 @@ const App: React.FC = () => {
           if (currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
           }
-        } else if (targetView === 'division' && params?.division) {
-          setCurrentDivision(params.division);
         }
         setView(targetView);
       } else {
@@ -397,7 +393,9 @@ const App: React.FC = () => {
     isStandalone, canInstall, triggerInstall,
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
+    navigationSource, setNavigationSource,
+    navigationContext, setNavigationContext,
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark, navigationSource, navigationContext]);
 
   const renderView = () => {
     switch (view) {
@@ -408,7 +406,6 @@ const App: React.FC = () => {
         case 'memorization': return <MemorizationAndSectionsPage />;
         case 'hisn-al-muslim': return <HisnAlMuslimPage />;
         case 'hadith': return <HadithPage />;
-        case 'division': return currentDivision ? <DivisionView division={currentDivision} /> : <IndexPage />;
         case 'bookmarks': return <BookmarksPage />;
         case 'more': return <MorePage />;
         case 'word-meanings': return <WordMeaningsPage />;

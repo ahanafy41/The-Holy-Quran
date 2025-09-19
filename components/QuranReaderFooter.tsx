@@ -11,7 +11,7 @@ interface QuranReaderFooterProps {
 }
 
 export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, visibleAyah }) => {
-    const { navigateTo } = useApp();
+    const { navigateTo, navigationContext } = useApp();
 
     const currentPage = findCurrentDivision(pages, surah.number, visibleAyah);
     const currentJuz = findCurrentDivision(juzs, surah.number, visibleAyah);
@@ -43,7 +43,12 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
             const targetNumber = direction === 'next' ? currentDivision.number + 1 : currentDivision.number - 1;
             const targetDivision = allDivisions.find(d => d.number === targetNumber);
             if (targetDivision) {
-                navigateTo('reader', { surahNumber: targetDivision.start.surah, ayahNumber: targetDivision.start.ayah, division: undefined });
+                navigateTo('reader', {
+                    surahNumber: targetDivision.start.surah,
+                    ayahNumber: targetDivision.start.ayah,
+                    division: undefined,
+                    source: 'footer'
+                });
             }
         }
     };
@@ -74,37 +79,50 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
         </div>
     );
 
+    const renderContent = () => {
+        const context = navigationContext || 'page'; // Default to page navigation
+
+        switch (context) {
+            case 'juz':
+                return <DivisionNavigator label="الجزء" division={currentJuz} onPrev={() => handleNavigation('juz', 'prev')} onNext={() => handleNavigation('juz', 'next')} max={30} />;
+            case 'hizb':
+                return <DivisionNavigator label="الحزب" division={currentHizb} onPrev={() => handleNavigation('hizb', 'prev')} onNext={() => handleNavigation('hizb', 'next')} max={60} />;
+            case 'rub':
+                return <DivisionNavigator label="الربع" division={currentRub} onPrev={() => handleNavigation('rub', 'prev')} onNext={() => handleNavigation('rub', 'next')} max={240} />;
+            case 'page':
+            default:
+                return (
+                    <div className="flex justify-between items-center">
+                        <NavButton
+                            onClick={() => handleNavigation('page', 'prev')}
+                            disabled={!currentPage || currentPage.number === 1}
+                            aria-label="الصفحة السابقة"
+                        >
+                            <ChevronRightIcon className="w-6 h-6" />
+                        </NavButton>
+                        <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold">
+                            <p>صفحة {currentPage?.number || '...'}/604</p>
+                        </div>
+                        <NavButton
+                            onClick={() => handleNavigation('page', 'next')}
+                            disabled={!currentPage || currentPage.number === 604}
+                            aria-label="الصفحة التالية"
+                        >
+                            <ChevronLeftIcon className="w-6 h-6" />
+                        </NavButton>
+                    </div>
+                );
+        }
+    };
+
     return (
         <div
             role="navigation"
             aria-label="شريط التنقل في صفحة القراءة"
             className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-30"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <div className="max-w-4xl mx-auto px-2 py-1">
-                <div className="flex justify-between items-center mb-1">
-                    <NavButton
-                        onClick={() => handleNavigation('page', 'prev')}
-                        disabled={!currentPage || currentPage.number === 1}
-                        aria-label="الصفحة السابقة"
-                    >
-                        <ChevronRightIcon className="w-6 h-6" />
-                    </NavButton>
-                    <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold">
-                        <p>صفحة {currentPage?.number || '...'}/604</p>
-                    </div>
-                    <NavButton
-                        onClick={() => handleNavigation('page', 'next')}
-                        disabled={!currentPage || currentPage.number === 604}
-                        aria-label="الصفحة التالية"
-                    >
-                        <ChevronLeftIcon className="w-6 h-6" />
-                    </NavButton>
-                </div>
-                <div className="grid grid-cols-3 gap-1">
-                    <DivisionNavigator label="الجزء" division={currentJuz} onPrev={() => handleNavigation('juz', 'prev')} onNext={() => handleNavigation('juz', 'next')} max={30} />
-                    <DivisionNavigator label="الحزب" division={currentHizb} onPrev={() => handleNavigation('hizb', 'prev')} onNext={() => handleNavigation('hizb', 'next')} max={60} />
-                    <DivisionNavigator label="الربع" division={currentRub} onPrev={() => handleNavigation('rub', 'prev')} onNext={() => handleNavigation('rub', 'next')} max={240} />
-                </div>
+            <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-center">
+                {renderContent()}
             </div>
         </div>
     );
