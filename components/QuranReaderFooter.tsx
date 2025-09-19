@@ -48,50 +48,62 @@ export const QuranReaderFooter: React.FC<QuranReaderFooterProps> = ({ surah, vis
         }
     };
 
-    const NavButton = ({ onClick, children, disabled }: { onClick: () => void, children: React.ReactNode, disabled?: boolean }) => (
+    const NavButton = ({ onClick, children, disabled, ...props }: { onClick: () => void, children: React.ReactNode, disabled?: boolean, [key: string]: any }) => (
         <button
             onClick={onClick}
             disabled={disabled}
             className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            {...props}
         >
             {children}
         </button>
     );
 
-    const DivisionNavigator = ({ type, division, onPrev, onNext }: { type: string, division: any, onPrev: () => void, onNext: () => void }) => (
+    const DivisionNavigator = ({ label, division, onPrev, onNext, max }: { label: string, division: any, onPrev: () => void, onNext: () => void, max: number }) => (
         <div className="flex items-center justify-center gap-2">
-            <NavButton onClick={onPrev} disabled={!division || division.number === 1}>
+            <NavButton onClick={onPrev} disabled={!division || division.number === 1} aria-label={`${label} السابق`}>
                 <PreviousIcon className="w-5 h-5" />
             </NavButton>
-            <div className="text-center text-xs font-semibold w-20">
-                <span className="text-slate-500">{type}</span>
+            <div className="text-center text-xs font-semibold w-20" aria-live="polite">
+                <span className="text-slate-500">{label}</span>
                 <p className="font-bold text-slate-800 dark:text-slate-200">{division?.number || '...'}</p>
             </div>
-            <NavButton onClick={onNext} disabled={!division || division.number === (type === 'Juz' ? 30 : type === 'Hizb' ? 60 : 240)}>
+            <NavButton onClick={onNext} disabled={!division || division.number === max} aria-label={`${label} التالي`}>
                 <NextIcon className="w-5 h-5" />
             </NavButton>
         </div>
     );
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-30"
-             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div
+            role="navigation"
+            aria-label="شريط التنقل في صفحة القراءة"
+            className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-30"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="max-w-4xl mx-auto px-2 py-1">
                 <div className="flex justify-between items-center mb-1">
-                    <NavButton onClick={() => handleNavigation('page', 'prev')} disabled={!currentPage || currentPage.number === 1}>
+                    <NavButton
+                        onClick={() => handleNavigation('page', 'prev')}
+                        disabled={!currentPage || currentPage.number === 1}
+                        aria-label="الصفحة السابقة"
+                    >
                         <ChevronRightIcon className="w-6 h-6" />
                     </NavButton>
-                    <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold">
-                        <p>Page {currentPage?.number || '...'}/604</p>
+                    <div className="text-sm text-center text-slate-600 dark:text-slate-300 font-semibold" aria-live="polite">
+                        <p>صفحة {currentPage?.number || '...'}/604</p>
                     </div>
-                    <NavButton onClick={() => handleNavigation('page', 'next')} disabled={!currentPage || currentPage.number === 604}>
+                    <NavButton
+                        onClick={() => handleNavigation('page', 'next')}
+                        disabled={!currentPage || currentPage.number === 604}
+                        aria-label="الصفحة التالية"
+                    >
                         <ChevronLeftIcon className="w-6 h-6" />
                     </NavButton>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
-                    <DivisionNavigator type="Juz" division={currentJuz} onPrev={() => handleNavigation('juz', 'prev')} onNext={() => handleNavigation('juz', 'next')} />
-                    <DivisionNavigator type="Hizb" division={currentHizb} onPrev={() => handleNavigation('hizb', 'prev')} onNext={() => handleNavigation('hizb', 'next')} />
-                    <DivisionNavigator type="Rub" division={currentRub} onPrev={() => handleNavigation('rub', 'prev')} onNext={() => handleNavigation('rub', 'next')} />
+                    <DivisionNavigator label="الجزء" division={currentJuz} onPrev={() => handleNavigation('juz', 'prev')} onNext={() => handleNavigation('juz', 'next')} max={30} />
+                    <DivisionNavigator label="الحزب" division={currentHizb} onPrev={() => handleNavigation('hizb', 'prev')} onNext={() => handleNavigation('hizb', 'next')} max={60} />
+                    <DivisionNavigator label="الربع" division={currentRub} onPrev={() => handleNavigation('rub', 'prev')} onNext={() => handleNavigation('rub', 'next')} max={240} />
                 </div>
             </div>
         </div>
