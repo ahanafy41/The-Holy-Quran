@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark } from './types';
+import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, SavedSection, ListeningReciter, RadioStation, LastReadPosition, Bookmark, QuranDivision } from './types';
 import * as api from './services/quranApi';
 import { IndexPage } from './components/IndexPage';
 import { QuranView } from './components/QuranView';
@@ -22,7 +22,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
 import { GlobalPlayer } from './components/GlobalPlayer';
 import { BottomNavBar } from './components/BottomNavBar';
-import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
+import { AppContext, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
@@ -99,7 +99,6 @@ const App: React.FC = () => {
         requiredSurahs.push(i);
     }
 
-    // Fetch surahs that are not in the cache
     const surahsToFetch = requiredSurahs.filter(sNum => !surahCache.current.has(sNum));
     if (surahsToFetch.length > 0) {
         await Promise.all(surahsToFetch.map(async (sNum) => {
@@ -108,7 +107,6 @@ const App: React.FC = () => {
         }));
     }
 
-    // Assemble the ayahs from the cached surahs
     for (const sNum of requiredSurahs) {
         const surah = surahCache.current.get(sNum);
         if (!surah) continue;
@@ -123,7 +121,6 @@ const App: React.FC = () => {
     }
 
     return ayahs;
-
   }, [settings.memorizationReciter]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -140,9 +137,7 @@ const App: React.FC = () => {
 
   const { offlineReady: [offlineReady, setOfflineReady], needRefresh: [needRefresh, setNeedRefresh], updateServiceWorker } = useRegisterSW();
 
-  const closeNeedRefresh = () => {
-    setNeedRefresh(false);
-  };
+  const closeNeedRefresh = () => setNeedRefresh(false);
 
   useEffect(() => {
     if (!wavesurferContainerRef.current) return;
@@ -153,23 +148,18 @@ const App: React.FC = () => {
     });
     wavesurferRef.current = ws;
 
-    const onReady = () => {
-        ws.play();
-    };
-
+    const onReady = () => ws.play();
     const onError = (err: Error) => {
         audioSourcesRef.current.index++;
         const { sources, index } = audioSourcesRef.current;
         if (index < sources.length) {
             ws.load(sources[index]);
         } else {
-            const errorMsg = `فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`;
-            setError(errorMsg);
+            setError(`فشل تحميل الصوت للآية ${activeAyahRef.current?.numberInSurah} من جميع المصادر.`);
             setActiveAyah(null);
             setIsPlaying(false);
         }
     };
-
     ws.on('ready', onReady);
     ws.on('error', onError);
     ws.on('play', () => setIsPlaying(true));
@@ -178,39 +168,7 @@ const App: React.FC = () => {
         setIsPlaying(false);
         setActiveAyah(null);
     });
-
-    return () => {
-        ws.destroy();
-    };
-  }, []);
-
-  // Initialize Global Player Wavesurfer
-  useEffect(() => {
-    if (!globalWavesurferContainerRef.current) return;
-    const ws = WaveSurfer.create({
-        container: globalWavesurferContainerRef.current,
-        height: 0,
-        mediaControls: false,
-    });
-    globalWavesurferRef.current = ws;
-
-    const onReady = () => ws.play();
-    const onError = (err: Error) => {
-        // For simplicity, just skip to next on error
-        playNextInPlaylist();
-    };
-
-    ws.on('ready', onReady);
-    ws.on('error', onError);
-    ws.on('play', () => setIsGlobalPlayerPlaying(true));
-    ws.on('pause', () => setIsGlobalPlayerPlaying(false));
-    ws.on('finish', () => {
-        playNextInPlaylist();
-    });
-
-    return () => {
-        ws.destroy();
-    };
+    return () => ws.destroy();
   }, []);
 
   const playNextInPlaylist = useCallback(() => {
@@ -220,7 +178,6 @@ const App: React.FC = () => {
     if (nextIndex < playlist.length) {
         setCurrentPlaylistItem(playlist[nextIndex]);
     } else {
-        // End of playlist
         setIsGlobalPlayerPlaying(false);
         setGlobalPlayer({ show: false });
         setPlaylist([]);
@@ -228,39 +185,49 @@ const App: React.FC = () => {
     }
   }, [playlist, currentPlaylistItem]);
 
-  // Effect to load audio when currentPlaylistItem changes
   useEffect(() => {
-      if (currentPlaylistItem && globalWavesurferRef.current) {
-          // Pause other players
+    if (!globalWavesurferContainerRef.current) return;
+    const ws = WaveSurfer.create({
+        container: globalWavesurferContainerRef.current,
+        height: 0,
+        mediaControls: false,
+    });
+    globalWavesurferRef.current = ws;
+    const onReady = () => ws.play();
+    const onError = () => playNextInPlaylist();
+    ws.on('ready', onReady);
+    ws.on('error', onError);
+    ws.on('play', () => setIsGlobalPlayerPlaying(true));
+    ws.on('pause', () => setIsGlobalPlayerPlaying(false));
+    ws.on('finish', () => playNextInPlaylist());
+    return () => ws.destroy();
+  }, [playNextInPlaylist]);
+
+  useEffect(() => {
+      if (currentPlaylistItem && globalWavesurferRef.current && isGlobalPlayerPlaying) {
           window.dispatchEvent(new CustomEvent('global-player-stop'));
           wavesurferRef.current?.pause();
-
           const sources = [currentPlaylistItem.audio, ...(currentPlaylistItem.audioSecondarys || [])].filter(Boolean);
           if (sources.length > 0) {
             globalWavesurferRef.current.load(sources[0]);
           } else {
-            // If Ayah has no audio, skip to next
             setTimeout(playNextInPlaylist, 100);
           }
+      } else if (globalWavesurferRef.current && !isGlobalPlayerPlaying) {
+          globalWavesurferRef.current.pause();
       }
-  }, [currentPlaylistItem, playNextInPlaylist]);
-
+  }, [currentPlaylistItem, isGlobalPlayerPlaying, playNextInPlaylist]);
 
   const loadPlaylist = useCallback((ayahs: Ayah[], startPlaying = true) => {
     if (ayahs.length === 0) return;
     setPlaylist(ayahs);
     setCurrentPlaylistItem(ayahs[0]);
     setGlobalPlayer({ show: true });
-    if (startPlaying) {
-        setIsGlobalPlayerPlaying(true);
-    } else {
-        setIsGlobalPlayerPlaying(false);
-        globalWavesurferRef.current?.pause();
-    }
+    setIsGlobalPlayerPlaying(startPlaying);
   }, []);
 
   const toggleGlobalPlayer = useCallback(() => {
-    globalWavesurferRef.current?.playPause();
+    setIsGlobalPlayerPlaying(prev => !prev);
   }, []);
 
   const playPrevInPlaylist = useCallback(() => {
@@ -270,7 +237,6 @@ const App: React.FC = () => {
     if (prevIndex >= 0) {
         setCurrentPlaylistItem(playlist[prevIndex]);
     }
-    // If it's the first track, do nothing or maybe restart it
   }, [playlist, currentPlaylistItem]);
 
   const closeGlobalPlayer = useCallback(() => {
@@ -306,20 +272,15 @@ const App: React.FC = () => {
         event.preventDefault();
         setInstallPromptEvent(event);
     };
-    
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
   
   const triggerInstall = useCallback(async () => {
       if (!installPromptEvent) return;
       installPromptEvent.prompt();
       const { outcome } = await installPromptEvent.userChoice;
-      if (outcome === 'accepted') {
-          setIsStandalone(true);
-      }
+      if (outcome === 'accepted') setIsStandalone(true);
       setInstallPromptEvent(null);
   }, [installPromptEvent]);
 
@@ -329,8 +290,7 @@ const App: React.FC = () => {
 
   const updateApiKey = useCallback((key: string) => {
     const trimmedKey = key.trim();
-    if (apiKey === trimmedKey) return; 
-
+    if (apiKey === trimmedKey) return;
     if (trimmedKey) {
         setApiKey(trimmedKey);
         localStorage.setItem('quranUserApiKey', trimmedKey);
@@ -342,11 +302,7 @@ const App: React.FC = () => {
   }, [apiKey]);
 
   const addSavedSection = useCallback((section: Omit<SavedSection, 'id'>) => {
-    const newSection: SavedSection = {
-        ...section,
-        id: `section-${Date.now()}`
-    };
-    setSavedSections(prev => [...prev, newSection]);
+    setSavedSections(prev => [...prev, { ...section, id: `section-${Date.now()}` }]);
   }, []);
 
   const removeSavedSection = useCallback((sectionId: string) => {
@@ -358,12 +314,7 @@ const App: React.FC = () => {
   }, []);
 
   const addBookmark = useCallback((bookmark: Omit<Bookmark, 'id' | 'timestamp'>) => {
-    const newBookmark: Bookmark = {
-        ...bookmark,
-        id: `bookmark-${Date.now()}`,
-        timestamp: Date.now()
-    };
-    setBookmarks(prev => [...prev, newBookmark]);
+    setBookmarks(prev => [...prev, { ...bookmark, id: `bookmark-${Date.now()}`, timestamp: Date.now() }]);
     setSuccessMessage('تم إضافة العلامة المرجعية بنجاح.');
   }, []);
 
@@ -388,17 +339,12 @@ const App: React.FC = () => {
   
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
     const state = { view: targetView, params };
-    // Only push state if it's different from the current one to avoid duplicate entries
     if (window.history.state?.view !== targetView || JSON.stringify(window.history.state?.params) !== JSON.stringify(params)) {
       window.history.pushState(state, '', `/${targetView}`);
     }
-
     setTargetAyah(params?.ayahNumber ?? null);
-
-    if (targetView === 'reader' && params?.surahNumber) {
-        if (currentSurah?.number !== params.surahNumber) {
-            await loadSurah(params.surahNumber);
-        }
+    if (targetView === 'reader' && params?.surahNumber && currentSurah?.number !== params.surahNumber) {
+        await loadSurah(params.surahNumber);
     } else if (targetView === 'division' && params?.division) {
         setCurrentDivision(params.division);
         document.title = `${params.division.title} - Quran Study App`;
@@ -412,27 +358,19 @@ const App: React.FC = () => {
       if (event.state) {
         const { view: targetView, params } = event.state;
         setTargetAyah(params?.ayahNumber ?? null);
-        if (targetView === 'reader' && params?.surahNumber) {
-          if (currentSurah?.number !== params.surahNumber) {
+        if (targetView === 'reader' && params?.surahNumber && currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
-          }
         } else if (targetView === 'division' && params?.division) {
           setCurrentDivision(params.division);
         }
         setView(targetView);
       } else {
-        // Initial state, go to index
         setView('index');
       }
     };
-
     window.addEventListener('popstate', handlePopState);
-    // Set the initial state
     window.history.replaceState({ view: 'index', params: {} }, '', '/index');
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [loadSurah, currentSurah]);
   
   const scrollToTop = useCallback(() => {
@@ -455,7 +393,6 @@ const App: React.FC = () => {
       setListeningReciters(lReciters);
       setRadioStations(rStations);
       setTafsirInfoList(tList.filter(t => t.language === 'ar'));
-      
     } catch (e) {
       setError('فشل تحميل البيانات الأولية. يرجى التحقق من اتصالك بالإنترنت.');
     } finally {
@@ -468,31 +405,23 @@ const App: React.FC = () => {
   }, [initApp]);
   
   useEffect(() => {
-    // This effect handles reloading the surah if the reciter is changed
-    // while the reader view is open.
     if (view === 'reader' && currentSurah) {
       loadSurah(currentSurah.number);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.memorizationReciter]);
 
-
   const playAyah = useCallback((ayah: Ayah) => {
     const wavesurfer = wavesurferRef.current;
     if (!wavesurfer) return;
-
     window.dispatchEvent(new CustomEvent('global-player-stop'));
-
     setActiveAyah(ayah);
     activeAyahRef.current = ayah;
-
     const sources = [ayah.audio, ...(ayah.audioSecondarys || [])].filter(Boolean);
     if (sources.length === 0) {
-        const errorMsg = `لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`;
-        setError(errorMsg);
+        setError(`لا توجد مصادر صوتية للآية ${ayah.numberInSurah}.`);
         return;
     }
-
     audioSourcesRef.current = { sources: sources, index: 0 };
     wavesurfer.load(sources[0]);
   }, [setError]);
@@ -505,11 +434,7 @@ const App: React.FC = () => {
       if (!ayah.surah) return;
       const tafsirInfo = tafsirInfoList.find(t => t.identifier === settings.tafsir);
       setIsTafsirOpen(true);
-      setTafsirContent({
-          ayah, tafsir: null, surahNumber: ayah.surah.number, surahName: ayah.surah.englishName, 
-          tafsirName: tafsirInfo?.name, isLoading: true
-      });
-
+      setTafsirContent({ ayah, tafsir: null, surahNumber: ayah.surah.number, surahName: ayah.surah.englishName, tafsirName: tafsirInfo?.name, isLoading: true });
       try {
           const tafsirData = await api.getTafsirForAyahWithEdition(settings.tafsir, ayah.surah.number, ayah.numberInSurah);
           setTafsirContent(prev => prev ? {...prev, tafsir: tafsirData, isLoading: false} : null);
@@ -542,13 +467,11 @@ const App: React.FC = () => {
     isStandalone, canInstall, triggerInstall,
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
-    // Global Player
     playlist, currentPlaylistItem, isGlobalPlayerPlaying, globalPlayer,
     loadPlaylist, toggleGlobalPlayer, playNextInPlaylist, playPrevInPlaylist, closeGlobalPlayer,
     getAyahsForDivision,
   }), [
     settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark,
-    // Global Player Deps
     playlist, currentPlaylistItem, isGlobalPlayerPlaying, globalPlayer, loadPlaylist, toggleGlobalPlayer, playNextInPlaylist, playPrevInPlaylist, closeGlobalPlayer,
     getAyahsForDivision,
   ]);
@@ -586,16 +509,10 @@ const App: React.FC = () => {
           >
             <div className="p-4 bg-gray-800 text-white rounded-lg shadow-lg flex items-center space-x-4 space-x-reverse">
               <span>يوجد تحديث جديد متوفر!</span>
-              <button
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded"
-                onClick={() => updateServiceWorker(true)}
-              >
+              <button className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded" onClick={() => updateServiceWorker(true)}>
                 تحديث
               </button>
-              <button
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded"
-                onClick={closeNeedRefresh}
-              >
+              <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded" onClick={closeNeedRefresh}>
                 إغلاق
               </button>
             </div>
