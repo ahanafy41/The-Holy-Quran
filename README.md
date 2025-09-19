@@ -98,13 +98,13 @@ The Hadith Collection feature allows users to browse and read from a collection 
 **Implementation Details:**
 
 -   **Component Structure:**
-    -   `HadithPage.tsx`: This is the main component for the Hadith feature. It manages the state of the feature, such as the selected book and the fetched Hadith data. It conditionally renders either the `BookListView` or the `HadithListView`.
-    -   `BookListView`: This component displays the list of available Hadith books. It fetches the list of books from a JSON file on GitHub. It also includes a search bar to filter the books.
-    -   `HadithListView`: This component displays the hadiths in a selected book. It uses `@tanstack/react-virtual` to efficiently render the list of hadiths and chapters. It also includes a search bar to search within the hadiths of the selected book.
-    -   `ChaptersModal`: This modal component displays the list of chapters in the selected book, allowing for quick navigation.
+    -   `HadithPage.tsx`: This is the main component for the Hadith feature. It manages the state and navigation flow, conditionally rendering the `BookListView`, `ChapterListView`, or `HadithListView` based on user selection.
+    -   `BookListView`: This component displays the list of available Hadith books and includes a search bar to filter them.
+    -   `ChapterListView`: This component displays the list of chapters for a selected book.
+    -   `HadithListView`: This component displays the hadiths within a selected chapter, using `@tanstack/react-virtual` for efficient rendering.
 -   **Data Fetching:**
-    -   The list of Hadith books is fetched from `https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/main/hadith-data/index.json`.
-    -   The content of each Hadith book (chapters and hadiths) is fetched from a separate JSON file on the same GitHub repository, based on the selected book's ID.
+    -   The list of Hadith books is defined locally in `data/hadithData.ts`.
+    -   The content for each book is split into multiple files. When a book is selected, a `chapters.json` file is fetched. When a chapter is selected, a corresponding `{chapterId}.json` is fetched. This on-demand, granular fetching strategy makes navigation instantaneous.
 -   **State Management:** The `useState` hook is used to manage the state of the selected book, the search queries, and the loading/error states.
 -   **UI:** The UI is built with Tailwind CSS and uses `framer-motion` for animations between the book list and the hadith list views.
 
