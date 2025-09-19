@@ -28,6 +28,21 @@ export interface AppContextType {
   playAyah: (ayah: Ayah) => void;
   pauseAyah: () => void;
   isPlaying: boolean;
+
+  // New Global Player State
+  playlist: Ayah[];
+  currentPlaylistItem: Ayah | null;
+  isGlobalPlayerPlaying: boolean;
+  globalPlayer: {
+    show: boolean;
+  };
+  loadPlaylist: (ayahs: Ayah[], startPlaying?: boolean) => void;
+  toggleGlobalPlayer: () => void;
+  playNextInPlaylist: () => void;
+  playPrevInPlaylist: () => void;
+  closeGlobalPlayer: () => void;
+  getAyahsForDivision: (division: QuranDivision) => Promise<Ayah[]>;
+
   navigateTo: (view: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => void;
   showTafsir: (ayah: Ayah) => void;
   showAIAssistant: (ayah: Ayah) => void;

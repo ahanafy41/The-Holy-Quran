@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
@@ -6,12 +5,15 @@ import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
+import { QuranViewBottomNav } from './QuranViewBottomNav';
+import { TopNavInfo } from './TopNavInfo';
 
 
 export const QuranView: React.FC = () => {
     const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition } = useApp();
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
+    const [topVisibleAyah, setTopVisibleAyah] = useState<number>(1);
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
@@ -20,6 +22,7 @@ export const QuranView: React.FC = () => {
 
     useEffect(() => {
         ayahRefs.current.clear();
+        setTopVisibleAyah(1); // Reset on surah change
     }, [currentSurah?.number]);
 
     useEffect(() => {
@@ -41,6 +44,17 @@ export const QuranView: React.FC = () => {
     };
 
     const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+        const intersectingEntries = entries.filter(e => e.isIntersecting);
+        if (intersectingEntries.length > 0) {
+            const topMostEntry = intersectingEntries.reduce((min, entry) =>
+                entry.boundingClientRect.top < min.boundingClientRect.top ? entry : min
+            );
+            const ayahNumber = parseInt(topMostEntry.target.getAttribute('data-ayah-number') || '0', 10);
+            if (ayahNumber) {
+                setTopVisibleAyah(ayahNumber);
+            }
+        }
+
         if (lastReadTimeoutRef.current) {
             clearTimeout(lastReadTimeoutRef.current);
         }
@@ -57,7 +71,7 @@ export const QuranView: React.FC = () => {
                     updateLastReadPosition(currentSurah.number, ayahNumber);
                 }
             }
-        }, 500); // Debounce to avoid rapid updates
+        }, 500);
 
     }, [currentSurah, updateLastReadPosition]);
 
@@ -67,9 +81,9 @@ export const QuranView: React.FC = () => {
         }
 
         observerRef.current = new IntersectionObserver(handleIntersection, {
-            root: null, // viewport
+            root: null,
             rootMargin: '0px',
-            threshold: 0.5 // Trigger when 50% of the element is visible
+            threshold: [0.1, 0.5, 0.9] // More thresholds for better accuracy
         });
 
         const observer = observerRef.current;
@@ -125,8 +139,8 @@ export const QuranView: React.FC = () => {
     }
     
     return (
-        <div className="max-w-4xl mx-auto">
-             <header className="mb-6 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
+        <div className="max-w-4xl mx-auto pb-24"> {/* Added padding-bottom */}
+             <header className="mb-4 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
                 <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
                     <button
                         onClick={() => window.history.back()}
@@ -139,6 +153,7 @@ export const QuranView: React.FC = () => {
                     <p className="text-lg text-slate-600 dark:text-slate-300">{currentSurah.englishName}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{currentSurah.revelationType} - {currentSurah.ayahs.length} آيات</p>
                 </div>
+                 <TopNavInfo topVisibleAyah={topVisibleAyah} />
             </header>
             <div className="space-y-1">
                 {currentSurah.ayahs.map(ayah => (
@@ -158,6 +173,8 @@ export const QuranView: React.FC = () => {
             </div>
 
             {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
+
+            <QuranViewBottomNav topVisibleAyah={topVisibleAyah} />
         </div>
     );
 };

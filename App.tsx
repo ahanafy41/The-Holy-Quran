@@ -20,6 +20,7 @@ import { ErrorToast } from './components/ErrorToast';
 import { SuccessToast } from './components/SuccessToast';
 import { SettingsModal } from './components/SettingsModal';
 import { TafsirModal } from './components/TafsirModal';
+import { GlobalPlayer } from './components/GlobalPlayer';
 import { BottomNavBar } from './components/BottomNavBar';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,6 +64,14 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const activeAyahRef = useRef<Ayah | null>(null);
   const audioSourcesRef = useRef<{ sources: string[], index: number }>({ sources: [], index: 0 });
+
+  // Global Player State
+  const [playlist, setPlaylist] = useState<Ayah[]>([]);
+  const [currentPlaylistItem, setCurrentPlaylistItem] = useState<Ayah | null>(null);
+  const [isGlobalPlayerPlaying, setIsGlobalPlayerPlaying] = useState(false);
+  const [globalPlayer, setGlobalPlayer] = useState<{show: boolean}>({show: false});
+  const globalWavesurferRef = useRef<WaveSurfer | null>(null);
+  const globalWavesurferContainerRef = useRef<HTMLDivElement>(null);
   
   const [targetAyah, setTargetAyah] = useState<number | null>(null);
   
@@ -80,6 +89,42 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('quranAppBookmarks');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const surahCache = useRef(new Map<number, Surah>());
+
+  const getAyahsForDivision = useCallback(async (division: QuranDivision): Promise<Ayah[]> => {
+    const ayahs: Ayah[] = [];
+    const requiredSurahs: number[] = [];
+    for (let i = division.start.surah; i <= division.end.surah; i++) {
+        requiredSurahs.push(i);
+    }
+
+    // Fetch surahs that are not in the cache
+    const surahsToFetch = requiredSurahs.filter(sNum => !surahCache.current.has(sNum));
+    if (surahsToFetch.length > 0) {
+        await Promise.all(surahsToFetch.map(async (sNum) => {
+            const surahData = await api.getSurah(sNum, settings.memorizationReciter);
+            surahCache.current.set(sNum, surahData);
+        }));
+    }
+
+    // Assemble the ayahs from the cached surahs
+    for (const sNum of requiredSurahs) {
+        const surah = surahCache.current.get(sNum);
+        if (!surah) continue;
+
+        const startAyah = (sNum === division.start.surah) ? division.start.ayah : 1;
+        const endAyah = (sNum === division.end.surah) ? division.end.ayah : surah.ayahs.length;
+
+        for (let a = startAyah; a <= endAyah; a++) {
+            const ayah = surah.ayahs.find(ayah => ayah.numberInSurah === a);
+            if(ayah) ayahs.push(ayah);
+        }
+    }
+
+    return ayahs;
+
+  }, [settings.memorizationReciter]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -137,6 +182,103 @@ const App: React.FC = () => {
     return () => {
         ws.destroy();
     };
+  }, []);
+
+  // Initialize Global Player Wavesurfer
+  useEffect(() => {
+    if (!globalWavesurferContainerRef.current) return;
+    const ws = WaveSurfer.create({
+        container: globalWavesurferContainerRef.current,
+        height: 0,
+        mediaControls: false,
+    });
+    globalWavesurferRef.current = ws;
+
+    const onReady = () => ws.play();
+    const onError = (err: Error) => {
+        // For simplicity, just skip to next on error
+        playNextInPlaylist();
+    };
+
+    ws.on('ready', onReady);
+    ws.on('error', onError);
+    ws.on('play', () => setIsGlobalPlayerPlaying(true));
+    ws.on('pause', () => setIsGlobalPlayerPlaying(false));
+    ws.on('finish', () => {
+        playNextInPlaylist();
+    });
+
+    return () => {
+        ws.destroy();
+    };
+  }, []);
+
+  const playNextInPlaylist = useCallback(() => {
+    if (!playlist.length) return;
+    const currentIndex = playlist.findIndex(item => item.number === currentPlaylistItem?.number);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < playlist.length) {
+        setCurrentPlaylistItem(playlist[nextIndex]);
+    } else {
+        // End of playlist
+        setIsGlobalPlayerPlaying(false);
+        setGlobalPlayer({ show: false });
+        setPlaylist([]);
+        setCurrentPlaylistItem(null);
+    }
+  }, [playlist, currentPlaylistItem]);
+
+  // Effect to load audio when currentPlaylistItem changes
+  useEffect(() => {
+      if (currentPlaylistItem && globalWavesurferRef.current) {
+          // Pause other players
+          window.dispatchEvent(new CustomEvent('global-player-stop'));
+          wavesurferRef.current?.pause();
+
+          const sources = [currentPlaylistItem.audio, ...(currentPlaylistItem.audioSecondarys || [])].filter(Boolean);
+          if (sources.length > 0) {
+            globalWavesurferRef.current.load(sources[0]);
+          } else {
+            // If Ayah has no audio, skip to next
+            setTimeout(playNextInPlaylist, 100);
+          }
+      }
+  }, [currentPlaylistItem, playNextInPlaylist]);
+
+
+  const loadPlaylist = useCallback((ayahs: Ayah[], startPlaying = true) => {
+    if (ayahs.length === 0) return;
+    setPlaylist(ayahs);
+    setCurrentPlaylistItem(ayahs[0]);
+    setGlobalPlayer({ show: true });
+    if (startPlaying) {
+        setIsGlobalPlayerPlaying(true);
+    } else {
+        setIsGlobalPlayerPlaying(false);
+        globalWavesurferRef.current?.pause();
+    }
+  }, []);
+
+  const toggleGlobalPlayer = useCallback(() => {
+    globalWavesurferRef.current?.playPause();
+  }, []);
+
+  const playPrevInPlaylist = useCallback(() => {
+    if (!playlist.length) return;
+    const currentIndex = playlist.findIndex(item => item.number === currentPlaylistItem?.number);
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+        setCurrentPlaylistItem(playlist[prevIndex]);
+    }
+    // If it's the first track, do nothing or maybe restart it
+  }, [playlist, currentPlaylistItem]);
+
+  const closeGlobalPlayer = useCallback(() => {
+      globalWavesurferRef.current?.stop();
+      setGlobalPlayer({ show: false });
+      setPlaylist([]);
+      setCurrentPlaylistItem(null);
+      setIsGlobalPlayerPlaying(false);
   }, []);
 
   useEffect(() => {
@@ -397,7 +539,16 @@ const App: React.FC = () => {
     isStandalone, canInstall, triggerInstall,
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
+    // Global Player
+    playlist, currentPlaylistItem, isGlobalPlayerPlaying, globalPlayer,
+    loadPlaylist, toggleGlobalPlayer, playNextInPlaylist, playPrevInPlaylist, closeGlobalPlayer,
+    getAyahsForDivision,
+  }), [
+    settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark,
+    // Global Player Deps
+    playlist, currentPlaylistItem, isGlobalPlayerPlaying, globalPlayer, loadPlaylist, toggleGlobalPlayer, playNextInPlaylist, playPrevInPlaylist, closeGlobalPlayer,
+    getAyahsForDivision,
+  ]);
 
   const renderView = () => {
     switch (view) {
@@ -419,6 +570,7 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={appContextValue}>
       <div ref={wavesurferContainerRef} className="h-0 w-0 overflow-hidden" />
+      <div ref={globalWavesurferContainerRef} className="h-0 w-0 overflow-hidden" />
       <AnimatePresence>
         {successMessage && <SuccessToast message={successMessage} onClose={() => setSuccessMessage(null)} />}
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
@@ -459,6 +611,10 @@ const App: React.FC = () => {
           {renderView()}
         </main>
       </div>
+
+      <AnimatePresence>
+        <GlobalPlayer />
+      </AnimatePresence>
 
       <AnimatePresence>
         {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more'].includes(view) && (
