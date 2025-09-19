@@ -7,6 +7,9 @@
 # Build output
 /dist
 
+# Generated data
+/public/hadith-data/
+
 # Environment variables
 .env
 .env.*
