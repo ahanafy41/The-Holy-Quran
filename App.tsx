@@ -468,10 +468,13 @@ const App: React.FC = () => {
   }, [initApp]);
   
   useEffect(() => {
+    // This effect handles reloading the surah if the reciter is changed
+    // while the reader view is open.
     if (view === 'reader' && currentSurah) {
       loadSurah(currentSurah.number);
     }
-  }, [view, currentSurah, settings.memorizationReciter, loadSurah]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.memorizationReciter]);
 
 
   const playAyah = useCallback((ayah: Ayah) => {
