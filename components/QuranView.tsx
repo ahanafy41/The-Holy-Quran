@@ -6,7 +6,7 @@ import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
-import { QuranReaderFooter } from './QuranReaderFooter';
+import { ReaderFooter } from './ReaderFooter';
 
 
 export const QuranView: React.FC = () => {
@@ -170,7 +170,7 @@ export const QuranView: React.FC = () => {
 
             {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
 
-            {currentSurah && <QuranReaderFooter surah={currentSurah} visibleAyah={visibleAyahInSurah} />}
+            {currentSurah && <ReaderFooter surah={currentSurah} visibleAyah={visibleAyahInSurah} />}
         </div>
     );
 };
