@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "text": "((لاَ بأْسَ طَهُورٌ إِنْ شَاءَ اللَّهُ)).",
+    "count": 1,
+    "audio": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data/audio/147.mp3",
+    "filename": "147"
+  },
+  {
+    "id": 2,
+    "text": "((أَسْأَلُ اللَّهَ الْعَظيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَشْفيَكَ)) (سبع مرات).",
+    "count": 1,
+    "audio": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data/audio/148.mp3",
+    "filename": "148"
+  }
+]
