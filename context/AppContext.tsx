@@ -2,11 +2,13 @@
 import { createContext, useContext } from 'react';
 import { Ayah, Surah, SurahSimple, Reciter, Tafsir, AppSettings, TafsirInfo, QuranDivision, SavedSection, ListeningReciter, RadioStation } from '../types';
 
+export type NavigationSource = 'footer' | 'index' | 'division' | 'bookmark' | 'last_read' | 'search' | null;
+
 export interface DivisionInfo extends QuranDivision {
     title: string;
 }
 
-export type View = 'home' | 'index' | 'reader' | 'listen' | 'division' | 'memorization' | 'radio' | 'hisn-al-muslim' | 'hadith' | 'bookmarks' | 'more' | 'word-meanings';
+export type View = 'home' | 'index' | 'reader' | 'listen' | 'memorization' | 'radio' | 'hisn-al-muslim' | 'hadith' | 'bookmarks' | 'more' | 'word-meanings';
 
 export interface AppContextType {
   settings: AppSettings;
@@ -28,7 +30,9 @@ export interface AppContextType {
   playAyah: (ayah: Ayah) => void;
   pauseAyah: () => void;
   isPlaying: boolean;
-  navigateTo: (view: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => void;
+  navigateTo: (view: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo, source?: NavigationSource }) => void;
+  navigationSource: NavigationSource;
+  setNavigationSource: (source: NavigationSource) => void; // Added for manual control if needed
   showTafsir: (ayah: Ayah) => void;
   showAIAssistant: (ayah: Ayah) => void;
   showSearch: () => void;

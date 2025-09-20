@@ -6,12 +6,14 @@ import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
+import { ReaderFooter } from './ReaderFooter';
 
 
 export const QuranView: React.FC = () => {
-    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition } = useApp();
+    const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition, navigationSource, setNavigationSource } = useApp();
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
+    const [visibleAyahInSurah, setVisibleAyahInSurah] = useState<number>(1);
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
@@ -54,6 +56,7 @@ export const QuranView: React.FC = () => {
             if (topEntry && topEntry.isIntersecting && currentSurah) {
                 const ayahNumber = parseInt(topEntry.target.getAttribute('data-ayah-number') || '0', 10);
                 if (ayahNumber) {
+                    setVisibleAyahInSurah(ayahNumber);
                     updateLastReadPosition(currentSurah.number, ayahNumber);
                 }
             }
@@ -94,6 +97,14 @@ export const QuranView: React.FC = () => {
                 if (element) {
                     element.scrollIntoView({ behavior: 'auto', block: 'center' });
                     setHighlightedAyah(targetAyah);
+
+                    // Set focus to the surah title for screen reader context after navigation
+                    if (navigationSource && titleRef.current) {
+                        titleRef.current.focus();
+                        // Reset the navigation source so focus isn't hijacked on other re-renders
+                        setNavigationSource(null);
+                    }
+
                     const timer = setTimeout(() => {
                         setHighlightedAyah(null);
                         setTargetAyah(null);
@@ -105,7 +116,7 @@ export const QuranView: React.FC = () => {
             }, 100);
             return () => clearTimeout(timeoutId);
         }
-    }, [targetAyah, currentSurah, setTargetAyah]);
+    }, [targetAyah, currentSurah, setTargetAyah, navigationSource, setNavigationSource]);
 
     if (isLoading && !currentSurah) {
         return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري التحميل...</div>;
@@ -158,6 +169,8 @@ export const QuranView: React.FC = () => {
             </div>
 
             {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
+
+            {currentSurah && <ReaderFooter surah={currentSurah} visibleAyah={visibleAyahInSurah} />}
         </div>
     );
 };
