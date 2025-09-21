@@ -37,6 +37,8 @@ export interface AppContextType {
   apiKey: string | null;
   updateApiKey: (key: string) => void;
   view: View;
+  navigationContext: string | null;
+  setNavigationContext: (context: string | null) => void;
   savedSections: SavedSection[];
   addSavedSection: (section: Omit<SavedSection, 'id'>) => void;
   removeSavedSection: (sectionId: string) => void;
