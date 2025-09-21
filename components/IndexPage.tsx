@@ -5,6 +5,7 @@ import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
 import { QuranDivision, SurahSimple, SavedSection } from '../types';
 import { BookOpenIcon, FolderIcon, ChevronLeftIcon, ArrowRightIcon, FlowerIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AdvancedSearch } from './AdvancedSearch';
 
 
 // Define types for clarity
@@ -56,6 +57,9 @@ export const IndexPage: React.FC = () => {
                      <p className="text-slate-600 dark:text-slate-400">تصفح حسب السور، الأجزاء، الصفحات، والمزيد.</p>
                 </div>
             </header>
+
+            <AdvancedSearch />
+
             <AnimatePresence mode="wait">
                 {activeList ? (
                     <motion.div key="list" {...listAnimation}>
