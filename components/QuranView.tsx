@@ -6,6 +6,7 @@ import { AyahActionModal } from './AyahActionModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
+import { QuranReaderControls } from './QuranReaderControls';
 
 
 export const QuranView: React.FC = () => {
@@ -16,20 +17,17 @@ export const QuranView: React.FC = () => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const lastFocusedSurah = useRef<number | null>(null);
 
     useEffect(() => {
         ayahRefs.current.clear();
     }, [currentSurah?.number]);
 
     useEffect(() => {
-        if (currentSurah && titleRef.current && lastFocusedSurah.current !== currentSurah.number) {
-            const timer = setTimeout(() => {
-                titleRef.current?.focus();
-                lastFocusedSurah.current = currentSurah.number;
-            }, 100);
-            return () => clearTimeout(timer);
-        }
+        // Set focus to the title when the surah changes, for accessibility.
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
     }, [currentSurah?.number]);
 
     const handleAyahSelect = (ayah: Ayah) => {
@@ -125,7 +123,7 @@ export const QuranView: React.FC = () => {
     }
     
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-24">
              <header className="mb-6 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
                 <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
                     <button
@@ -158,6 +156,7 @@ export const QuranView: React.FC = () => {
             </div>
 
             {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
+            <QuranReaderControls />
         </div>
     );
 };

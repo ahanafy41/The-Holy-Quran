@@ -97,11 +97,12 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
 
     const handleItemClick = (item: any) => {
         if (list.id === 'surahs') {
-            navigateTo('reader', { surahNumber: item.number });
+            navigateTo('reader', { surahNumber: item.number, navigationContext: 'surahs' });
         } else {
             const surahName = surahMap.get(item.start.surah);
             navigateTo('division', {
-                division: { ...item, title: `${list.itemLabel} ${item.number}`, startSurahName: surahName }
+                division: { ...item, title: `${list.itemLabel} ${item.number}`, startSurahName: surahName },
+                navigationContext: list.id,
             });
         }
     };

@@ -8,6 +8,7 @@ import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QuranReaderControls } from './QuranReaderControls';
 
 interface DivisionViewProps {
     division: QuranDivision & { title: string, startSurahName?: string };
@@ -111,7 +112,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-24">
              <header className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 mb-6 text-center relative">
                 <button
                     onClick={() => window.history.back()}
@@ -133,6 +134,7 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
             <AnimatePresence>
                 {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
             </AnimatePresence>
+            <QuranReaderControls division={division} />
         </div>
     );
 };

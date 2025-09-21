@@ -56,6 +56,7 @@ const App: React.FC = () => {
   
   const [view, setView] = useState<View>('index');
   const [currentDivision, setCurrentDivision] = useState<DivisionInfo | null>(null);
+  const [navigationContext, setNavigationContext] = useState<string | null>(null);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -244,13 +245,14 @@ const App: React.FC = () => {
     }
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
-  const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo }) => {
+  const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo, navigationContext?: string }) => {
     const state = { view: targetView, params };
     // Only push state if it's different from the current one to avoid duplicate entries
     if (window.history.state?.view !== targetView || JSON.stringify(window.history.state?.params) !== JSON.stringify(params)) {
       window.history.pushState(state, '', `/${targetView}`);
     }
 
+    setNavigationContext(params?.navigationContext ?? null);
     setTargetAyah(params?.ayahNumber ?? null);
 
     if (targetView === 'reader' && params?.surahNumber) {
@@ -270,6 +272,7 @@ const App: React.FC = () => {
       if (event.state) {
         const { view: targetView, params } = event.state;
         setTargetAyah(params?.ayahNumber ?? null);
+        setNavigationContext(params?.navigationContext ?? null);
         if (targetView === 'reader' && params?.surahNumber) {
           if (currentSurah?.number !== params.surahNumber) {
             await loadSurah(params.surahNumber);
@@ -281,6 +284,7 @@ const App: React.FC = () => {
       } else {
         // Initial state, go to index
         setView('index');
+        setNavigationContext(null);
       }
     };
 
@@ -326,10 +330,14 @@ const App: React.FC = () => {
   }, [initApp]);
   
   useEffect(() => {
+    // This effect is intended to reload the surah if the reciter preference changes.
+    // We must not include currentSurah or loadSurah in the dependency array to avoid an infinite loop,
+    // as loadSurah updates currentSurah, which would re-trigger the effect.
     if (view === 'reader' && currentSurah) {
       loadSurah(currentSurah.number);
     }
-  }, [view, currentSurah, settings.memorizationReciter, loadSurah]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, settings.memorizationReciter]);
 
 
   const playAyah = useCallback((ayah: Ayah) => {
@@ -393,11 +401,12 @@ const App: React.FC = () => {
     settings, updateSettings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah,
     isLoading, error, setError, setSuccessMessage, activeAyah, targetAyah, setTargetAyah, playAyah, pauseAyah,
     isPlaying, navigateTo, showTafsir, showAIAssistant, showSearch, showSettings, view, scrollToTop,
+    navigationContext, setNavigationContext,
     savedSections, addSavedSection, removeSavedSection, apiKey, updateApiKey,
     isStandalone, canInstall, triggerInstall,
     lastReadPosition, updateLastReadPosition,
     bookmarks, addBookmark, removeBookmark,
-  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
+  }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, navigationContext, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
 
   const renderView = () => {
     switch (view) {
