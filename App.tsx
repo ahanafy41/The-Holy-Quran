@@ -330,10 +330,14 @@ const App: React.FC = () => {
   }, [initApp]);
   
   useEffect(() => {
+    // This effect is intended to reload the surah if the reciter preference changes.
+    // We must not include currentSurah or loadSurah in the dependency array to avoid an infinite loop,
+    // as loadSurah updates currentSurah, which would re-trigger the effect.
     if (view === 'reader' && currentSurah) {
       loadSurah(currentSurah.number);
     }
-  }, [view, currentSurah, settings.memorizationReciter, loadSurah]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, settings.memorizationReciter]);
 
 
   const playAyah = useCallback((ayah: Ayah) => {

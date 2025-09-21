@@ -16,7 +16,7 @@ const divisionMap: { [key: string]: { data: QuranDivision[], label: string } } =
 };
 
 export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division }) => {
-  const { navigationContext, navigateTo, currentSurah, lastReadPosition, surahList } = useApp();
+  const { navigationContext, navigateTo, currentSurah, lastReadPosition, surahList, isLoading } = useApp();
 
   const getCurrentDivisionInfo = () => {
     const context = navigationContext;
@@ -123,7 +123,7 @@ export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division })
       <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
         <button
           onClick={handlePrev}
-          disabled={isPrevDisabled}
+          disabled={isPrevDisabled || isLoading}
           aria-label={`${info.label} السابق`}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -138,7 +138,7 @@ export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division })
 
         <button
           onClick={handleNext}
-          disabled={isNextDisabled}
+          disabled={isNextDisabled || isLoading}
           aria-label={`${info.label} التالي`}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >

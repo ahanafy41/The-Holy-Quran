@@ -17,20 +17,17 @@ export const QuranView: React.FC = () => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const lastFocusedSurah = useRef<number | null>(null);
 
     useEffect(() => {
         ayahRefs.current.clear();
     }, [currentSurah?.number]);
 
     useEffect(() => {
-        if (currentSurah && titleRef.current && lastFocusedSurah.current !== currentSurah.number) {
-            const timer = setTimeout(() => {
-                titleRef.current?.focus();
-                lastFocusedSurah.current = currentSurah.number;
-            }, 100);
-            return () => clearTimeout(timer);
-        }
+        // Set focus to the title when the surah changes, for accessibility.
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
     }, [currentSurah?.number]);
 
     const handleAyahSelect = (ayah: Ayah) => {
