@@ -78,15 +78,10 @@ export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division })
         const nextDivision = divData[nextIndex];
         const surahName = surahList.find(s => s.number === nextDivision.start.surah)?.name;
 
-        // When navigating pages, we want to stay in the reader view
-        if (info.context === 'pages') {
-            navigateTo('reader', { surahNumber: nextDivision.start.surah, ayahNumber: nextDivision.start.ayah, navigationContext: 'pages' });
-        } else {
-            navigateTo('division', {
-                division: { ...nextDivision, title: `${divisionMap[info.context].label} ${nextDivision.number}`, startSurahName: surahName },
-                navigationContext: info.context,
-            });
-        }
+        navigateTo('division', {
+            division: { ...nextDivision, title: `${divisionMap[info.context].label} ${nextDivision.number}`, startSurahName: surahName },
+            navigationContext: info.context,
+        });
     }
   };
 
@@ -104,14 +99,10 @@ export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division })
         const prevDivision = divData[prevIndex];
         const surahName = surahList.find(s => s.number === prevDivision.start.surah)?.name;
 
-        if (info.context === 'pages') {
-            navigateTo('reader', { surahNumber: prevDivision.start.surah, ayahNumber: prevDivision.start.ayah, navigationContext: 'pages' });
-        } else {
-            navigateTo('division', {
-                division: { ...prevDivision, title: `${divisionMap[info.context].label} ${prevDivision.number}`, startSurahName: surahName },
-                navigationContext: info.context,
-            });
-        }
+        navigateTo('division', {
+            division: { ...prevDivision, title: `${divisionMap[info.context].label} ${prevDivision.number}`, startSurahName: surahName },
+            navigationContext: info.context,
+        });
     }
   };
 
