@@ -16,6 +16,7 @@
     "@tanstack/react-virtual": "^3.7.0",
     "focus-trap-react": "^11.0.4",
     "framer-motion": "^12.23.16",
+    "fuse.js": "^7.1.0",
     "node-fetch": "^3.3.2",
     "quran-meta": "^5.1.0",
     "react": "^19.1.1",
