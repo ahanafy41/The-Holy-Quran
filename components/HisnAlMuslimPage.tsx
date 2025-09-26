@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HisnCategory, HisnDhikr } from '../types';
+import hisnAlMuslimCategories from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
 
@@ -153,7 +154,7 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
 };
 
 
-const CategoryListView: React.FC<{ categories: HisnCategory[], onSelect: (category: HisnCategory) => void }> = ({ categories, onSelect }) => {
+const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }> = ({ onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -165,9 +166,9 @@ const CategoryListView: React.FC<{ categories: HisnCategory[], onSelect: (catego
     }, []);
 
     const filteredCategories = useMemo(() => {
-        if (!searchQuery.trim()) return categories;
-        return categories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [searchQuery, categories]);
+        if (!searchQuery.trim()) return hisnAlMuslimCategories;
+        return hisnAlMuslimCategories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchQuery]);
 
     return (
         <div>
@@ -206,31 +207,6 @@ const CategoryListView: React.FC<{ categories: HisnCategory[], onSelect: (catego
 
 export const HisnAlMuslimPage: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<HisnCategory | null>(null);
-    const [categories, setCategories] = useState<HisnCategory[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchAzkarData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const response = await fetch('https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/feat/online-azkar-data/azkar-data/azkar.json');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                setCategories(data);
-            } catch (err) {
-                setError('فشل تحميل الأذكار. يرجى المحاولة مرة أخرى.');
-                console.error("Failed to load Azkar data:", err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchAzkarData();
-    }, []);
 
     const viewAnimation = {
         initial: { opacity: 0, x: 20 },
@@ -238,19 +214,6 @@ export const HisnAlMuslimPage: React.FC = () => {
         exit: { opacity: 0, x: -20 },
         transition: { duration: 0.25 }
     };
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-full"><p>جاري تحميل الأذكار...</p></div>;
-    }
-
-    if (error) {
-         return <div className="flex flex-col justify-center items-center h-full text-center">
-            <p className="text-red-500 mb-4">{error}</p>
-            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                إعادة تحميل الصفحة
-            </button>
-        </div>;
-    }
 
     return (
         <AnimatePresence mode="wait">
@@ -261,7 +224,7 @@ export const HisnAlMuslimPage: React.FC = () => {
                 {selectedCategory ? (
                     <CategoryDetailView category={selectedCategory} onBack={() => setSelectedCategory(null)} />
                 ) : (
-                    <CategoryListView categories={categories} onSelect={setSelectedCategory} />
+                    <CategoryListView onSelect={setSelectedCategory} />
                 )}
             </MotionDiv>
         </AnimatePresence>
