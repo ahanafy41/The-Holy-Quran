@@ -163,7 +163,7 @@ export const HadithPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/hadith-data/${book.id}/chapters.json`);
+            const response = await fetch(`https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/hadith-data-migration/hadith-data/${book.id}/chapters.json`);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             setChapters(data);
@@ -182,7 +182,7 @@ export const HadithPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/hadith-data/${selectedBook.id}/${chapter.id}.json`);
+            const response = await fetch(`https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/hadith-data-migration/hadith-data/${selectedBook.id}/${chapter.id}.json`);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             setHadiths(data);
