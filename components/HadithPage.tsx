@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HadithBook, Hadith, HadithChapter } from '../types';
 import { hadithCollection } from '../data/hadithData';
+import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
@@ -152,6 +153,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
 export const HadithPage: React.FC = () => {
     const [view, setView] = useState<'books' | 'chapters' | 'hadiths'>('books');
     const [selectedBook, setSelectedBook] = useState<HadithBook | null>(null);
+    const [selectedBookData, setSelectedBookData] = useState<any | null>(null);
     const [chapters, setChapters] = useState<HadithChapter[]>([]);
     const [selectedChapter, setSelectedChapter] = useState<HadithChapter | null>(null);
     const [hadiths, setHadiths] = useState<Hadith[]>([]);
@@ -163,40 +165,33 @@ export const HadithPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/hadith-data/${book.id}/chapters.json`);
+            const url = hadithBookUrls[book.id];
+            if (!url) throw new Error(`No URL found for book ID: ${book.id}`);
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
-            setChapters(data);
+            setSelectedBookData(data);
+            setChapters(data.chapters || []);
             setView('chapters');
         } catch (err) {
-            setError('فشل تحميل الأبواب. يرجى المحاولة مرة أخرى.');
-            console.error("Failed to load hadith chapters:", err);
+            setError('فشل تحميل الكتاب. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
+            console.error("Failed to load hadith book:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSelectChapter = async (chapter: HadithChapter) => {
-        if (!selectedBook) return;
+    const handleSelectChapter = (chapter: HadithChapter) => {
+        if (!selectedBookData) return;
         setSelectedChapter(chapter);
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await fetch(`/hadith-data/${selectedBook.id}/${chapter.id}.json`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            setHadiths(data);
-            setView('hadiths');
-        } catch (err) {
-            setError('فشل تحميل الأحاديث. يرجى المحاولة مرة أخرى.');
-            console.error("Failed to load hadiths:", err);
-        } finally {
-            setIsLoading(false);
-        }
+        const chapterHadiths = selectedBookData.hadiths.filter((h: Hadith) => h.chapterId === chapter.id);
+        setHadiths(chapterHadiths);
+        setView('hadiths');
     };
 
     const handleBackToBooks = () => {
         setSelectedBook(null);
+        setSelectedBookData(null);
         setChapters([]);
         setView('books');
     };
