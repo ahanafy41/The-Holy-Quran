@@ -1,11 +1,21 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HisnCategory, HisnDhikr } from '../types';
-import hisnAlMuslimCategories from '../azkar-data/azkar.json';
+import hisnAlMuslimCategoriesData from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
 
 const MotionDiv = motion.div as any;
+
+const baseURL = 'https://raw.githubusercontent.com/ahanafy41/Adhkar-json-main/master/Adhkar-json-main';
+
+const hisnAlMuslimCategories: HisnCategory[] = hisnAlMuslimCategoriesData.map(category => ({
+    ...category,
+    audio: `${baseURL}${category.audio}`,
+    array: category.array.map(dhikr => ({
+        ...dhikr,
+        audio: `${baseURL}${dhikr.audio}`
+    }))
+}));
 
 const DhikrCard: React.FC<{
     dhikr: HisnDhikr;
