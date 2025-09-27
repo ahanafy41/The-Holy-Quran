@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HisnCategory, HisnDhikr } from '../types';
-import hisnAlMuslimCategories from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
 
@@ -154,7 +153,7 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
 };
 
 
-const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }> = ({ onSelect }) => {
+const CategoryListView: React.FC<{ categories: HisnCategory[], onSelect: (category: HisnCategory) => void }> = ({ categories, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -166,9 +165,9 @@ const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }>
     }, []);
 
     const filteredCategories = useMemo(() => {
-        if (!searchQuery.trim()) return hisnAlMuslimCategories;
-        return hisnAlMuslimCategories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [searchQuery]);
+        if (!searchQuery.trim()) return categories;
+        return categories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchQuery, categories]);
 
     return (
         <div>
@@ -206,7 +205,26 @@ const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }>
 
 
 export const HisnAlMuslimPage: React.FC = () => {
+    const [categories, setCategories] = useState<HisnCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<HisnCategory | null>(null);
+
+    useEffect(() => {
+        fetch('https://raw.githubusercontent.com/ahanafy41/Adhkar-json-main/main/Adhkar-json-main/azkar.json')
+            .then(response => response.json())
+            .then((data: HisnCategory[]) => {
+                const baseURL = 'https://raw.githubusercontent.com/ahanafy41/Adhkar-json-main/main/Adhkar-json-main';
+                const updatedData = data.map(category => ({
+                    ...category,
+                    audio: `${baseURL}${category.audio}`,
+                    array: category.array.map(dhikr => ({
+                        ...dhikr,
+                        audio: `${baseURL}${dhikr.audio}`
+                    }))
+                }));
+                setCategories(updatedData);
+            })
+            .catch(error => console.error("Failed to fetch Hisn al-Muslim data:", error));
+    }, []);
 
     const viewAnimation = {
         initial: { opacity: 0, x: 20 },
@@ -224,7 +242,7 @@ export const HisnAlMuslimPage: React.FC = () => {
                 {selectedCategory ? (
                     <CategoryDetailView category={selectedCategory} onBack={() => setSelectedCategory(null)} />
                 ) : (
-                    <CategoryListView onSelect={setSelectedCategory} />
+                    <CategoryListView categories={categories} onSelect={setSelectedCategory} />
                 )}
             </MotionDiv>
         </AnimatePresence>
