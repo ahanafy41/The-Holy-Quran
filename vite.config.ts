@@ -10,8 +10,8 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: 'azkar-data/audio',
-          dest: ''
+          src: 'azkar-data/audio/*',
+          dest: 'audio'
         }
       ]
     }),
