@@ -4,12 +4,28 @@ import { XMarkIcon, CheckCircleIcon } from './Icons';
 import { motion } from 'framer-motion';
 
 
+/**
+ * @interface SuccessToastProps
+ * @description Defines the props for the SuccessToast component.
+ */
 interface SuccessToastProps {
+    /** The success message to be displayed. */
     message: string;
+    /** A callback function to be invoked when the toast should be closed. */
     onClose: () => void;
+    /** The duration in milliseconds for which the toast should be visible. Defaults to 4000. */
     duration?: number;
 }
 
+/**
+ * `SuccessToast` is a component that displays a success message in a toast notification.
+ * The toast appears with an animation, stays on screen for a specified duration,
+ * and then automatically calls the `onClose` callback to dismiss itself.
+ *
+ * @component
+ * @param {SuccessToastProps} props - The props for the component.
+ * @returns {React.ReactElement} A toast notification for displaying success messages.
+ */
 export const SuccessToast: React.FC<SuccessToastProps> = ({ message, onClose, duration = 4000 }) => {
     useEffect(() => {
         const timer = setTimeout(() => {

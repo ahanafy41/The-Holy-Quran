@@ -9,13 +9,30 @@ import { ArrowRightIcon } from './Icons';
 import { QuranReaderControls } from './QuranReaderControls';
 
 
+/**
+ * `QuranView` is the main component for displaying the text of a single Surah.
+ * It handles rendering the list of ayahs, managing interactions like selection,
+ * scrolling to a specific ayah, and automatically tracking the user's last read position.
+ *
+ * @component
+ * @example
+ * return <QuranView />
+ */
 export const QuranView: React.FC = () => {
     const { currentSurah, isLoading, error, targetAyah, setTargetAyah, navigateTo, updateLastReadPosition } = useApp();
+
+    /** State to hold the currently selected ayah, which triggers the action modal. */
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
+    /** State to temporarily highlight an ayah, e.g., when navigating from a search result. */
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
+
+    /** A ref to a map of ayah numbers to their corresponding DOM elements for direct access (e.g., for scrolling). */
     const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    /** A ref to the surah title element for setting focus on navigation. */
     const titleRef = useRef<HTMLHeadingElement>(null);
+    /** A ref to the IntersectionObserver instance used for tracking which ayah is on screen. */
     const observerRef = useRef<IntersectionObserver | null>(null);
+    /** A ref to a timeout used to debounce the last-read position updates. */
     const lastReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
@@ -30,14 +47,26 @@ export const QuranView: React.FC = () => {
         return () => clearTimeout(timer);
     }, [currentSurah?.number]);
 
+    /**
+     * Sets the selected ayah, which will trigger the AyahActionModal to open.
+     * @param {Ayah} ayah - The ayah that was selected by the user.
+     */
     const handleAyahSelect = (ayah: Ayah) => {
         setSelectedAyah(ayah);
     };
 
+    /**
+     * Clears the selected ayah, closing the AyahActionModal.
+     */
     const handleModalClose = () => {
         setSelectedAyah(null);
     };
 
+    /**
+     * The callback for the IntersectionObserver. It determines the topmost visible ayah
+     * and, after a short delay, updates the global last-read position.
+     * @param {IntersectionObserverEntry[]} entries - The list of observed entries.
+     */
     const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
         if (lastReadTimeoutRef.current) {
             clearTimeout(lastReadTimeoutRef.current);

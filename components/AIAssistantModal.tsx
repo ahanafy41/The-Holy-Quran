@@ -8,16 +8,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 
 
+/**
+ * @interface AIAssistantModalProps
+ * @description Defines the props for the AIAssistantModal component.
+ */
 interface AIAssistantModalProps {
+    /** The Ayah object that is the context for the chat session. */
     ayah: Ayah;
+    /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
 }
 
+/**
+ * @typedef {object} Message
+ * @description Represents a single message in the chat history.
+ * @property {'user' | 'model'} role - The role of the message sender.
+ * @property {string} text - The content of the message.
+ */
 type Message = {
     role: 'user' | 'model';
     text: string;
 };
 
+/**
+ * `AIAssistantModal` provides an AI-powered chat interface for users to ask questions
+ * and get explanations about a specific ayah. It uses the Google Gemini API for chat functionality
+ * and streams responses for a better user experience.
+ *
+ * @component
+ * @param {AIAssistantModalProps} props - The props for the component.
+ * @returns {React.ReactElement} A modal dialog for the AI Assistant chat.
+ */
 export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClose }) => {
     const { apiKey } = useApp();
     const [messages, setMessages] = useState<Message[]>([]);

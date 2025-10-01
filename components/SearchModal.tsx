@@ -9,6 +9,16 @@ import { Spinner } from './Spinner';
 import { SearchResult } from '../types';
 import { XMarkIcon, SearchIcon } from './Icons';
 
+/**
+ * `SearchModal` provides a user interface for searching the Quran.
+ * It features a debounced search input to provide real-time results efficiently.
+ * The modal is accessible, trapping focus and closing on escape or outside click.
+ *
+ * @component
+ * @param {{ onClose: () => void }} props - The component props.
+ * @param {() => void} props.onClose - A callback function to be invoked when the modal should be closed.
+ * @returns {React.ReactElement} A modal dialog for searching the Quran.
+ */
 export const SearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { navigateTo, surahList } = useApp();
     const [searchQuery, setSearchQuery] = useState('');

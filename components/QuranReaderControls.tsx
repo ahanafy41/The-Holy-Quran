@@ -4,8 +4,16 @@ import { QuranDivision } from '../types';
 import { juzs, hizbs, rubs, pages } from '../data/quranicDivisions';
 import { ChevronRightIcon, ChevronLeftIcon } from './Icons';
 
+/**
+ * @interface ReaderControlsProps
+ * @description Defines the props for the QuranReaderControls component.
+ */
 interface ReaderControlsProps {
-  division?: QuranDivision; // For DivisionView
+  /**
+   * An optional division object, provided when the controls are used within the `DivisionView`.
+   * This helps determine the context for navigation.
+   */
+  division?: QuranDivision;
 }
 
 const divisionMap: { [key: string]: { data: QuranDivision[], label: string } } = {
@@ -15,6 +23,15 @@ const divisionMap: { [key: string]: { data: QuranDivision[], label: string } } =
   'pages': { data: pages, label: 'الصفحة' },
 };
 
+/**
+ * `QuranReaderControls` is a component that provides persistent navigation controls
+ * at the bottom of the screen for moving to the next or previous surah or division (e.g., Juz, Hizb).
+ * It dynamically determines the current context (surah, juz, etc.) and adjusts its behavior accordingly.
+ *
+ * @component
+ * @param {ReaderControlsProps} props - The props for the component.
+ * @returns {React.ReactElement | null} A floating control bar for navigation, or null if the context cannot be determined.
+ */
 export const QuranReaderControls: React.FC<ReaderControlsProps> = ({ division }) => {
   const { navigationContext, navigateTo, currentSurah, lastReadPosition, surahList, isLoading } = useApp();
 

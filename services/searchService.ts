@@ -3,6 +3,15 @@ import { SearchResult, QuranAyah } from '../types';
 import { quranText } from '../data/quran-text';
 import { normalizeArabic } from '../utils/text';
 
+/**
+ * @constant
+ * @type {Fuse.IFuseOptions<QuranAyah>}
+ * @description Configuration options for Fuse.js search.
+ * - `includeScore`: Includes the search score in the results.
+ * - `keys`: Specifies the properties to search within each object (searching in the pre-normalized Arabic text).
+ * - `threshold`: Sets the tolerance for fuzzy searching (0.0 for perfect match, 1.0 for any match). A value of 0.3 provides a good balance.
+ * - `ignoreLocation`: Allows matches to be found anywhere in the string, not just at the beginning.
+ */
 const fuseOptions = {
     includeScore: true,
     // Search in `normalizedText` of the Ayah object
@@ -13,13 +22,23 @@ const fuseOptions = {
     ignoreLocation: true,
 };
 
-// Create a single Fuse instance for the entire Quran text for performance.
+/**
+ * @constant
+ * @type {Fuse<QuranAyah>}
+ * @description A pre-initialized Fuse.js instance for performing searches on the entire Quran text.
+ * This is created once to avoid the performance overhead of re-indexing on every search.
+ */
 const fuse = new Fuse(quranText, fuseOptions);
 
 /**
  * Searches the Quran for a given query using a pre-processed local data source with Fuse.js.
- * @param query The user's search string.
- * @returns A promise that resolves to an array of matching ayahs.
+ * This provides a fast, client-side fuzzy search capability. The search is performed on normalized Arabic text
+ * to ensure that variations in diacritics or letter forms do not affect the search results.
+ *
+ * @param {string} query The user's search string. It will be normalized before being used in the search.
+ * @returns {Promise<SearchResult[]>} A promise that resolves to an array of the top 20 matching ayahs,
+ * formatted as `SearchResult` objects. Returns an empty array if the query is too short (less than 2 characters)
+ * or if no matches are found.
  */
 export const searchQuran = async (query: string): Promise<SearchResult[]> => {
     const normalizedQuery = normalizeArabic(query.trim());

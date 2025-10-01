@@ -7,8 +7,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Spinner } from './Spinner';
 import { RadioPlayerView } from './RadioPlayerView';
 
+/**
+ * @typedef {'list' | 'player'} View
+ * @description Represents the possible views within the RadioPage component.
+ */
 type View = 'list' | 'player';
 
+/**
+ * `RadioPage` is the main container component for the Quran Radio feature.
+ * It manages the state for switching between the list of radio stations and the player view.
+ *
+ * @component
+ * @returns {React.ReactElement} The main component for the radio feature.
+ */
 export const RadioPage: React.FC = () => {
     const { radioStations } = useApp();
     const [view, setView] = useState<View>('list');
@@ -52,6 +63,15 @@ export const RadioPage: React.FC = () => {
     );
 };
 
+/**
+ * `RadioListView` displays a searchable list of available Quran radio stations.
+ *
+ * @component
+ * @param {{stations: RadioStation[], onSelect: (r: RadioStation) => void}} props - The component props.
+ * @param {RadioStation[]} props.stations - The list of radio stations to display.
+ * @param {(r: RadioStation) => void} props.onSelect - Callback function triggered when a station is selected.
+ * @returns {React.ReactElement} A view for selecting a radio station.
+ */
 const RadioListView: React.FC<{stations: RadioStation[], onSelect: (r: RadioStation) => void}> = ({ stations, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');

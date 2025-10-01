@@ -17,6 +17,20 @@ const hisnAlMuslimCategories: HisnCategory[] = hisnAlMuslimCategoriesData.map(ca
     }))
 }));
 
+/**
+ * `DhikrCard` is a presentational component that displays a single dhikr (remembrance).
+ * It includes the dhikr text, a counter for repetitions, a progress bar, and an audio play button.
+ * The main body of the card acts as a button to decrement the counter.
+ *
+ * @component
+ * @param {object} props - The component props.
+ * @param {HisnDhikr} props.dhikr - The dhikr object to display.
+ * @param {number} props.progress - The remaining number of repetitions for the dhikr.
+ * @param {boolean} props.isPlaying - A flag indicating if the audio for this dhikr is currently playing.
+ * @param {() => void} props.onCounterClick - Callback function triggered when the counter area is clicked.
+ * @param {() => void} props.onPlayClick - Callback function triggered when the play button is clicked.
+ * @returns {React.ReactElement} A card component for a single dhikr.
+ */
 const DhikrCard: React.FC<{
     dhikr: HisnDhikr;
     progress: number;
@@ -90,6 +104,16 @@ const DhikrCard: React.FC<{
 };
 
 
+/**
+ * `CategoryDetailView` displays the list of all dhikrs for a selected category.
+ * It manages the state for the repetition counters of each dhikr and controls audio playback.
+ *
+ * @component
+ * @param {{ category: HisnCategory, onBack: () => void }} props - The component props.
+ * @param {HisnCategory} props.category - The category object whose dhikrs are to be displayed.
+ * @param {() => void} props.onBack - Callback function to navigate back to the category list view.
+ * @returns {React.ReactElement} A view displaying a list of `DhikrCard` components.
+ */
 const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void }> = ({ category, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -165,6 +189,14 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
 };
 
 
+/**
+ * `CategoryListView` displays a searchable list of all categories from the "Hisn al-Muslim" collection.
+ *
+ * @component
+ * @param {{ onSelect: (category: HisnCategory) => void }} props - The component props.
+ * @param {(category: HisnCategory) => void} props.onSelect - Callback function triggered when a user selects a category.
+ * @returns {React.ReactElement} A component that renders a list of dhikr categories.
+ */
 const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }> = ({ onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -216,6 +248,13 @@ const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }>
 };
 
 
+/**
+ * `HisnAlMuslimPage` is the main container component for the "Hisn al-Muslim" (Fortress of the Muslim) feature.
+ * It manages the view state, switching between the list of categories and the detailed view of a selected category.
+ *
+ * @component
+ * @returns {React.ReactElement} The main page component for the Hisn al-Muslim feature.
+ */
 export const HisnAlMuslimPage: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<HisnCategory | null>(null);
 

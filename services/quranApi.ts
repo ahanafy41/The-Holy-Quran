@@ -23,6 +23,15 @@ interface Moshaf {
     surah_list: string;
 }
 
+/**
+ * Fetches data from a URL with a specified number of retries and exponential backoff.
+ * This is useful for handling transient network errors or temporary server issues.
+ * @param {string} url The URL to fetch.
+ * @param {number} [retries=3] The maximum number of retries.
+ * @param {number} [backoff=1000] The initial backoff delay in milliseconds.
+ * @returns {Promise<any>} A promise that resolves to the JSON response.
+ * @throws Will throw an error if the fetch fails after all retries.
+ */
 async function fetchWithRetry(url: string, retries = 3, backoff = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -46,7 +55,14 @@ async function fetchWithRetry(url: string, retries = 3, backoff = 1000) {
     throw new Error(`Failed to fetch ${url} after ${retries} attempts.`);
 }
 
-
+/**
+ * A generic wrapper for fetching data from the alquran.cloud API.
+ * It handles the base URL, checks the API response status, and extracts the data.
+ * @template T The expected type of the data to be returned.
+ * @param {string} endpoint The API endpoint to fetch (e.g., 'surah').
+ * @returns {Promise<T>} A promise that resolves to the data from the API.
+ * @throws Will throw an error if the API call is unsuccessful.
+ */
 async function fetchAPI<T,>(endpoint: string): Promise<T> {
   try {
     const data = await fetchWithRetry(`${BASE_URL}/${endpoint}`);
@@ -60,6 +76,13 @@ async function fetchAPI<T,>(endpoint: string): Promise<T> {
   }
 }
 
+/**
+ * A generic wrapper for fetching data from the mp3quran.net API.
+ * @template T The expected type of the data to be returned.
+ * @param {string} endpoint The API endpoint to fetch (e.g., 'reciters').
+ * @returns {Promise<T>} A promise that resolves to the data from the API.
+ * @throws Will throw an error if the API call is unsuccessful.
+ */
 async function fetchMP3QuranAPI<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${MP3QURAN_API_URL}/${endpoint}`);
   if (!response.ok) {
@@ -69,6 +92,12 @@ async function fetchMP3QuranAPI<T>(endpoint: string): Promise<T> {
   return data.reciters as T;
 }
 
+/**
+ * Fetches and processes a list of reciters for the audio listening feature from the mp3quran.net API.
+ * It creates distinct display names for reciters with multiple recording styles (e.g., Murattal, Mujawwad).
+ * It also manually prepends a specific reciter (Sheikh Muhammad Rifat) who has a partial recording.
+ * @returns {Promise<ListeningReciter[]>} A promise that resolves to an array of listening reciters.
+ */
 export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
     const rawReciters = await fetchMP3QuranAPI<MP3QuranReciter[]>('reciters?language=ar');
     const listeningReciters: ListeningReciter[] = [];
@@ -110,6 +139,11 @@ export const getListeningReciters = async (): Promise<ListeningReciter[]> => {
     return listeningReciters;
 };
 
+/**
+ * Fetches a list of Quran radio stations from the mp3quran.net API.
+ * It also prepends a hardcoded, verified URL for the popular "Quran Radio from Cairo" station to ensure its availability and place it first in the list.
+ * @returns {Promise<RadioStation[]>} A promise that resolves to an array of radio stations.
+ */
 export const getRadioStations = async (): Promise<RadioStation[]> => {
     let stations: RadioStation[] = [];
 
@@ -141,7 +175,15 @@ export const getRadioStations = async (): Promise<RadioStation[]> => {
 };
 
 
-// Helper to add a fallback audio URL from a more reliable CDN (everyayah.com)
+/**
+ * A helper function to augment an Ayah object with a fallback audio URL.
+ * The primary audio source from alquran.cloud can sometimes be unreliable. This function adds a secondary URL
+ * from everyayah.com, which is a more stable CDN for verse-by-verse audio.
+ * @param {Ayah} ayah The original Ayah object.
+ * @param {number} surahNumber The number of the surah the ayah belongs to.
+ * @param {string} reciterIdentifier The identifier for the reciter (e.g., 'ar.alafasy').
+ * @returns {Ayah} The Ayah object augmented with a fallback audio URL in the `audioSecondarys` array.
+ */
 const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifier: string): Ayah => {
     // Maps API reciter identifier to the folder name on everyayah.com
     const reciterKey = reciterIdentifier.startsWith('ar.') ? reciterIdentifier.substring(3) : reciterIdentifier;
@@ -179,10 +221,22 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
     return ayah;
 };
 
+/**
+ * Fetches the list of all Surahs in the Quran.
+ * @returns {Promise<SurahSimple[]>} A promise that resolves to an array of simple Surah objects.
+ */
 export const getSurahList = (): Promise<SurahSimple[]> => {
   return fetchAPI<SurahSimple[]>('surah');
 };
 
+/**
+ * Fetches a complete Surah, including all its ayahs, for a specific reciter.
+ * It then augments each ayah with a fallback audio source and attaches a reference to the parent surah object.
+ * This is necessary because the API response for a surah does not include surah metadata within each ayah object.
+ * @param {number} surahNumber The number of the surah to fetch (1-114).
+ * @param {string} reciterIdentifier The identifier for the desired reciter.
+ * @returns {Promise<Surah>} A promise that resolves to the full Surah object.
+ */
 export const getSurah = async (surahNumber: number, reciterIdentifier: string): Promise<Surah> => {
   const surah = await fetchAPI<Surah>(`surah/${surahNumber}/${reciterIdentifier}`);
   
@@ -206,6 +260,13 @@ export const getSurah = async (surahNumber: number, reciterIdentifier: string): 
   return surah;
 };
 
+/**
+ * Fetches a single Ayah by its absolute number in the Quran for a specific reciter.
+ * It also augments the ayah with a fallback audio source.
+ * @param {number} ayahNumber The absolute number of the ayah in the Quran (1-6236).
+ * @param {string} reciterIdentifier The identifier for the desired reciter.
+ * @returns {Promise<Ayah>} A promise that resolves to the Ayah object.
+ */
 export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Promise<Ayah> => {
     const ayah = await fetchAPI<Ayah>(`ayah/${ayahNumber}/${reciterIdentifier}`);
     // Augment with a robust fallback audio source if surah info is available
@@ -215,6 +276,12 @@ export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Pr
     return ayah;
 };
 
+/**
+ * Fetches a list of reciters who provide verse-by-verse audio.
+ * It filters the general list of audio editions to only include 'versebyverse' types.
+ * It also manually prepends Fares Abbad to the list if he is not already present, ensuring his availability.
+ * @returns {Promise<Reciter[]>} A promise that resolves to an array of verse-by-verse reciter objects.
+ */
 export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
     const reciters = await fetchAPI<Reciter[]>('edition/format/audio');
     const filteredReciters = reciters.filter(r => r.type === 'versebyverse');
@@ -238,10 +305,21 @@ export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
     return filteredReciters;
 };
 
+/**
+ * Fetches the list of available Tafsir editions.
+ * @returns {Promise<TafsirInfo[]>} A promise that resolves to an array of Tafsir information objects.
+ */
 export const getTafsirInfo = (): Promise<TafsirInfo[]> => {
   return fetchAPI<TafsirInfo[]>('edition/type/tafsir');
 };
 
+/**
+ * Fetches the Tafsir for a specific ayah from a specific Tafsir edition.
+ * @param {string} editionIdentifier The identifier of the Tafsir edition (e.g., 'ar.muyassar').
+ * @param {number} surahNumber The number of the surah.
+ * @param {number} ayahNumber The number of the ayah within the surah.
+ * @returns {Promise<Tafsir>} A promise that resolves to the Tafsir object.
+ */
 export const getTafsirForAyahWithEdition = (editionIdentifier: string, surahNumber: number, ayahNumber: number): Promise<Tafsir> => {
   return fetchAPI<Tafsir>(`ayah/${surahNumber}:${ayahNumber}/${editionIdentifier}`);
 };
@@ -262,6 +340,13 @@ interface ApiSearchResult {
     matches: ApiSearchMatch[];
 }
 
+/**
+ * Searches the Quran for a given query string.
+ * It uses a specific clean text edition for more accurate search results.
+ * The function handles cases where the query is empty or if the API returns no matches.
+ * @param {string} query The search term.
+ * @returns {Promise<SearchResult[]>} A promise that resolves to an array of search results.
+ */
 export const searchQuran = async (query: string): Promise<SearchResult[]> => {
   if (!query.trim()) {
     return [];

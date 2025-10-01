@@ -5,19 +5,37 @@ import { useApp } from '../context/AppContext';
 import { ArrowRightIcon, PauseIcon, PlayIcon, PreviousIcon, NextIcon } from './Icons';
 import { Spinner } from './Spinner';
 
+/**
+ * @interface ListenPlayerViewProps
+ * @description Props for the ListenPlayerView component.
+ */
 interface ListenPlayerViewProps {
+    /** The selected reciter object. */
     reciter: ListeningReciter;
+    /** The selected surah object to be played. */
     surah: SurahSimple;
+    /** Callback function to navigate back to the previous view (surah list). */
     onBack: () => void;
+    /** Callback function to change the track to the next or previous surah. */
     onTrackChange: (direction: 'next' | 'prev') => void;
+    /** A boolean flag indicating if the current track is the first in the list. */
     isFirst: boolean;
+    /** A boolean flag indicating if the current track is the last in the list. */
     isLast: boolean;
 };
 
+/**
+ * `ListenPlayerView` is the user interface for the audio player in the listening feature.
+ * It provides controls for play/pause, seeking, and navigating between tracks (surahs).
+ * It uses a standard HTML `<audio>` element for playback.
+ *
+ * @component
+ * @param {ListenPlayerViewProps} props - The props for the component.
+ * @returns {React.ReactElement} The audio player interface.
+ */
 export const ListenPlayerView: React.FC<ListenPlayerViewProps> = ({ reciter, surah, onBack, onTrackChange, isFirst, isLast }) => {
     const { pauseAyah: pauseGlobalPlayer } = useApp();
     
-    // Player state
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [progress, setProgress] = useState(0);
@@ -59,6 +77,7 @@ export const ListenPlayerView: React.FC<ListenPlayerViewProps> = ({ reciter, sur
     }, [reciter, surah]);
 
     // Player controls
+    /** Handles the play/pause button click. */
     const handlePlayPause = () => {
         if (!audioRef.current) return;
         if (isPlaying) {
@@ -68,6 +87,7 @@ export const ListenPlayerView: React.FC<ListenPlayerViewProps> = ({ reciter, sur
         }
     };
     
+    /** Handles user interaction with the seek bar. */
     const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (audioRef.current) {
             const newTime = Number(event.target.value);
@@ -76,6 +96,11 @@ export const ListenPlayerView: React.FC<ListenPlayerViewProps> = ({ reciter, sur
         }
     };
 
+    /**
+     * Formats a duration in seconds into a "minutes:seconds" string.
+     * @param {number} secs - The duration in seconds.
+     * @returns {string} The formatted time string (e.g., "5:23").
+     */
     const formatTime = (secs: number) => {
         const minutes = Math.floor(secs / 60) || 0;
         const seconds = Math.floor(secs - minutes * 60) || 0;

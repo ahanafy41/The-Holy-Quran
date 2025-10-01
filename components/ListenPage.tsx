@@ -8,8 +8,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Spinner } from './Spinner';
 import { ListenPlayerView } from './ListenPlayerView';
 
+/**
+ * @typedef {'reciters' | 'surahs' | 'player'} View
+ * @description Represents the possible views within the ListenPage component.
+ */
 type View = 'reciters' | 'surahs' | 'player';
 
+/**
+ * `ListenPage` is the main container component for the audio listening feature.
+ * It manages the state and flow for selecting a reciter, then a surah, and finally launching the player.
+ * It acts as a state machine, transitioning between 'reciters', 'surahs', and 'player' views.
+ *
+ * @component
+ * @returns {React.ReactElement} The main component for the listening feature.
+ */
 export const ListenPage: React.FC = () => {
     const { listeningReciters, surahList } = useApp();
     const [view, setView] = useState<View>('reciters');
@@ -84,6 +96,15 @@ export const ListenPage: React.FC = () => {
     );
 };
 
+/**
+ * `ReciterListView` displays a searchable list of available audio reciters.
+ *
+ * @component
+ * @param {{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}} props - The component props.
+ * @param {ListeningReciter[]} props.reciters - The list of reciters to display.
+ * @param {(r: ListeningReciter) => void} props.onSelect - Callback function triggered when a reciter is selected.
+ * @returns {React.ReactElement} A view for selecting a reciter.
+ */
 const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}> = ({ reciters, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -151,6 +172,17 @@ const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: Lis
     )
 }
 
+/**
+ * `SurahListView` displays a list of surahs available for a selected reciter.
+ *
+ * @component
+ * @param {{reciter: ListeningReciter, surahs: SurahSimple[], onSelect: (s: SurahSimple) => void, onBack: () => void}} props - The component props.
+ * @param {ListeningReciter} props.reciter - The currently selected reciter.
+ * @param {SurahSimple[]} props.surahs - The list of surahs available for the reciter.
+ * @param {(s: SurahSimple) => void} props.onSelect - Callback function triggered when a surah is selected.
+ * @param {() => void} props.onBack - Callback function to go back to the reciter list.
+ * @returns {React.ReactElement} A view for selecting a surah.
+ */
 const SurahListView: React.FC<{reciter: ListeningReciter, surahs: SurahSimple[], onSelect: (s: SurahSimple) => void, onBack: () => void}> = ({ reciter, surahs, onSelect, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     useEffect(() => {

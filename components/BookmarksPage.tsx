@@ -3,9 +3,21 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { BookmarkIcon, TrashIcon, BookOpenIcon } from './Icons';
 
+/**
+ * `BookmarksPage` is a component that displays a list of all the user's saved bookmarks.
+ * It provides options to navigate to the bookmarked ayah in the reader view or to delete a bookmark.
+ *
+ * @component
+ * @returns {React.ReactElement} A page listing the user's saved bookmarks.
+ */
 export const BookmarksPage: React.FC = () => {
     const { bookmarks, removeBookmark, navigateTo, surahList } = useApp();
 
+    /**
+     * A helper function to get the name of a surah from its number.
+     * @param {number} surahNumber - The number of the surah.
+     * @returns {string} The name of the surah or a default string if not found.
+     */
     const getSurahName = (surahNumber: number) => {
         const surah = surahList.find(s => s.number === surahNumber);
         return surah ? surah.name : 'سورة غير معروفة';

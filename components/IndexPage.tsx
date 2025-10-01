@@ -8,8 +8,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AdvancedSearch } from './AdvancedSearch';
 
 
-// Define types for clarity
+/**
+ * @typedef {SurahSimple | QuranDivision | { name: string; number: number } | SavedSection} DivisionItem
+ * @description A union type representing the different kinds of items that can be displayed in a division list.
+ */
 type DivisionItem = SurahSimple | QuranDivision | { name: string; number: number } | SavedSection;
+
+/**
+ * @interface DivisionConfig
+ * @description Defines the configuration for a specific type of Quranic division (e.g., "Surahs", "Juzs").
+ * @property {string} id - A unique identifier for the division type.
+ * @property {string} title - The display title for the division (e.g., "السور").
+ * @property {DivisionItem[]} items - An array of the items belonging to this division.
+ * @property {string} itemLabel - The singular label for an item in this division (e.g., "سورة").
+ * @property {React.FC<{ className?: string }>} icon - The icon component to be displayed for this division in the grid.
+ */
 interface DivisionConfig {
     id: string;
     title: string;
@@ -18,6 +31,14 @@ interface DivisionConfig {
     icon: React.FC<{ className?: string }>;
 }
 
+/**
+ * `IndexPage` serves as the main navigation hub for browsing the Quran.
+ * It allows users to select a division type (like Surah, Juz, or Page) and then view a list of items within that division.
+ * It manages the state between showing the main grid of division types and the detailed list view for a selected type.
+ *
+ * @component
+ * @returns {React.ReactElement} The main index page component.
+ */
 export const IndexPage: React.FC = () => {
     const { surahList, navigateTo, savedSections } = useApp();
     const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
@@ -75,7 +96,15 @@ export const IndexPage: React.FC = () => {
     );
 };
 
-// Index Grid View
+/**
+ * `IndexGrid` is a presentational component that displays a grid of buttons for each Quranic division type.
+ *
+ * @component
+ * @param {{ divisions: DivisionConfig[]; onSelect: (config: DivisionConfig) => void; }} props - The component props.
+ * @param {DivisionConfig[]} props.divisions - The array of division configurations to display.
+ * @param {(config: DivisionConfig) => void} props.onSelect - Callback function triggered when a division is selected.
+ * @returns {React.ReactElement} A grid of division selection buttons.
+ */
 const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: DivisionConfig) => void; }> = ({ divisions, onSelect }) => (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {divisions.map((div) => (
@@ -88,7 +117,18 @@ const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: Divi
     </div>
 );
 
-// List View for a selected division
+/**
+ * `ListView` is a presentational component that displays a list of items for a selected division type (e.g., all Surahs, all Juzs).
+ * It provides a back button to return to the `IndexGrid` and handles navigation when an item is selected.
+ *
+ * @component
+ * @param {{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }} props - The component props.
+ * @param {DivisionConfig} props.list - The configuration object for the list to be displayed.
+ * @param {() => void} props.onBack - Callback function to go back to the index grid.
+ * @param {Function} props.navigateTo - The navigation function from `useApp` context.
+ * @param {Map<number, string>} props.surahMap - A map of surah numbers to their names, for displaying context.
+ * @returns {React.ReactElement} A component displaying a list of division items.
+ */
 const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }> = ({ list, onBack, navigateTo, surahMap }) => {
     const listTitleRef = useRef<HTMLHeadingElement>(null);
 

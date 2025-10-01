@@ -4,12 +4,28 @@ import { XMarkIcon } from './Icons';
 import { motion } from 'framer-motion';
 
 
+/**
+ * @interface ErrorToastProps
+ * @description Defines the props for the ErrorToast component.
+ */
 interface ErrorToastProps {
+    /** The error message to be displayed. */
     message: string;
+    /** A callback function to be invoked when the toast should be closed. */
     onClose: () => void;
+    /** The duration in milliseconds for which the toast should be visible. Defaults to 6000. */
     duration?: number;
 }
 
+/**
+ * `ErrorToast` is a component that displays an error message in a toast notification.
+ * The toast appears with an animation, stays on screen for a specified duration,
+ * and then automatically calls the `onClose` callback to dismiss itself.
+ *
+ * @component
+ * @param {ErrorToastProps} props - The props for the component.
+ * @returns {React.ReactElement} A toast notification for displaying errors.
+ */
 export const ErrorToast: React.FC<ErrorToastProps> = ({ message, onClose, duration = 6000 }) => {
     useEffect(() => {
         const timer = setTimeout(() => {

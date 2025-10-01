@@ -5,6 +5,14 @@ import { BookOpenIcon, HeadphonesIcon, ShieldIcon, MenuIcon, BookmarkIcon } from
 
 const MotionNav = motion.nav as any;
 
+/**
+ * `BottomNavBar` is the primary navigation component for the application, typically displayed at the bottom of the screen on mobile devices.
+ * It provides quick access to the main features of the app, such as the Quran index, listening, Hadith, and more.
+ * The active tab is highlighted based on the current view from the `useApp` context.
+ *
+ * @component
+ * @returns {React.ReactElement} The bottom navigation bar component.
+ */
 export const BottomNavBar = () => {
     const { view, navigateTo, showSettings } = useApp();
 

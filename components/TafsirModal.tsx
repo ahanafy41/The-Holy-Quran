@@ -6,7 +6,21 @@ import { XMarkIcon } from './Icons';
 import { Spinner } from './Spinner';
 import { Ayah, Tafsir } from '../types';
 
+/**
+ * @interface TafsirModalProps
+ * @description Defines the props for the TafsirModal component.
+ */
 interface TafsirModalProps {
+    /**
+     * An object containing all the data needed to display the tafsir.
+     * @property {Ayah} ayah - The ayah being explained.
+     * @property {Tafsir | null} tafsir - The tafsir text object, or null if not yet loaded.
+     * @property {number} surahNumber - The number of the surah.
+     * @property {string} surahName - The English name of the surah.
+     * @property {string} [tafsirName] - The name of the tafsir edition being displayed.
+     * @property {boolean} isLoading - A flag indicating if the tafsir content is currently being loaded.
+     * @property {string} [error] - An error message to display if the tafsir fails to load.
+     */
     content: {
         ayah: Ayah;
         tafsir: Tafsir | null;
@@ -16,9 +30,18 @@ interface TafsirModalProps {
         isLoading: boolean;
         error?: string;
     };
+    /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
 }
 
+/**
+ * `TafsirModal` is a component that displays the commentary (tafsir) for a specific ayah in an accessible modal dialog.
+ * It handles displaying loading and error states and uses the `useFocusTrap` hook to keep focus within the modal.
+ *
+ * @component
+ * @param {TafsirModalProps} props - The props for the component.
+ * @returns {React.ReactElement} A modal dialog for displaying tafsir.
+ */
 export const TafsirModal: React.FC<TafsirModalProps> = ({ content, onClose }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     useFocusTrap(modalRef, onClose);

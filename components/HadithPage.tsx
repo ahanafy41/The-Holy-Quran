@@ -8,7 +8,14 @@ import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
 
 const MotionDiv = motion.div as any;
 
-// --- Component to display the list of Hadith books ---
+/**
+ * `BookListView` displays a searchable list of Hadith books.
+ *
+ * @component
+ * @param {{ onSelect: (book: HadithBook) => void }} props - The component props.
+ * @param {(book: HadithBook) => void} props.onSelect - Callback function triggered when a user selects a book.
+ * @returns {React.ReactElement} A component that renders the list of Hadith books.
+ */
 const BookListView: React.FC<{ onSelect: (book: HadithBook) => void }> = ({ onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +64,17 @@ const BookListView: React.FC<{ onSelect: (book: HadithBook) => void }> = ({ onSe
     );
 };
 
-// --- Component to display the list of chapters in a book ---
+/**
+ * `ChapterListView` displays a list of chapters for a given Hadith book.
+ *
+ * @component
+ * @param {{ book: HadithBook, chapters: HadithChapter[], onSelect: (chapter: HadithChapter) => void, onBack: () => void }} props - The component props.
+ * @param {HadithBook} props.book - The book whose chapters are being displayed.
+ * @param {HadithChapter[]} props.chapters - The array of chapters to render.
+ * @param {(chapter: HadithChapter) => void} props.onSelect - Callback triggered when a user selects a chapter.
+ * @param {() => void} props.onBack - Callback to navigate back to the book list.
+ * @returns {React.ReactElement} A component that renders the list of chapters.
+ */
 const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], onSelect: (chapter: HadithChapter) => void, onBack: () => void }> = ({ book, chapters, onSelect, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     useEffect(() => {
@@ -89,7 +106,18 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
     );
 };
 
-// --- Component to display the hadiths in a selected chapter ---
+/**
+ * `HadithListView` displays a virtualized list of Hadiths for a selected chapter.
+ * It uses `@tanstack/react-virtual` for efficient rendering of potentially long lists.
+ *
+ * @component
+ * @param {{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }} props - The component props.
+ * @param {HadithBook} props.book - The parent book of the chapter.
+ * @param {HadithChapter} props.chapter - The chapter whose hadiths are being displayed.
+ * @param {Hadith[]} props.hadiths - The array of hadiths to render.
+ * @param {() => void} props.onBack - Callback to navigate back to the chapter list.
+ * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
+ */
 const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }> = ({ book, chapter, hadiths, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
@@ -149,7 +177,14 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
 };
 
 
-// --- Main page component that manages state ---
+/**
+ * `HadithPage` is the main component for the Hadith browsing feature.
+ * It manages the state for the three-level navigation (books, chapters, hadiths)
+ * and orchestrates data fetching and view transitions.
+ *
+ * @component
+ * @returns {React.ReactElement} The Hadith feature page.
+ */
 export const HadithPage: React.FC = () => {
     const [view, setView] = useState<'books' | 'chapters' | 'hadiths'>('books');
     const [selectedBook, setSelectedBook] = useState<HadithBook | null>(null);

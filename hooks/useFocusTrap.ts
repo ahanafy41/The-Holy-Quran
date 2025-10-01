@@ -1,6 +1,14 @@
 
 import { useEffect, useRef } from 'react';
 
+/**
+ * A custom hook to trap focus within a designated HTML element.
+ * It also provides a way to close the element (e.g., a modal) by pressing the Escape key.
+ * When the component unmounts, focus is returned to the element that originally triggered the focus trap.
+ *
+ * @param {React.RefObject<HTMLElement>} ref - A ref to the container element that should trap focus.
+ * @param {() => void} onClose - A callback function to be invoked when the 'Escape' key is pressed.
+ */
 export const useFocusTrap = (ref: React.RefObject<HTMLElement>, onClose: () => void) => {
     const triggerRef = useRef<HTMLElement | null>(null);
 

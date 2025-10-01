@@ -6,6 +6,17 @@ import { useApp } from '../context/AppContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { XMarkIcon } from './Icons';
 
+/**
+ * `CreateSectionModal` is a component that provides a form within a modal dialog
+ * for users to create a new "saved section" for memorization. It allows selecting a
+ * surah and a range of ayahs, and giving the section a custom name.
+ *
+ * @component
+ * @param {{onClose: () => void, onSave: (section: Omit<SavedSection, 'id'>) => void}} props - The component props.
+ * @param {() => void} props.onClose - Callback function to close the modal without saving.
+ * @param {(section: Omit<SavedSection, 'id'>) => void} props.onSave - Callback function to save the new section, passing the section data.
+ * @returns {React.ReactElement} A modal dialog for creating a memorization section.
+ */
 export const CreateSectionModal: React.FC<{onClose: () => void, onSave: (section: Omit<SavedSection, 'id'>) => void}> = ({ onClose, onSave }) => {
     const { surahList } = useApp();
     const [selectedSurah, setSelectedSurah] = useState<SurahSimple | null>(null);

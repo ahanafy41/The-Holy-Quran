@@ -4,8 +4,20 @@ import * as offlineService from '../services/offlineService';
 import { CheckCircleIcon, ArrowDownTrayIcon, TrashIcon } from './Icons';
 import { Reciter } from '../types';
 
+/**
+ * @typedef {'downloaded' | 'downloading' | 'none'} DownloadStatus
+ * @description Represents the current download status of an offline data item.
+ */
 type DownloadStatus = 'downloaded' | 'downloading' | 'none';
 
+/**
+ * `OfflineManager` is a component that provides the user interface for managing
+ * offline data. It allows users to download and delete Quran text data and audio
+ * files for individual reciters, and it displays the progress of ongoing downloads.
+ *
+ * @component
+ * @returns {React.ReactElement} A UI section for managing offline data.
+ */
 export const OfflineManager: React.FC = () => {
     const { memorizationReciters: reciters, setSuccessMessage, setError } = useApp();
     

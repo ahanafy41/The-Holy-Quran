@@ -5,6 +5,15 @@ import { useApp } from '../context/AppContext';
 import { ArrowRightIcon, PauseIcon, PlayIcon, SpeakerWaveIcon, SpeakerXMarkIcon } from './Icons';
 import { Spinner } from './Spinner';
 
+/**
+ * `AudioVisualizer` is a purely decorative component that displays a simple
+ * bar animation to indicate that audio is playing.
+ *
+ * @component
+ * @param {{ isPlaying: boolean }} props - The component props.
+ * @param {boolean} props.isPlaying - A flag to control the animation's play state.
+ * @returns {React.ReactElement} A set of animated bars.
+ */
 const AudioVisualizer: React.FC<{ isPlaying: boolean }> = ({ isPlaying }) => {
     return (
         <div className={`flex justify-center items-center h-24 space-x-2 ${isPlaying ? 'playing' : ''}`}>
@@ -36,6 +45,17 @@ const AudioVisualizer: React.FC<{ isPlaying: boolean }> = ({ isPlaying }) => {
     );
 };
 
+/**
+ * `RadioPlayerView` provides the user interface for the live radio streaming feature.
+ * It includes controls for play/pause and mute, and displays the name of the
+ * currently playing station along with a visualizer.
+ *
+ * @component
+ * @param {{ station: RadioStation, onBack: () => void }} props - The component props.
+ * @param {RadioStation} props.station - The radio station object to be played.
+ * @param {() => void} props.onBack - Callback function to navigate back to the station list.
+ * @returns {React.ReactElement} The radio player interface.
+ */
 export const RadioPlayerView: React.FC<{ station: RadioStation, onBack: () => void }> = ({ station, onBack }) => {
     const { pauseAyah: pauseGlobalPlayer } = useApp();
     

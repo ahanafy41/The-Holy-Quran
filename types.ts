@@ -1,4 +1,5 @@
 
+/** Represents a full Surah object, including all its ayahs. */
 export interface Surah {
   number: number;
   name: string;
@@ -8,6 +9,7 @@ export interface Surah {
   ayahs: Ayah[];
 }
 
+/** Represents a simplified Surah object, used in lists. */
 export interface SurahSimple {
   number: number;
   name: string;
@@ -16,6 +18,7 @@ export interface SurahSimple {
   revelationType: 'Meccan' | 'Medinan';
 }
 
+/** Represents a single Ayah (verse) of the Quran. */
 export interface Ayah {
   number: number;
   audio: string;
@@ -31,6 +34,7 @@ export interface Ayah {
   surah?: SurahSimple;
 }
 
+/** Represents a verse-by-verse reciter from the alquran.cloud API. */
 export interface Reciter {
   identifier: string;
   language: string;
@@ -40,7 +44,7 @@ export interface Reciter {
   type: 'surah' | 'versebyverse';
 }
 
-// From mp3quran.net API
+/** Represents a full-surah reciter from the mp3quran.net API. */
 export interface ListeningReciter {
   identifier: string; // combination of id and moshaf id
   name: string;
@@ -49,12 +53,14 @@ export interface ListeningReciter {
   surah_list?: string; // Optional: comma-separated list of available surah numbers
 }
 
+/** Represents a single radio station. */
 export interface RadioStation {
   id: number;
   name: string;
   url: string;
 }
 
+/** Represents a single Tafsir text for an ayah. */
 export interface Tafsir {
   id: number;
   name: string;
@@ -63,6 +69,7 @@ export interface Tafsir {
   text: string;
 }
 
+/** Represents information about an available Tafsir edition. */
 export interface TafsirInfo {
   identifier: string;
   language: string;
@@ -70,12 +77,14 @@ export interface TafsirInfo {
   englishName: string;
 }
 
+/** Represents the application's user-configurable settings. */
 export interface AppSettings {
   darkMode: boolean;
   memorizationReciter: string; // for verse-by-verse
   tafsir: string; 
 }
 
+/** Represents a user-defined section of the Quran for memorization. */
 export interface SavedSection {
   id: string;
   name: string;
@@ -84,6 +93,7 @@ export interface SavedSection {
   endAyah: number;
 }
 
+/** Represents a structural division of the Quran (e.g., Juz, Hizb, Page). */
 export interface QuranDivision {
   number: number;
   start: { surah: number; ayah: number };
@@ -91,6 +101,7 @@ export interface QuranDivision {
   startSurahName?: string;
 }
 
+/** Represents a single ayah used in the local search index. */
 export interface QuranAyah {
   surah: number;
   ayah: number;
@@ -99,8 +110,10 @@ export interface QuranAyah {
   normalizedTextNoSpaces: string;
 }
 
+/** Represents the result of a search query. */
 export type SearchResult = QuranAyah;
 
+/** Represents a single dhikr (remembrance) from the Hisn al-Muslim collection. */
 export interface HisnDhikr {
   id: number;
   text: string;
@@ -109,6 +122,7 @@ export interface HisnDhikr {
   filename: string;
 }
 
+/** Represents a category of dhikr from the Hisn al-Muslim collection. */
 export interface HisnCategory {
   id: number;
   category: string;
@@ -117,6 +131,7 @@ export interface HisnCategory {
   array: HisnDhikr[];
 }
 
+/** Represents a single Hadith. */
 export interface Hadith {
   id: number;
   idInBook: number;
@@ -129,6 +144,7 @@ export interface Hadith {
   };
 }
 
+/** Represents a chapter within a Hadith book. */
 export interface HadithChapter {
   id: number;
   bookId: number;
@@ -136,23 +152,27 @@ export interface HadithChapter {
   english: string;
 }
 
+/** Represents a single Hadith book. */
 export interface HadithBook {
   id: string;
   arabic: string;
   english: string;
 }
 
+/** Represents a full collection of Hadiths for a single book. */
 export interface HadithCollection {
   chapters: HadithBook[];
   hadiths: Hadith[];
 }
 
+/** Represents the user's last-read position in the Quran. */
 export interface LastReadPosition {
   surahNumber: number;
   ayahNumber: number;
   timestamp: number;
 }
 
+/** Represents a user-created bookmark. */
 export interface Bookmark {
   id: string;
   name: string;

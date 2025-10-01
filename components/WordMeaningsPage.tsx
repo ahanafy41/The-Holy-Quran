@@ -9,6 +9,14 @@ const getSurahNameAr = (surahNumber: number, surahList: any[]) => {
     return surah ? surah.name : 'سورة غير معروفة';
 };
 
+/**
+ * `WordMeaningsPage` is a component that displays the meanings of Quranic words,
+ * organized by surah, based on the book "Al-Siraj fi Bayan Gharib al-Qur'an".
+ * It uses an accordion-style interface to show/hide the meanings for each surah.
+ *
+ * @component
+ * @returns {React.ReactElement} A page displaying Quranic word meanings.
+ */
 export const WordMeaningsPage: React.FC = () => {
     const { surahList } = useApp();
     const [openSurah, setOpenSurah] = useState<number | null>(null);

@@ -1,4 +1,8 @@
-
+/**
+ * @file This is the main entry point for the React application.
+ * It finds the root DOM element and renders the main `App` component into it.
+ * React's StrictMode is enabled to highlight potential problems in the application.
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

@@ -11,11 +11,25 @@ import { CreateSectionModal } from './CreateSectionModal';
 import { MemorizationPlayerView } from './MemorizationPlayerView';
 
 
+/**
+ * @typedef {object} PlayerPlaylist
+ * @description Represents the data needed for the memorization player, including the section details and the corresponding array of Ayah objects.
+ * @property {SavedSection} section - The saved section metadata.
+ * @property {Ayah[]} ayahs - The array of Ayah objects that belong to the section.
+ */
 type PlayerPlaylist = {
     section: SavedSection;
     ayahs: Ayah[];
 };
 
+/**
+ * `MemorizationAndSectionsPage` is the main entry point for the memorization and review features.
+ * It manages the view state, allowing the user to see their saved sections, start a listening session,
+ * start an AI-powered review session (Samia), or create a new section.
+ *
+ * @component
+ * @returns {React.ReactElement} The main page for memorization and saved sections.
+ */
 export const MemorizationAndSectionsPage: React.FC = () => {
     const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings, pauseAyah: pauseGlobalPlayer } = useApp();
     const [playlist, setPlaylist] = useState<PlayerPlaylist | null>(null);
@@ -136,6 +150,19 @@ export const MemorizationAndSectionsPage: React.FC = () => {
     );
 };
 
+/**
+ * `OptionsMenu` is a small dropdown menu component that provides actions for a single saved section.
+ * Actions include reading, reviewing with AI (Samia), and deleting the section.
+ *
+ * @component
+ * @param {object} props - The component props.
+ * @param {SavedSection} props.section - The section associated with this menu.
+ * @param {() => void} props.onRead - Callback to navigate to the reader view for this section.
+ * @param {() => void} props.onSamia - Callback to start an AI review session.
+ * @param {() => void} props.onRemove - Callback to delete the section.
+ * @param {() => void} props.onClose - Callback to close the menu.
+ * @returns {React.ReactElement} A dropdown menu with options for a section.
+ */
 const OptionsMenu: React.FC<{
     section: SavedSection;
     onRead: () => void;
@@ -177,6 +204,20 @@ const OptionsMenu: React.FC<{
 };
 
 
+/**
+ * `SectionListView` displays a list of all sections saved by the user for memorization and review.
+ * It provides the main interface for interacting with these sections, including listening, reviewing, and managing them.
+ *
+ * @component
+ * @param {object} props - The component props.
+ * @param {SavedSection[]} props.savedSections - An array of the user's saved sections.
+ * @param {(section: SavedSection) => void} props.onStartListening - Callback to start a listening session for a section.
+ * @param {(section: SavedSection) => void} props.onStartSamia - Callback to start an AI review session for a section.
+ * @param {(section: SavedSection) => void} props.onReadSection - Callback to navigate to the reader view for a section.
+ * @param {() => void} props.onAddSection - Callback to open the modal for creating a new section.
+ * @param {(id: string) => void} props.onRemoveSection - Callback to delete a section.
+ * @returns {React.ReactElement} A component that lists all saved sections.
+ */
 const SectionListView: React.FC<{
     savedSections: SavedSection[];
     onStartListening: (section: SavedSection) => void;
