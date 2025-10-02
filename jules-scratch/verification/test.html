@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Test</title>
+</head>
+<body>
+    <h1>Testing fetch for azkar.json</h1>
+    <script>
+        fetch('https://raw.githubusercontent.com/ahanafy41/Adhkar-json-main/master/Adhkar-json-main/azkar.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetch successful:', data);
+            })
+            .catch(error => {
+                console.error('Fetch failed:', error);
+            });
+    </script>
+</body>
+</html>
