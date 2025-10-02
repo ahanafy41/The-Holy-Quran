@@ -37,7 +37,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
     const descriptionId = `desc-${layoutIdPrefix}-${ayah.number}`;
     
     const ayahNumberCircle = (
-        <div className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
+        <div aria-hidden="true" className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-sm font-mono bg-slate-100 dark:bg-slate-700/50 rounded-full group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
             {ayah.numberInSurah}
         </div>
     );
@@ -48,8 +48,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
             onClick={onSelect}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(e); }}
             tabIndex={0}
-            role="button"
-            aria-roledescription="Verse"
+            aria-label={`${ayah.text} ${ayah.numberInSurah}`}
             className={`group p-4 rounded-xl transition-all duration-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:focus:ring-green-400/50 ${
                 isSelected ? 'bg-green-50 dark:bg-green-500/10' :
                 isHighlighted ? 'bg-yellow-100 dark:bg-yellow-400/10 ring-2 ring-yellow-400/50' :
@@ -63,7 +62,7 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
                 />
             )}
             {ayahNumberCircle}
-            <p dir="rtl" className="font-quran text-3xl md:text-4xl leading-loose text-right pr-14">
+            <p dir="rtl" className="font-quran text-3xl md:text-4xl leading-loose text-right pr-14" aria-hidden="true">
                 {ayah.text}
             </p>
         </div>
