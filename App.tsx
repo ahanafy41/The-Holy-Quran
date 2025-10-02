@@ -24,6 +24,20 @@ import { BottomNavBar } from './components/BottomNavBar';
 import { AppContext, useApp, View, DivisionInfo } from './context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * The root component of the Quran Study App.
+ *
+ * This component is responsible for:
+ * - Initializing and managing the global application state (settings, data, UI state).
+ * - Handling data fetching for core application data like surah lists, reciters, and tafsirs.
+ * - Managing audio playback for ayahs using WaveSurfer.js.
+ * - Controlling navigation between different views (e.g., Index, Reader, Listen).
+ * - Managing the display of modals (Settings, Search, Tafsir, AI Assistant).
+ * - Providing the global state and action functions to the entire component tree via `AppContext.Provider`.
+ * - Handling Progressive Web App (PWA) installation logic.
+ *
+ * @returns {React.ReactElement} The main application structure, including modals, toasts, main content area, and the bottom navigation bar.
+ */
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('quranAppSettings');
@@ -172,6 +186,10 @@ const App: React.FC = () => {
     };
   }, []);
   
+  /**
+   * Triggers the PWA installation prompt if it's available.
+   * This should be called in response to a user action, like clicking an "Install" button.
+   */
   const triggerInstall = useCallback(async () => {
       if (!installPromptEvent) return;
       installPromptEvent.prompt();
@@ -186,6 +204,10 @@ const App: React.FC = () => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
 
+  /**
+   * Updates the user's Google AI API key, trimming whitespace and persisting it to local storage.
+   * @param {string} key - The new API key.
+   */
   const updateApiKey = useCallback((key: string) => {
     const trimmedKey = key.trim();
     if (apiKey === trimmedKey) return; 
@@ -200,6 +222,11 @@ const App: React.FC = () => {
     }
   }, [apiKey]);
 
+  /**
+   * Adds a new section to the list of saved sections for memorization and persists it to local storage.
+   * A unique ID is generated for the new section.
+   * @param {Omit<SavedSection, 'id'>} section - The section data to save, without an id.
+   */
   const addSavedSection = useCallback((section: Omit<SavedSection, 'id'>) => {
     const newSection: SavedSection = {
         ...section,
@@ -208,14 +235,29 @@ const App: React.FC = () => {
     setSavedSections(prev => [...prev, newSection]);
   }, []);
 
+  /**
+   * Removes a saved section from the list by its ID and updates local storage.
+   * @param {string} sectionId - The ID of the section to remove.
+   */
   const removeSavedSection = useCallback((sectionId: string) => {
       setSavedSections(prev => prev.filter(s => s.id !== sectionId));
   }, []);
 
+  /**
+   * Updates the user's last read position and persists it to local storage.
+   * This is typically called when a user navigates to a new surah or scrolls to a new ayah.
+   * @param {number} surahNumber - The surah number of the last read position.
+   * @param {number} ayahNumber - The ayah number within the surah.
+   */
   const updateLastReadPosition = useCallback((surahNumber: number, ayahNumber: number) => {
     setLastReadPosition({ surahNumber, ayahNumber, timestamp: Date.now() });
   }, []);
 
+  /**
+   * Adds a new bookmark to the list and persists it to local storage.
+   * A unique ID and timestamp are generated for the new bookmark.
+   * @param {Omit<Bookmark, 'id' | 'timestamp'>} bookmark - The bookmark data to save.
+   */
   const addBookmark = useCallback((bookmark: Omit<Bookmark, 'id' | 'timestamp'>) => {
     const newBookmark: Bookmark = {
         ...bookmark,
@@ -226,10 +268,19 @@ const App: React.FC = () => {
     setSuccessMessage('تم إضافة العلامة المرجعية بنجاح.');
   }, []);
 
+  /**
+   * Removes a bookmark from the list by its ID and updates local storage.
+   * @param {string} bookmarkId - The ID of the bookmark to remove.
+   */
   const removeBookmark = useCallback((bookmarkId: string) => {
       setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
   }, []);
   
+  /**
+   * Fetches the full data for a specific surah, including its ayahs and their audio URLs.
+   * Updates the `currentSurah` state and sets the last read position.
+   * @param {number} surahNumber - The number of the surah to load (1-114).
+   */
   const loadSurah = useCallback(async (surahNumber: number) => {
     setIsLoading(true);
     setError(null);
@@ -245,6 +296,12 @@ const App: React.FC = () => {
     }
   }, [settings.memorizationReciter, updateLastReadPosition]);
   
+  /**
+   * Handles navigation between different views of the application.
+   * It updates the browser history, sets the current view, and loads necessary data for the target view.
+   * @param {View} targetView - The view to navigate to.
+   * @param {object} [params] - Optional parameters for the navigation, such as surah/ayah number or division info.
+   */
   const navigateTo = useCallback(async (targetView: View, params?: { surahNumber?: number; ayahNumber?: number, division?: DivisionInfo, navigationContext?: string }) => {
     const state = { view: targetView, params };
     // Only push state if it's different from the current one to avoid duplicate entries
@@ -297,10 +354,18 @@ const App: React.FC = () => {
     };
   }, [loadSurah, currentSurah]);
   
+  /**
+   * Scrolls the main content area to the top smoothly.
+   */
   const scrollToTop = useCallback(() => {
       mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  /**
+   * Fetches all initial data required for the application to function.
+   * This includes the list of surahs, reciters, tafsirs, and radio stations.
+   * It sets the loading state and handles potential errors during initialization.
+   */
   const initApp = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -340,6 +405,12 @@ const App: React.FC = () => {
   }, [view, settings.memorizationReciter]);
 
 
+  /**
+   * Initiates audio playback for a given ayah.
+   * It stops any other globally playing audio, sets the active ayah, and loads the audio source into WaveSurfer.
+   * It includes a fallback mechanism to try secondary audio sources if the primary one fails.
+   * @param {Ayah} ayah - The ayah object to play.
+   */
   const playAyah = useCallback((ayah: Ayah) => {
     const wavesurfer = wavesurferRef.current;
     if (!wavesurfer) return;
@@ -360,10 +431,18 @@ const App: React.FC = () => {
     wavesurfer.load(sources[0]);
   }, [setError]);
 
+  /**
+   * Pauses the currently playing audio via WaveSurfer.
+   */
   const pauseAyah = useCallback(() => {
     wavesurferRef.current?.pause();
   }, []);
 
+  /**
+   * Opens the Tafsir modal for a specific ayah.
+   * It fetches the tafsir content for the selected ayah and tafsir edition from the settings.
+   * @param {Ayah} ayah - The ayah for which to display the tafsir.
+   */
   const showTafsir = async (ayah: Ayah) => {
       if (!ayah.surah) return;
       const tafsirInfo = tafsirInfoList.find(t => t.identifier === settings.tafsir);
@@ -381,8 +460,14 @@ const App: React.FC = () => {
       }
   };
 
+  /** Opens the settings modal. */
   const showSettings = () => setIsSettingsOpen(true);
 
+  /**
+   * Opens the AI Assistant modal for a specific ayah.
+   * It first checks if an API key is available and prompts the user to add one if not.
+   * @param {Ayah} ayah - The ayah to be discussed with the AI assistant.
+   */
   const showAIAssistant = (ayah: Ayah) => {
       if (!apiKey) {
           setError("مفتاح API مطلوب لاستخدام مساعد الذكاء الاصطناعي. يرجى إضافته في الإعدادات.");
@@ -393,6 +478,7 @@ const App: React.FC = () => {
       setIsAIAssistantOpen(true);
   };
 
+  /** Opens the search modal. */
   const showSearch = () => setIsSearchOpen(true);
   
   const canInstall = !!installPromptEvent && !isStandalone;
@@ -408,6 +494,10 @@ const App: React.FC = () => {
     bookmarks, addBookmark, removeBookmark,
   }), [settings, memorizationReciters, listeningReciters, radioStations, tafsirInfoList, surahList, currentSurah, loadSurah, isLoading, error, activeAyah, targetAyah, isPlaying, view, navigationContext, savedSections, addSavedSection, removeSavedSection, apiKey, updateSettings, setError, setSuccessMessage, setTargetAyah, playAyah, pauseAyah, navigateTo, updateApiKey, isStandalone, canInstall, triggerInstall, scrollToTop, lastReadPosition, updateLastReadPosition, bookmarks, addBookmark, removeBookmark]);
 
+  /**
+   * A helper function to render the component for the current view.
+   * @returns {React.ReactElement} The component corresponding to the current `view` state.
+   */
   const renderView = () => {
     switch (view) {
         case 'index': return <IndexPage />;

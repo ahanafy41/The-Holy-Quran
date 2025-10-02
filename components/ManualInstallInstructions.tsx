@@ -2,6 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon, ShareIcon, ThreeDotsVerticalIcon } from './Icons';
 
+/**
+ * `InstructionStep` is a small presentational component that displays a single
+ * step in the manual installation instructions, consisting of an icon and text.
+ *
+ * @component
+ * @param {{ icon: React.FC<{className?: string}>, text: string }} props - The component props.
+ * @param {React.FC<{className?: string}>} props.icon - The icon component to display for the step.
+ * @param {string} props.text - The instructional text for the step.
+ * @returns {React.ReactElement} A list item representing an instruction step.
+ */
 const InstructionStep: React.FC<{ icon: React.FC<{className?: string}>, text: string }> = ({ icon: Icon, text }) => (
     <li className="flex items-center gap-4">
         <div className="flex-shrink-0 w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">
@@ -11,6 +21,14 @@ const InstructionStep: React.FC<{ icon: React.FC<{className?: string}>, text: st
     </li>
 );
 
+/**
+ * `ManualInstallInstructions` detects the user's platform (Desktop, Android, iOS)
+ * and displays the relevant, platform-specific instructions for manually installing the PWA.
+ * This component is shown when the automatic installation prompt is not available.
+ *
+ * @component
+ * @returns {React.ReactElement} A component displaying manual PWA installation steps.
+ */
 export const ManualInstallInstructions: React.FC = () => {
     const [platform, setPlatform] = useState<'desktop' | 'android' | 'ios' | 'unknown'>('unknown');
 

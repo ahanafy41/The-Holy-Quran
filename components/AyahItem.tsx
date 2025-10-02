@@ -3,14 +3,34 @@ import React from 'react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
 
+/**
+ * @interface AyahItemProps
+ * @description Props for the AyahItem component.
+ */
 interface AyahItemProps {
+    /** The Ayah object containing the text and metadata. */
     ayah: Ayah;
+    /** A boolean indicating if the ayah is currently selected, triggering the action modal. */
     isSelected: boolean;
+    /** An optional boolean to indicate if the ayah should be visually highlighted (e.g., from a search result). */
     isHighlighted?: boolean;
+    /** Callback function triggered when the user clicks or presses Enter/Space on the item. */
     onSelect: (event: React.MouseEvent<HTMLDivElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => void;
-    layoutIdPrefix: string; // To ensure unique layoutIds across different views
+    /** A prefix for the layoutId to ensure unique animation IDs across different views where AyahItem might be used. */
+    layoutIdPrefix: string;
 }
 
+/**
+ * `AyahItemComponent` is a presentational component that displays a single Ayah (verse) of the Quran.
+ * It handles different visual states: selected, highlighted, and currently playing.
+ * It is memoized using `React.memo` to prevent unnecessary re-renders.
+ * The component is also wrapped in `React.forwardRef` to allow parent components to get a ref to the underlying `div` element.
+ *
+ * @component
+ * @param {AyahItemProps} props - The props for the component.
+ * @param {React.Ref<HTMLDivElement>} ref - The forwarded ref.
+ * @returns {React.ReactElement} A single ayah item.
+ */
 const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ ayah, isSelected, isHighlighted, onSelect, layoutIdPrefix }, ref) => {
     const { activeAyah } = useApp();
     const isPlaying = activeAyah?.number === ayah.number;
@@ -49,4 +69,8 @@ const AyahItemComponent = React.forwardRef<HTMLDivElement, AyahItemProps>(({ aya
     );
 });
 
+/**
+ * A memoized version of the `AyahItemComponent` to optimize performance by preventing
+ * unnecessary re-renders when props have not changed.
+ */
 export const AyahItem = React.memo(AyahItemComponent);

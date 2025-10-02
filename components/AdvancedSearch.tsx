@@ -17,6 +17,14 @@ const divisionData: { [key in DivisionType]: { data: (QuranDivision | SurahSimpl
     rub: { data: rubs, label: 'ربع' },
 };
 
+/**
+ * `AdvancedSearch` is a multi-functional component that provides both a text-based search
+ * for ayahs and a "Go To" feature for quick navigation to a specific surah, juz, page, etc.
+ * It combines a debounced search input with dropdowns for precise navigation.
+ *
+ * @component
+ * @returns {React.ReactElement} A component for advanced search and quick navigation.
+ */
 export const AdvancedSearch: React.FC = () => {
     const { navigateTo, surahList } = useApp();
 

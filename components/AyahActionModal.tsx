@@ -7,11 +7,26 @@ import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIc
 import { AddBookmarkModal } from './AddBookmarkModal';
 
 
+/**
+ * @interface AyahActionModalProps
+ * @description Defines the props for the AyahActionModal component.
+ */
 interface AyahActionModalProps {
+    /** The Ayah object for which the actions are being displayed. */
     ayah: Ayah;
+    /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
 }
 
+/**
+ * `AyahActionModal` is a component that presents a modal dialog with a menu of actions
+ * that can be performed on a selected ayah. These actions include listening, viewing tafsir,
+ * bookmarking, copying, and sharing.
+ *
+ * @component
+ * @param {AyahActionModalProps} props - The props for the component.
+ * @returns {React.ReactElement} A modal dialog with actions for a specific ayah.
+ */
 export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError, view, navigateTo, showSearch } = useApp();
     const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);

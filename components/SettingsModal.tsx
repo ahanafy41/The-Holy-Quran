@@ -9,6 +9,16 @@ import { SettingSelect } from './SettingSelect';
 import { OfflineManager } from './OfflineManager';
 import { ManualInstallInstructions } from './ManualInstallInstructions';
 
+/**
+ * `SettingsModal` is a component that provides a centralized interface for all user-configurable settings.
+ * This includes PWA installation, preferred reciters and tafsirs, offline data management,
+ * and the AI assistant API key.
+ *
+ * @component
+ * @param {{onClose: () => void}} props - The component props.
+ * @param {() => void} props.onClose - A callback function to be invoked when the modal should be closed.
+ * @returns {React.ReactElement} A modal dialog for application settings.
+ */
 export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     const { settings, updateSettings, memorizationReciters, tafsirInfoList, apiKey, updateApiKey, isStandalone, canInstall, triggerInstall } = useApp();
     const modalRef = useRef<HTMLDivElement>(null);

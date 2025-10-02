@@ -1,6 +1,13 @@
 
 import React from 'react';
 
+/**
+ * `Spinner` is a simple component that displays a spinning loading indicator.
+ * It is used throughout the application to signify that a process is ongoing.
+ *
+ * @component
+ * @returns {React.ReactElement} A spinning SVG element.
+ */
 export const Spinner: React.FC = () => (
     <svg className="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

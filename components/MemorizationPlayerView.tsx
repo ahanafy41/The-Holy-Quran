@@ -6,12 +6,24 @@ import { useApp } from '../context/AppContext';
 import { PlayIcon, PauseIcon, PreviousIcon, NextIcon, ArrowRightIcon } from './Icons';
 import { SettingSelect as BaseSettingSelect } from './SettingSelect';
 
+/**
+ * @interface PlayerPlaylist
+ * @description Defines the structure of the playlist object required by the memorization player.
+ * @property {SavedSection} section - The metadata of the saved section being played.
+ * @property {Ayah[]} ayahs - An array of the Ayah objects included in the section.
+ */
 interface PlayerPlaylist {
     section: SavedSection;
     ayahs: Ayah[];
 };
 
-// A local, un-exported version of the SettingSelect component with a smaller label
+/**
+ * A local, un-exported version of the SettingSelect component with a smaller label,
+ * tailored for the compact UI of the memorization player controls.
+ *
+ * @param {object} props - The component props.
+ * @returns {React.ReactElement} A styled select input for player settings.
+ */
 const SettingSelect: React.FC<React.PropsWithChildren<{id: string; label: string; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;}>> = ({id, label, children, ...props}) => (
     <div>
         <label htmlFor={id} className="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-400">{label}</label>
@@ -21,7 +33,17 @@ const SettingSelect: React.FC<React.PropsWithChildren<{id: string; label: string
     </div>
 );
 
-
+/**
+ * `MemorizationPlayerView` is a specialized audio player designed for Quran memorization.
+ * It uses `wavesurfer.js` to display an audio waveform and provides controls for repetition,
+ * delay between repetitions, and playback speed.
+ *
+ * @component
+ * @param {{ playlist: PlayerPlaylist, onBack: () => void }} props - The props for the component.
+ * @param {PlayerPlaylist} props.playlist - The playlist object containing the section and ayahs to be played.
+ * @param {() => void} props.onBack - A callback function to navigate back to the previous view.
+ * @returns {React.ReactElement} The memorization player interface.
+ */
 export const MemorizationPlayerView: React.FC<{ playlist: PlayerPlaylist, onBack: () => void }> = ({ playlist, onBack }) => {
     console.log('[Mem DEBUG] MemorizationPlayerView component rendered.');
     const { setError } = useApp();
@@ -55,6 +77,13 @@ export const MemorizationPlayerView: React.FC<{ playlist: PlayerPlaylist, onBack
         return () => clearTimeout(timer);
     }, []);
     
+    /**
+     * A callback function to initiate playback for a specific ayah in the playlist.
+     * It sets the current ayah index, resets repetition counters, and loads the audio
+     * source into WaveSurfer. It also handles cases where no audio source is available.
+     *
+     * @param {number} index - The index of the ayah to play in the `ayahs` array.
+     */
     const playAyah = useCallback((index: number) => {
         const ws = wavesurferRef.current;
         console.log(`[Mem DEBUG] playAyah called for index: ${index}.`);

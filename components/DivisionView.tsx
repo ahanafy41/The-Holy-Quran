@@ -10,10 +10,28 @@ import { ArrowRightIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuranReaderControls } from './QuranReaderControls';
 
+/**
+ * @interface DivisionViewProps
+ * @description Props for the DivisionView component.
+ */
 interface DivisionViewProps {
+    /**
+     * The division object to be displayed. It includes the start and end points,
+     * a display title, and an optional starting surah name for context.
+     */
     division: QuranDivision & { title: string, startSurahName?: string };
 }
 
+/**
+ * `DivisionView` is a component responsible for fetching and displaying all the ayahs
+ * that belong to a specific Quranic division (e.g., a Juz, Hizb, or Rub).
+ * It dynamically fetches the required surahs and filters the ayahs based on the division's
+ * start and end points. It also renders Surah headers as the reader scrolls through the content.
+ *
+ * @component
+ * @param {DivisionViewProps} props - The props for the component.
+ * @returns {React.ReactElement} A view displaying the ayahs of a specific division.
+ */
 export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
     const { settings, setError, error, navigateTo } = useApp();
     const [fetchedSurahs, setFetchedSurahs] = useState<Surah[]>([]);
@@ -66,6 +84,12 @@ export const DivisionView: React.FC<DivisionViewProps> = ({ division }) => {
         );
     }, [fetchedSurahs, division]);
 
+    /**
+     * Renders the main content of the division view, including loading/error states,
+     * surah headers, and the list of ayahs. It intelligently adds surah headers and
+     * the Bismillah only when a new surah begins within the division.
+     * @returns {React.ReactNode} The rendered content.
+     */
     const renderContent = () => {
         if (isLoading) {
             return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل المحتوى</div>;

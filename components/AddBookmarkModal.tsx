@@ -6,11 +6,26 @@ import { Ayah } from '../types';
 import { BookmarkIcon, XMarkIcon } from './Icons';
 import { motion } from 'framer-motion';
 
+/**
+ * @interface AddBookmarkModalProps
+ * @description Defines the props for the AddBookmarkModal component.
+ */
 interface AddBookmarkModalProps {
+    /** The Ayah object for which the bookmark is being created. */
     ayah: Ayah;
+    /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
 }
 
+/**
+ * `AddBookmarkModal` is a component that displays a modal dialog for adding a new bookmark.
+ * It provides an input field for the user to name the bookmark, with a default name suggested
+ * based on the surah and ayah number. It uses `focus-trap-react` for accessibility.
+ *
+ * @component
+ * @param {AddBookmarkModalProps} props - The props for the component.
+ * @returns {React.ReactElement} A modal dialog for adding a bookmark.
+ */
 export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({ ayah, onClose }) => {
     const { addBookmark } = useApp();
     const [name, setName] = useState(`سورة ${ayah.surah?.name}, آية ${ayah.numberInSurah}`);

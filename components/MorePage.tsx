@@ -2,6 +2,14 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { BookmarkIcon, RadioIcon, FlowerIcon, CogIcon, ShieldIcon, BookOpenIcon, ChevronLeftIcon, SearchIcon } from './Icons';
 
+/**
+ * `MorePage` serves as a menu for accessing various features and settings of the application
+ * that are not included in the main bottom navigation bar. It presents a list of items
+ * that navigate to different pages or open modals.
+ *
+ * @component
+ * @returns {React.ReactElement} A page containing a list of navigation items.
+ */
 const MorePage: React.FC = () => {
     const { navigateTo, showSettings, showSearch } = useApp();
 
