@@ -6,7 +6,6 @@ import { useApp } from '../context/AppContext';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { XMarkIcon, ArrowDownTrayIcon } from './Icons';
 import { SettingSelect } from './SettingSelect';
-import { OfflineManager } from './OfflineManager';
 import { ManualInstallInstructions } from './ManualInstallInstructions';
 
 /**
@@ -76,8 +75,6 @@ export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
                      <SettingSelect id="tafsir" label="التفسير" value={settings.tafsir} onChange={(e) => updateSettings({ tafsir: e.target.value })}>
                         {tafsirInfoList.map(t => <option key={t.identifier} value={t.identifier}>{t.name}</option>)}
                      </SettingSelect>
-
-                     <OfflineManager />
 
                      <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                         <h4 className="font-medium mb-3">إعدادات الذكاء الاصطناعي</h4>

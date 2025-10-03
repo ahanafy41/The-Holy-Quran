@@ -2,9 +2,9 @@
 > copy-of-quran-study-app@0.0.0 dev
 > vite
 
-[vite-plugin-static-copy] Collected 1 items.
+Port 5173 is in use, trying another one...
 
-  VITE v5.4.20  ready in 700 ms
+  VITE v5.4.20  ready in 696 ms
 
-  ➜  Local:   http://localhost:5173/
+  ➜  Local:   http://localhost:5174/
   ➜  Network: use --host to expose
