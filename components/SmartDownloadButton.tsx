@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Downloader from '../services/downloadManager';
-import { DownloadIcon, CheckCircleIcon, AlertTriangleIcon } from './Icons';
+import { DownloadIcon, CheckCircleIcon, XMarkIcon } from './Icons';
 import { Spinner } from './Spinner';
 
 // Define the possible states for the download button
@@ -110,7 +110,7 @@ const SmartDownloadButton: React.FC<SmartDownloadButtonProps> = ({
     case 'completed':
       return <div className="p-2 text-green-500" aria-label="اكتمل التحميل"><CheckCircleIcon className="w-6 h-6" /></div>;
     case 'error':
-      return <button onClick={handleDownload} className="p-2 rounded-full text-red-500 hover:bg-red-100" aria-label={`خطأ في التحميل: ${error}. اضغط للمحاولة مرة أخرى.`}><AlertTriangleIcon className="w-5 h-5" /></button>;
+      return <button onClick={handleDownload} className="p-2 rounded-full text-red-500 hover:bg-red-100" aria-label={`خطأ في التحميل: ${error}. اضغط للمحاولة مرة أخرى.`}><XMarkIcon className="w-5 h-5" /></button>;
     case 'idle':
     default:
       return <button onClick={handleDownload} className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label={`تحميل ${itemName}`}><DownloadIcon className="w-5 h-5" /></button>;
