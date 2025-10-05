@@ -320,7 +320,54 @@ export const getTafsirInfo = (): Promise<TafsirInfo[]> => {
  * @param {number} ayahNumber The number of the ayah within the surah.
  * @returns {Promise<Tafsir>} A promise that resolves to the Tafsir object.
  */
-export const getTafsirForAyahWithEdition = (editionIdentifier: string, surahNumber: number, ayahNumber: number): Promise<Tafsir> => {
+import tafsirMuyassar from '../data/tafsir_muyassar.json';
+
+// Local cache for tafsir data to avoid re-reading from JSON file
+const localTafsirCache: { [key: string]: Tafsir } = {};
+
+
+/**
+ * Fetches the Tafsir for a specific ayah from a specific Tafsir edition.
+ * It prioritizes loading from a local JSON file for "Tafsir Al-Muyassar"
+ * to enable offline access and improve performance. For other editions,
+ * it falls back to the external API.
+ *
+ * @param {string} editionIdentifier The identifier of the Tafsir edition (e.g., 'ar.muyassar').
+ * @param {number} surahNumber The number of the surah.
+ * @param {number} ayahNumber The number of the ayah within the surah.
+ * @returns {Promise<Tafsir>} A promise that resolves to the Tafsir object.
+ */
+export const getTafsirForAyahWithEdition = async (editionIdentifier: string, surahNumber: number, ayahNumber: number): Promise<Tafsir> => {
+  const cacheKey = `${editionIdentifier}-${surahNumber}-${ayahNumber}`;
+  if (localTafsirCache[cacheKey]) {
+    return localTafsirCache[cacheKey];
+  }
+
+  // Prioritize local data for Tafsir Al-Muyassar
+  if (editionIdentifier === 'ar.muyassar') {
+    try {
+      const surahTafsirs = (tafsirMuyassar as any)[String(surahNumber)];
+      if (surahTafsirs && surahTafsirs[String(ayahNumber)]) {
+        const tafsir: Tafsir = {
+          text: surahTafsirs[String(ayahNumber)],
+          edition: {
+            identifier: 'ar.muyassar',
+            name: 'تفسير الميسر',
+            language: 'ar',
+            englishName: 'Al-Muyassar',
+            type: 'tafsir'
+          }
+        };
+        localTafsirCache[cacheKey] = tafsir;
+        return tafsir;
+      }
+    } catch (e) {
+      console.error("Error reading local tafsir, falling back to API.", e);
+      // Fallback to API if local file is corrupt or missing
+    }
+  }
+
+  // Fallback to API for other tafsirs or if local fails
   return fetchAPI<Tafsir>(`ayah/${surahNumber}:${ayahNumber}/${editionIdentifier}`);
 };
 
