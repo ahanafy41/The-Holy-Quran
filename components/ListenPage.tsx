@@ -64,6 +64,11 @@ export const ListenPage: React.FC = () => {
     }
     
     const renderContent = () => {
+        // Add a loading guard to ensure all initial data is ready before rendering any view.
+        if (listeningReciters.length === 0 || surahList.length === 0) {
+            return <div className="text-center p-10 flex items-center justify-center gap-2"><Spinner/> جاري تحميل البيانات...</div>;
+        }
+
         if (view === 'player' && selectedReciter && selectedSurah) {
             const currentSurahIndex = availableSurahsForSelectedReciter.findIndex(s => s.number === selectedSurah.number);
             const isFirst = currentSurahIndex === 0;
@@ -219,18 +224,28 @@ const SurahListView: React.FC<{reciter: ListeningReciter, surahs: SurahSimple[],
             </header>
              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                 {surahs.map(surah => (
-                     <button key={surah.number} onClick={() => onSelect(surah)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                        <div className="flex items-center gap-4">
-                            <span className="text-lg font-mono text-slate-400 group-hover:text-green-500">{surah.number}</span>
-                             <div>
-                                <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                    <div key={surah.number} className="w-full flex items-center justify-between text-right p-4 group">
+                        <button onClick={() => onSelect(surah)} className="flex-grow flex items-center gap-4 text-right">
+                            <span className="text-lg font-mono text-slate-400">{surah.number}</span>
+                            <div>
+                                <p className="font-semibold text-lg text-slate-800 dark:text-slate-200">
                                     {surah.name}
                                 </p>
-                                 <p className="text-sm text-slate-500 dark:text-slate-400">{surah.englishName}</p>
-                             </div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{surah.englishName}</p>
+                            </div>
+                        </button>
+                        <div className="flex-shrink-0 ml-4">
+                            <SmartDownloadButton
+                                itemId={`surah-audio-${reciter.identifier}-${surah.number}`}
+                                itemName={`سورة ${surah.name} - ${reciter.name}`}
+                                itemType="surah"
+                                getUrlsToDownload={async () => {
+                                    // Construct the URL for the single surah audio file
+                                    return [`${reciter.server}/${String(surah.number).padStart(3, '0')}.mp3`];
+                                }}
+                            />
                         </div>
-                        <SpeakerWaveIcon className="w-6 h-6 text-slate-400 group-hover:text-green-500 transition-colors" />
-                    </button>
+                    </div>
                 ))}
             </div>
         </div>

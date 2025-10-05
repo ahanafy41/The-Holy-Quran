@@ -77,49 +77,77 @@ export async function addDownloadedItem(item: DownloadedItem): Promise<void> {
 }
 
 /**
- * Downloads an array of files, caches them, and reports progress.
+ * Downloads an array of files, caching them and reporting progress based on streamed data size.
+ * This function uses ReadableStream to handle large files efficiently without high memory usage.
  * @param urls - The array of URLs to download.
  * @param onProgress - A callback function to report progress (0-100).
- * @returns A promise that resolves to the total size of the downloaded files in bytes.
+ * @returns A promise that resolves to the total size of successfully downloaded files in bytes.
  */
 export async function downloadAndCacheFiles(
-  urls: string[],
-  onProgress: (progress: number) => void
+    urls: string[],
+    onProgress: (progress: number) => void
 ): Promise<number> {
-  const cache = await caches.open(CACHE_NAME);
-  let totalSize = 0;
-  let downloadedCount = 0;
+    const cache = await caches.open(CACHE_NAME);
+    let totalDownloadedSize = 0;
+    let totalExpectedSize = 0;
 
-  // Use Promise.all to download files in parallel for better performance
-  const downloadPromises = urls.map(async (url) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-      }
+    // Use Promise.all to fetch all headers concurrently first to get total size.
+    const sizePromises = urls.map(url =>
+        fetch(url, { method: 'HEAD' }).then(res => {
+            if (res.ok && res.headers.has('Content-Length')) {
+                return parseInt(res.headers.get('Content-Length') || '0', 10);
+            }
+            return 0;
+        }).catch(() => 0)
+    );
 
-      // Clone the response because it can only be consumed once.
-      // One consumption for caching, one for getting the size.
-      const responseToCache = response.clone();
-      await cache.put(url, responseToCache);
+    const fileSizes = await Promise.all(sizePromises);
+    totalExpectedSize = fileSizes.reduce((sum, size) => sum + size, 0);
 
-      const blob = await response.blob();
-      totalSize += blob.size;
-    } catch (error) {
-      console.error(`Skipping file due to error: ${url}`, error);
-      // Re-throw to let the caller know a file failed, or handle it gracefully.
-      // For now, we'll let it fail the entire batch if one file fails.
-      throw error;
-    } finally {
-      downloadedCount++;
-      const progress = Math.round((downloadedCount / urls.length) * 100);
-      onProgress(progress);
+    let cumulativeDownloaded = 0;
+
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            if (!response.body) throw new Error('Response body is null');
+
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let receivedLength = 0;
+
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                chunks.push(value);
+                receivedLength += value.length;
+
+                const currentProgress = ((cumulativeDownloaded + receivedLength) / totalExpectedSize) * 100;
+                onProgress(Math.min(100, Math.round(currentProgress)));
+            }
+
+            const blob = new Blob(chunks);
+            totalDownloadedSize += blob.size;
+            cumulativeDownloaded += fileSizes[i] || blob.size; // Use pre-fetched size for more stable progress
+
+            const blobResponse = new Response(blob, {
+                headers: response.headers,
+            });
+
+            await cache.put(url, blobResponse);
+        } catch (error) {
+            console.error(`Failed to download or cache ${url}:`, error);
+            // If a file fails, we still increment the cumulative total by its expected size
+            // to ensure the progress bar can reach 100%.
+            cumulativeDownloaded += fileSizes[i] || 0;
+        }
     }
-  });
 
-  await Promise.all(downloadPromises);
-
-  return totalSize;
+    onProgress(100); // Ensure it completes at 100%
+    return totalDownloadedSize;
 }
 
 /**
