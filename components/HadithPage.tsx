@@ -5,6 +5,7 @@ import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
+import SmartDownloadButton from './SmartDownloadButton';
 
 const MotionDiv = motion.div as any;
 
@@ -51,12 +52,28 @@ const BookListView: React.FC<{ onSelect: (book: HadithBook) => void }> = ({ onSe
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm">
                 <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[calc(100vh-20rem)] overflow-y-auto">
                     {filteredBooks.map(book => (
-                        <button key={book.id} onClick={() => onSelect(book)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                            <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                                {book.arabic}
-                            </p>
-                            <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
-                        </button>
+                        <div key={book.id} className="w-full flex items-center justify-between text-right p-4 group">
+                            <button onClick={() => onSelect(book)} className="flex-grow text-right hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors -m-4 p-4 rounded-lg">
+                                <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                    {book.arabic}
+                                </p>
+                            </button>
+                            <div className="flex-shrink-0 ml-4">
+                                <SmartDownloadButton
+                                    itemId={`hadith-${book.id}`}
+                                    itemName={`كتاب ${book.arabic}`}
+                                    itemType="hadith_book"
+                                    getUrlsToDownload={async () => {
+                                        const url = hadithBookUrls[book.id];
+                                        if (!url) {
+                                            console.error(`No URL found for hadith book ID: ${book.id}`);
+                                            return [];
+                                        }
+                                        return [url];
+                                    }}
+                                />
+                            </div>
+                        </div>
                     ))}
                 </div>
             </div>

@@ -39,7 +39,8 @@ describe('App Navigation', () => {
     fireEvent.click(listenButton);
 
     // 3. Verify we are on the ListenPage
-    const listenHeading = await screen.findByRole('heading', { name: /اختر القارئ/i });
+    // We increase the timeout here to allow for the API call to fetch reciters to complete.
+    const listenHeading = await screen.findByRole('heading', { name: /اختر القارئ/i }, { timeout: 5000 });
     expect(listenHeading).toBeInTheDocument();
 
     // 4. Simulate the user pressing the back button

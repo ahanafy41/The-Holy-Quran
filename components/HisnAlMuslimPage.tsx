@@ -3,6 +3,7 @@ import type { HisnCategory, HisnDhikr } from '../types';
 import hisnAlMuslimCategoriesData from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
+import SmartDownloadButton from './SmartDownloadButton';
 
 const MotionDiv = motion.div as any;
 
@@ -165,11 +166,24 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
     return (
         <div>
             <audio ref={audioRef} />
-            <header className="flex items-center gap-4 mb-6">
-                <button onClick={onBack} aria-label="الرجوع لقائمة الأذكار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
-                </button>
-                <h1 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold focus:outline-none">{category.category}</h1>
+            <header className="flex items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} aria-label="الرجوع لقائمة الأذكار" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <ArrowRightIcon className="w-6 h-6 transform -scale-x-100" />
+                    </button>
+                    <h1 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold focus:outline-none">{category.category}</h1>
+                </div>
+                <div className="flex-shrink-0">
+                    <SmartDownloadButton
+                        itemId={`hisn-${category.id}`}
+                        itemName={`صوتيات: ${category.category}`}
+                        itemType="hisn_category"
+                        getUrlsToDownload={async () => {
+                            // Filter out any dhikr that doesn't have a valid audio URL
+                            return category.array.map(d => d.audio).filter(Boolean);
+                        }}
+                    />
+                </div>
             </header>
 
             <div className="space-y-4">

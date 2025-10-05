@@ -7,6 +7,7 @@ import { ChevronLeftIcon, ArrowRightIcon, SpeakerWaveIcon, SearchIcon } from './
 import { motion, AnimatePresence } from 'framer-motion';
 import { Spinner } from './Spinner';
 import { ListenPlayerView } from './ListenPlayerView';
+import SmartDownloadButton from './SmartDownloadButton';
 
 /**
  * @typedef {'reciters' | 'surahs' | 'player'} View
@@ -72,7 +73,7 @@ export const ListenPage: React.FC = () => {
         if (view === 'surahs' && selectedReciter) {
             return <SurahListView reciter={selectedReciter} surahs={availableSurahsForSelectedReciter} onSelect={handleSurahSelect} onBack={handleBack} />;
         }
-        return <ReciterListView reciters={listeningReciters} onSelect={handleReciterSelect} />;
+        return <ReciterListView reciters={listeningReciters} onSelect={handleReciterSelect} surahList={surahList} />;
     };
     
     const viewAnimation = {
@@ -100,12 +101,13 @@ export const ListenPage: React.FC = () => {
  * `ReciterListView` displays a searchable list of available audio reciters.
  *
  * @component
- * @param {{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}} props - The component props.
+ * @param {{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void, surahList: SurahSimple[]}} props - The component props.
  * @param {ListeningReciter[]} props.reciters - The list of reciters to display.
  * @param {(r: ListeningReciter) => void} props.onSelect - Callback function triggered when a reciter is selected.
+ * @param {SurahSimple[]} props.surahList - The full list of surahs, used for generating download URLs.
  * @returns {React.ReactElement} A view for selecting a reciter.
  */
-const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void}> = ({ reciters, onSelect }) => {
+const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: ListeningReciter) => void, surahList: SurahSimple[]}> = ({ reciters, onSelect, surahList }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -151,15 +153,27 @@ const ReciterListView: React.FC<{reciters: ListeningReciter[], onSelect: (r: Lis
                 {filteredReciters.length > 0 ? (
                     <div className="divide-y divide-slate-100 dark:divide-slate-700">
                         {filteredReciters.map(reciter => (
-                            <button key={reciter.identifier} onClick={() => onSelect(reciter)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                                <div>
-                                    <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                                        {reciter.name}
-                                    </p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">{reciter.rewaya}</p>
+                            <div key={reciter.identifier} className="w-full flex items-center justify-between text-right p-4 group">
+                                <button onClick={() => onSelect(reciter)} className="flex-grow text-right">
+                                    <div>
+                                        <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                            {reciter.name}
+                                        </p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">{reciter.rewaya}</p>
+                                    </div>
+                                </button>
+                                <div className="flex-shrink-0 ml-4">
+                                    <SmartDownloadButton
+                                        itemId={`reciter-${reciter.identifier}`}
+                                        itemName={`المصحف كاملًا - ${reciter.name}`}
+                                        itemType="full_reciter"
+                                        getUrlsToDownload={async () => {
+                                            const surahNumbers = reciter.surah_list ? reciter.surah_list.split(',').map(Number) : surahList.map(s => s.number);
+                                            return surahNumbers.map(n => `${reciter.server}/${String(n).padStart(3, '0')}.mp3`);
+                                        }}
+                                    />
                                 </div>
-                                <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
-                            </button>
+                            </div>
                         ))}
                     </div>
                 ) : (

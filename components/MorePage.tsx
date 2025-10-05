@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { BookmarkIcon, RadioIcon, FlowerIcon, CogIcon, ShieldIcon, BookOpenIcon, ChevronLeftIcon, SearchIcon } from './Icons';
+import { BookmarkIcon, RadioIcon, FlowerIcon, CogIcon, ShieldIcon, BookOpenIcon, ChevronLeftIcon, SearchIcon, DownloadIcon } from './Icons';
 
 /**
  * `MorePage` serves as a menu for accessing various features and settings of the application
@@ -48,6 +48,13 @@ const MorePage: React.FC = () => {
             icon: FlowerIcon,
             action: () => navigateTo('memorization'),
             color: 'text-emerald-500',
+        },
+        {
+            title: "إدارة التحميلات",
+            description: "عرض وحذف المحتوى المحمل",
+            icon: DownloadIcon,
+            action: () => navigateTo('downloads'),
+            color: 'text-orange-500',
         },
         {
             title: "الإعدادات",
