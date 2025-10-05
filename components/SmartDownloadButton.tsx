@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as Downloader from '../services/downloadManager';
 import { ArrowDownTrayIcon, CheckCircleIcon, XMarkIcon } from './Icons';
 import { Spinner } from './Spinner';
+import DownloadProgressBar from './DownloadProgressBar';
 
 // Define the possible states for the download button
 export type DownloadState = 'idle' | 'checking' | 'downloading' | 'completed' | 'error';
@@ -88,25 +89,7 @@ const SmartDownloadButton: React.FC<SmartDownloadButtonProps> = ({
     case 'checking':
       return <div className="p-2" aria-label="جاري التحقق من حالة التحميل"><Spinner /></div>;
     case 'downloading':
-      return (
-        <div className="flex items-center justify-center w-10 h-10" role="status" aria-live="polite" aria-label={`جاري التحميل ${progress}%`}>
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-            <circle className="text-slate-200 dark:text-slate-700" strokeWidth="4" stroke="currentColor" fill="transparent" r="16" cx="18" cy="18" />
-            <circle
-              className="text-green-500"
-              strokeWidth="4"
-              strokeDasharray={`${progress}, 100`}
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="transparent"
-              r="16"
-              cx="18"
-              cy="18"
-            />
-          </svg>
-          <span className="absolute text-xs font-bold text-slate-700 dark:text-slate-200">{progress}</span>
-        </div>
-      );
+        return <div className="w-24"><DownloadProgressBar progress={progress} /></div>;
     case 'completed':
       return <div className="p-2 text-green-500" aria-label="اكتمل التحميل"><CheckCircleIcon className="w-6 h-6" /></div>;
     case 'error':

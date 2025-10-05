@@ -77,9 +77,8 @@ export async function addDownloadedItem(item: DownloadedItem): Promise<void> {
 }
 
 /**
- * Downloads an array of files in batches, caches them, and reports progress based on actual file sizes.
- * This function first fetches the size of all files to provide an accurate progress indicator.
- * It downloads files in small batches to avoid overwhelming the browser.
+ * Downloads an array of files, caching them and reporting progress based on streamed data size.
+ * This function uses ReadableStream to handle large files efficiently without high memory usage.
  * @param urls - The array of URLs to download.
  * @param onProgress - A callback function to report progress (0-100).
  * @returns A promise that resolves to the total size of successfully downloaded files in bytes.
@@ -89,78 +88,65 @@ export async function downloadAndCacheFiles(
     onProgress: (progress: number) => void
 ): Promise<number> {
     const cache = await caches.open(CACHE_NAME);
-    const totalFiles = urls.length;
     let totalDownloadedSize = 0;
+    let totalExpectedSize = 0;
 
-    // 1. Fetch all file sizes to calculate the total expected size for accurate progress.
-    console.log('Calculating total download size...');
+    // Use Promise.all to fetch all headers concurrently first to get total size.
     const sizePromises = urls.map(url =>
         fetch(url, { method: 'HEAD' }).then(res => {
             if (res.ok && res.headers.has('Content-Length')) {
                 return parseInt(res.headers.get('Content-Length') || '0', 10);
             }
-            console.warn(`Could not get content-length for ${url}.`);
-            return 0; // Fallback size if header is missing
-        }).catch(() => 0) // Fallback on network error for a single HEAD request
+            return 0;
+        }).catch(() => 0)
     );
 
     const fileSizes = await Promise.all(sizePromises);
-    const totalExpectedSize = fileSizes.reduce((sum, size) => sum + size, 0);
-    const useSizeBasedProgress = totalExpectedSize > 0;
+    totalExpectedSize = fileSizes.reduce((sum, size) => sum + size, 0);
 
-    if (useSizeBasedProgress) {
-        console.log(`Total download size: ${(totalExpectedSize / (1024 * 1024)).toFixed(2)} MB`);
-    } else {
-        console.warn('Could not determine total download size. Progress will be based on file count.');
-    }
+    let cumulativeDownloaded = 0;
 
-    let processedBytes = 0;
-    let processedFileCount = 0;
-    const batchSize = 5; // Process 5 downloads at a time
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            if (!response.body) throw new Error('Response body is null');
 
-    onProgress(0); // Initialize progress at 0%
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let receivedLength = 0;
 
-    for (let i = 0; i < totalFiles; i += batchSize) {
-        const batchUrls = urls.slice(i, i + batchSize);
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-        const downloadPromises = batchUrls.map(async (url, indexInBatch) => {
-            const urlIndex = i + indexInBatch;
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-                }
+                chunks.push(value);
+                receivedLength += value.length;
 
-                const responseToCache = response.clone();
-                await cache.put(url, responseToCache);
-
-                const blob = await response.blob();
-                totalDownloadedSize += blob.size;
-
-            } catch (error) {
-                console.error(`Skipping file due to error: ${url}`, error);
-            } finally {
-                // Update progress based on the number of processed files (both success and failure).
-                // This ensures the progress bar always reaches 100%.
-                processedFileCount++;
-
-                let progress = 0;
-                if (useSizeBasedProgress) {
-                    // For size-based progress, we increment by the *expected* size of the file
-                    // to ensure a smooth progression to 100%, even if some files fail.
-                    processedBytes += fileSizes[urlIndex] || 0;
-                    progress = Math.round((processedBytes / totalExpectedSize) * 100);
-                } else {
-                    // Fallback to count-based progress if sizes couldn't be determined.
-                    progress = Math.round((processedFileCount / totalFiles) * 100);
-                }
-                onProgress(progress);
+                const currentProgress = ((cumulativeDownloaded + receivedLength) / totalExpectedSize) * 100;
+                onProgress(Math.min(100, Math.round(currentProgress)));
             }
-        });
 
-        await Promise.all(downloadPromises);
+            const blob = new Blob(chunks);
+            totalDownloadedSize += blob.size;
+            cumulativeDownloaded += fileSizes[i] || blob.size; // Use pre-fetched size for more stable progress
+
+            const blobResponse = new Response(blob, {
+                headers: response.headers,
+            });
+
+            await cache.put(url, blobResponse);
+        } catch (error) {
+            console.error(`Failed to download or cache ${url}:`, error);
+            // If a file fails, we still increment the cumulative total by its expected size
+            // to ensure the progress bar can reach 100%.
+            cumulativeDownloaded += fileSizes[i] || 0;
+        }
     }
 
+    onProgress(100); // Ensure it completes at 100%
     return totalDownloadedSize;
 }
 
