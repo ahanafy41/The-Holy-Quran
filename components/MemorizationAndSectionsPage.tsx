@@ -9,6 +9,7 @@ import { SamiaSessionModal } from './SamiaSessionModal';
 import { Spinner } from './Spinner';
 import { CreateSectionModal } from './CreateSectionModal';
 import { MemorizationPlayerView } from './MemorizationPlayerView';
+import SmartDownloadButton from './SmartDownloadButton';
 
 
 /**
@@ -273,6 +274,24 @@ const SectionListView: React.FC<{
                                 </p>
                             </button>
                             <div className="relative flex items-center gap-2 flex-shrink-0">
+                                 <SmartDownloadButton
+                                    itemId={`memorization-${section.id}`}
+                                    itemName={`مقطع ${section.name}`}
+                                    itemType="memorization_section"
+                                    getUrlsToDownload={async () => {
+                                        try {
+                                            const surahData = await api.getSurah(section.surahNumber, useApp().settings.memorizationReciter);
+                                            const sectionAyahs = surahData.ayahs.filter(
+                                                ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
+                                            );
+                                            const audioUrls = sectionAyahs.flatMap(ayah => [ayah.audio, ...(ayah.audioSecondarys || [])]).filter(Boolean);
+                                            return audioUrls;
+                                        } catch (e) {
+                                            console.error("Failed to get URLs for memorization section", e);
+                                            throw new Error("فشل في جلب بيانات المقطع للتحميل.");
+                                        }
+                                    }}
+                                 />
                                  <button
                                     onClick={(e) => handleMenuToggle(e, section.id)}
                                     aria-label={`خيارات مقطع ${section.name}`}

@@ -2,10 +2,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { juzs, pages, hizbs, rubs } from '../data/quranicDivisions';
+import * as api from '../services/quranApi';
 import { QuranDivision, SurahSimple, SavedSection } from '../types';
 import { BookOpenIcon, FolderIcon, ChevronLeftIcon, ArrowRightIcon, FlowerIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdvancedSearch } from './AdvancedSearch';
+import SmartDownloadButton from './SmartDownloadButton';
 
 
 /**
@@ -40,7 +42,7 @@ interface DivisionConfig {
  * @returns {React.ReactElement} The main index page component.
  */
 export const IndexPage: React.FC = () => {
-    const { surahList, navigateTo, savedSections } = useApp();
+    const { surahList } = useApp();
     const [activeList, setActiveList] = useState<DivisionConfig | null>(null);
     const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -84,7 +86,7 @@ export const IndexPage: React.FC = () => {
             <AnimatePresence mode="wait">
                 {activeList ? (
                     <motion.div key="list" {...listAnimation}>
-                        <ListView list={activeList} onBack={() => setActiveList(null)} navigateTo={navigateTo as any} surahMap={surahMap} />
+                        <ListView list={activeList} onBack={() => setActiveList(null)} surahMap={surahMap} />
                     </motion.div>
                 ) : (
                     <motion.div key="index" {...indexAnimation}>
@@ -122,15 +124,15 @@ const IndexGrid: React.FC<{ divisions: DivisionConfig[]; onSelect: (config: Divi
  * It provides a back button to return to the `IndexGrid` and handles navigation when an item is selected.
  *
  * @component
- * @param {{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }} props - The component props.
+ * @param {{ list: DivisionConfig; onBack: () => void; surahMap: Map<number, string>; }} props - The component props.
  * @param {DivisionConfig} props.list - The configuration object for the list to be displayed.
  * @param {() => void} props.onBack - Callback function to go back to the index grid.
- * @param {Function} props.navigateTo - The navigation function from `useApp` context.
  * @param {Map<number, string>} props.surahMap - A map of surah numbers to their names, for displaying context.
  * @returns {React.ReactElement} A component displaying a list of division items.
  */
-const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo: Function; surahMap: Map<number, string>; }> = ({ list, onBack, navigateTo, surahMap }) => {
+const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; surahMap: Map<number, string>; }> = ({ list, onBack, surahMap }) => {
     const listTitleRef = useRef<HTMLHeadingElement>(null);
+    const { navigateTo, settings } = useApp();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -161,24 +163,48 @@ const ListView: React.FC<{ list: DivisionConfig; onBack: () => void; navigateTo:
             </header>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm divide-y divide-slate-100 dark:divide-slate-700">
                 {list.items.map((item: any, index: number) => (
-                    <button key={`${list.id}-${item.number || index}`} onClick={() => handleItemClick(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                        <div>
-                            <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                              {list.id === 'surahs' ? item.name : `${list.itemLabel} ${item.number}`}
-                            </p>
-                            {list.id === 'surahs' && (
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    {item.revelationType === 'Medinan' ? 'مدنية' : 'مكية'} - {item.numberOfAyahs} آيات
-                                </p>
-                            )}
-                            {list.id !== 'surahs' && list.id !== 'pages' && item.start && (
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    يبدأ من: سورة {surahMap.get(item.start.surah)}، آية {item.start.ayah}
-                                </p>
-                            )}
+                    list.id === 'surahs' ? (
+                        <div key={`surah-${item.number}`} className="w-full flex items-center justify-between text-right p-4 group">
+                            <button onClick={() => handleItemClick(item)} className="flex-grow text-right">
+                                <div>
+                                    <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                        {item.revelationType === 'Medinan' ? 'مدنية' : 'مكية'} - {item.numberOfAyahs} آيات
+                                    </p>
+                                </div>
+                            </button>
+                            <div className="flex-shrink-0 ml-4">
+                                <SmartDownloadButton
+                                    itemId={`surah-${item.number}`}
+                                    itemName={`سورة ${item.name}`}
+                                    itemType="surah"
+                                    getUrlsToDownload={async () => {
+                                        const reciter = settings.memorizationReciter;
+                                        const surahData = await api.getSurah(item.number, reciter);
+                                        const surahApiUrl = `https://api.alquran.cloud/v1/surah/${item.number}/${reciter}`;
+                                        const audioUrls = surahData.ayahs.flatMap(ayah => [ayah.audio, ...(ayah.audioSecondarys || [])]).filter(Boolean);
+                                        return [surahApiUrl, ...audioUrls];
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
-                    </button>
+                    ) : (
+                        <button key={`${list.id}-${item.number || index}`} onClick={() => handleItemClick(item)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
+                            <div>
+                                <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
+                                  {`${list.itemLabel} ${item.number}`}
+                                </p>
+                                {list.id !== 'pages' && item.start && (
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                        يبدأ من: سورة {surahMap.get(item.start.surah)}، آية {item.start.ayah}
+                                    </p>
+                                )}
+                            </div>
+                            <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
+                        </button>
+                    )
                 ))}
             </div>
         </div>

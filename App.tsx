@@ -14,6 +14,7 @@ import { BookmarksPage } from './components/BookmarksPage';
 import { DivisionView } from './components/DivisionView';
 import MorePage from './components/MorePage';
 import { WordMeaningsPage } from './components/WordMeaningsPage';
+import { DownloadsPage } from './components/DownloadsPage';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
@@ -511,6 +512,7 @@ const App: React.FC = () => {
         case 'bookmarks': return <BookmarksPage />;
         case 'more': return <MorePage />;
         case 'word-meanings': return <WordMeaningsPage />;
+        case 'downloads': return <DownloadsPage />;
         default: return <IndexPage />;
     }
   };
@@ -560,7 +562,7 @@ const App: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more'].includes(view) && (
+        {['index', 'listen', 'hadith', 'hisn-al-muslim', 'bookmarks', 'radio', 'memorization', 'more', 'downloads'].includes(view) && (
           <BottomNavBar />
         )}
       </AnimatePresence>

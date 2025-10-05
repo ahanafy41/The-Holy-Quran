@@ -10,6 +10,45 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 50 * 1024 * 1024, // 50 MB
+        runtimeCaching: [
+          {
+            // Cache for audio files from various sources
+            urlPattern: ({ url }) => {
+              return url.hostname === 'everyayah.com' || url.hostname === 'raw.githubusercontent.com';
+            },
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'quran-app-offline-cache', // Using the same cache name as downloadManager
+              expiration: {
+                maxEntries: 5000, // Store up to 5000 audio files
+                maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200], // Cache opaque and successful responses
+              },
+            },
+          },
+          {
+            // Cache for API responses (Quran data, Hadith, etc.)
+            urlPattern: ({ url }) => {
+              return url.hostname === 'api.alquran.cloud' ||
+                     url.hostname === 'www.mp3quran.net' ||
+                     url.href.endsWith('.json'); // Generic rule for hadith files
+            },
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'quran-app-api-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'القرآن الكريم',
