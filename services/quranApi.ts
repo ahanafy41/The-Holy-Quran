@@ -6,6 +6,31 @@ const MP3QURAN_API_URL = 'https://www.mp3quran.net/api/v3';
 const RADIO_BROWSER_API_URL = 'https://de1.api.radio-browser.info/json';
 
 
+/**
+ * Prepends a proxy path to a URL during development to bypass CORS issues.
+ * In production, it returns the original URL.
+ * @param {string} url The original URL.
+ * @returns {string} The potentially proxied URL.
+ */
+const proxyDevUrl = (url: string): string => {
+  // import.meta.env.DEV is a Vite-specific environment variable
+  // that is true during development and false in production builds.
+  if (import.meta.env.DEV && url.includes('//cdn.islamic.network')) {
+    try {
+      const urlObject = new URL(url);
+      // Rewrite the URL to use the proxy path defined in vite.config.ts
+      return `/islamic-network-proxy${urlObject.pathname}${urlObject.search}`;
+    } catch (e) {
+      // If URL parsing fails for any reason, log the error and return the original URL
+      // to prevent the application from crashing.
+      console.error(`Invalid URL for proxying: ${url}`, e);
+      return url;
+    }
+  }
+  return url;
+};
+
+
 // For mp3quran.net API
 interface MP3QuranReciter {
     id: number;
@@ -254,6 +279,13 @@ export const getSurah = async (surahNumber: number, reciterIdentifier: string): 
   surah.ayahs = surah.ayahs.map(ayah => {
     const augmentedAyah = addFallbackAudioSource(ayah, surah.number, reciterIdentifier);
     augmentedAyah.surah = surahInfoForAyahs;
+
+    // Apply the development proxy to all relevant audio URLs to bypass CORS
+    augmentedAyah.audio = proxyDevUrl(augmentedAyah.audio);
+    if (augmentedAyah.audioSecondarys) {
+      augmentedAyah.audioSecondarys = augmentedAyah.audioSecondarys.map(proxyDevUrl);
+    }
+
     return augmentedAyah;
   });
   
@@ -268,11 +300,18 @@ export const getSurah = async (surahNumber: number, reciterIdentifier: string): 
  * @returns {Promise<Ayah>} A promise that resolves to the Ayah object.
  */
 export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Promise<Ayah> => {
-    const ayah = await fetchAPI<Ayah>(`ayah/${ayahNumber}/${reciterIdentifier}`);
+    let ayah = await fetchAPI<Ayah>(`ayah/${ayahNumber}/${reciterIdentifier}`);
     // Augment with a robust fallback audio source if surah info is available
     if (ayah.surah) {
-        return addFallbackAudioSource(ayah, ayah.surah.number, reciterIdentifier);
+        ayah = addFallbackAudioSource(ayah, ayah.surah.number, reciterIdentifier);
     }
+
+    // Apply the development proxy to all relevant audio URLs
+    ayah.audio = proxyDevUrl(ayah.audio);
+    if (ayah.audioSecondarys) {
+      ayah.audioSecondarys = ayah.audioSecondarys.map(proxyDevUrl);
+    }
+
     return ayah;
 };
 
