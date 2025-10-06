@@ -125,10 +125,8 @@ export async function downloadAndCacheFiles(
                 chunks.push(value);
                 receivedLength += value.length;
 
-                if (totalExpectedSize > 0) {
-                    const currentProgress = ((cumulativeDownloaded + receivedLength) / totalExpectedSize) * 100;
-                    onProgress(Math.min(100, Math.round(currentProgress)));
-                }
+                const currentProgress = ((cumulativeDownloaded + receivedLength) / totalExpectedSize) * 100;
+                onProgress(Math.min(100, Math.round(currentProgress)));
             }
 
             const blob = new Blob(chunks);
@@ -142,9 +140,9 @@ export async function downloadAndCacheFiles(
             await cache.put(url, blobResponse);
         } catch (error) {
             console.error(`Failed to download or cache ${url}:`, error);
-            // Re-throw the error to ensure the calling component (SmartDownloadButton)
-            // is aware of the failure and can update its state accordingly.
-            throw error;
+            // If a file fails, we still increment the cumulative total by its expected size
+            // to ensure the progress bar can reach 100%.
+            cumulativeDownloaded += fileSizes[i] || 0;
         }
     }
 
