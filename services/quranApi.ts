@@ -7,22 +7,20 @@ const RADIO_BROWSER_API_URL = 'https://de1.api.radio-browser.info/json';
 
 
 /**
- * Prepends a proxy path to a URL during development to bypass CORS issues.
- * In production, it returns the original URL.
+ * Rewrites a URL from cdn.islamic.network to use the universal proxy path.
+ * This works for both local dev (Vite proxy) and production (Netlify proxy).
  * @param {string} url The original URL.
- * @returns {string} The potentially proxied URL.
+ * @returns {string} The rewritten URL.
  */
-const proxyDevUrl = (url: string): string => {
-  // import.meta.env.DEV is a Vite-specific environment variable
-  // that is true during development and false in production builds.
-  if (import.meta.env.DEV && url.includes('//cdn.islamic.network')) {
+const rewriteUrlForProxy = (url: string): string => {
+  // Check if the URL is valid and for the specific CDN that needs proxying.
+  if (url && url.includes('//cdn.islamic.network')) {
     try {
       const urlObject = new URL(url);
-      // Rewrite the URL to use the proxy path defined in vite.config.ts
+      // Always rewrite the URL to use the universal proxy path.
       return `/islamic-network-proxy${urlObject.pathname}${urlObject.search}`;
     } catch (e) {
-      // If URL parsing fails for any reason, log the error and return the original URL
-      // to prevent the application from crashing.
+      // If URL parsing fails, log the error and return the original URL.
       console.error(`Invalid URL for proxying: ${url}`, e);
       return url;
     }
@@ -280,10 +278,10 @@ export const getSurah = async (surahNumber: number, reciterIdentifier: string): 
     const augmentedAyah = addFallbackAudioSource(ayah, surah.number, reciterIdentifier);
     augmentedAyah.surah = surahInfoForAyahs;
 
-    // Apply the development proxy to all relevant audio URLs to bypass CORS
-    augmentedAyah.audio = proxyDevUrl(augmentedAyah.audio);
+    // Apply the universal proxy to all relevant audio URLs to bypass CORS
+    augmentedAyah.audio = rewriteUrlForProxy(augmentedAyah.audio);
     if (augmentedAyah.audioSecondarys) {
-      augmentedAyah.audioSecondarys = augmentedAyah.audioSecondarys.map(proxyDevUrl);
+      augmentedAyah.audioSecondarys = augmentedAyah.audioSecondarys.map(rewriteUrlForProxy);
     }
 
     return augmentedAyah;
@@ -306,10 +304,10 @@ export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Pr
         ayah = addFallbackAudioSource(ayah, ayah.surah.number, reciterIdentifier);
     }
 
-    // Apply the development proxy to all relevant audio URLs
-    ayah.audio = proxyDevUrl(ayah.audio);
+    // Apply the universal proxy to all relevant audio URLs
+    ayah.audio = rewriteUrlForProxy(ayah.audio);
     if (ayah.audioSecondarys) {
-      ayah.audioSecondarys = ayah.audioSecondarys.map(proxyDevUrl);
+      ayah.audioSecondarys = ayah.audioSecondarys.map(rewriteUrlForProxy);
     }
 
     return ayah;
