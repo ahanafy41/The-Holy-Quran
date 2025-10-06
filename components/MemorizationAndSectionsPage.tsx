@@ -10,6 +10,7 @@ import { Spinner } from './Spinner';
 import { CreateSectionModal } from './CreateSectionModal';
 import { MemorizationPlayerView } from './MemorizationPlayerView';
 import SmartDownloadButton from './SmartDownloadButton';
+import { SettingSelect } from './SettingSelect';
 
 
 /**
@@ -32,11 +33,12 @@ type PlayerPlaylist = {
  * @returns {React.ReactElement} The main page for memorization and saved sections.
  */
 export const MemorizationAndSectionsPage: React.FC = () => {
-    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings, pauseAyah: pauseGlobalPlayer } = useApp();
+    const { savedSections, settings, setError, addSavedSection, removeSavedSection, navigateTo, surahList, apiKey, showSettings, pauseAyah: pauseGlobalPlayer, memorizationReciters } = useApp();
     const [playlist, setPlaylist] = useState<PlayerPlaylist | null>(null);
     const [samiaPlaylist, setSamiaPlaylist] = useState<PlayerPlaylist | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [localReciter, setLocalReciter] = useState(settings.memorizationReciter);
 
     // Stop the global player when this view is active
     useEffect(() => {
@@ -47,7 +49,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const surahData = await api.getSurah(section.surahNumber, settings.memorizationReciter);
+            const surahData = await api.getSurah(section.surahNumber, localReciter);
             const sectionAyahs = surahData.ayahs.filter(
                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
             );
@@ -70,7 +72,7 @@ export const MemorizationAndSectionsPage: React.FC = () => {
         setError(null);
         try {
             // We don't need reciter for Samia mode, but getSurah requires it. We can use any valid one.
-            const surahData = await api.getSurah(section.surahNumber, settings.memorizationReciter);
+            const surahData = await api.getSurah(section.surahNumber, localReciter);
             const sectionAyahs = surahData.ayahs.filter(
                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
             );
@@ -115,6 +117,9 @@ export const MemorizationAndSectionsPage: React.FC = () => {
                 onReadSection={handleReadSection}
                 onAddSection={() => setIsCreating(true)}
                 onRemoveSection={removeSavedSection}
+                localReciter={localReciter}
+                onReciterChange={setLocalReciter}
+                reciters={memorizationReciters}
             />
         );
     };
@@ -226,7 +231,13 @@ const SectionListView: React.FC<{
     onReadSection: (section: SavedSection) => void;
     onAddSection: () => void;
     onRemoveSection: (id: string) => void;
-}> = ({ savedSections, onStartListening, onStartSamia, onReadSection, onAddSection, onRemoveSection }) => {
+    localReciter: string;
+    onReciterChange: (reciterId: string) => void;
+    reciters: ReadonlyArray<{
+        identifier: string;
+        name: string;
+    }>;
+}> = ({ savedSections, onStartListening, onStartSamia, onReadSection, onAddSection, onRemoveSection, localReciter, onReciterChange, reciters }) => {
     
     const { surahList } = useApp();
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -257,6 +268,21 @@ const SectionListView: React.FC<{
                 </button>
             </header>
             
+            <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm">
+                <SettingSelect
+                    id="memorization-reciter"
+                    label="قارئ الحفظ"
+                    value={localReciter}
+                    onChange={(e) => onReciterChange(e.target.value)}
+                >
+                    {reciters.map(reciter => (
+                        <option key={reciter.identifier} value={reciter.identifier}>
+                            {reciter.name}
+                        </option>
+                    ))}
+                </SettingSelect>
+            </div>
+
             {savedSections.length === 0 ? (
                 <div className="text-center p-8 space-y-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm">
                     <FlowerIcon className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600" />
@@ -280,12 +306,13 @@ const SectionListView: React.FC<{
                                     itemType="memorization_section"
                                     getUrlsToDownload={async () => {
                                         try {
-                                            const surahData = await api.getSurah(section.surahNumber, useApp().settings.memorizationReciter);
+                                            const surahData = await api.getSurah(section.surahNumber, localReciter);
                                             const sectionAyahs = surahData.ayahs.filter(
                                                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
                                             );
                                             const audioUrls = sectionAyahs.flatMap(ayah => [ayah.audio, ...(ayah.audioSecondarys || [])]).filter(Boolean);
-                                            return audioUrls;
+                                            const uniqueUrls = Array.from(new Set(audioUrls));
+                                            return uniqueUrls;
                                         } catch (e) {
                                             console.error("Failed to get URLs for memorization section", e);
                                             throw new Error("فشل في جلب بيانات المقطع للتحميل.");
