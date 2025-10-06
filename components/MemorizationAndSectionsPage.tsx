@@ -228,7 +228,7 @@ const SectionListView: React.FC<{
     onRemoveSection: (id: string) => void;
 }> = ({ savedSections, onStartListening, onStartSamia, onReadSection, onAddSection, onRemoveSection }) => {
     
-    const { surahList, settings } = useApp();
+    const { surahList } = useApp();
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const surahMap = useMemo(() => new Map(surahList.map(s => [s.number, s.name])), [surahList]);
     const titleRef = useRef<HTMLHeadingElement>(null);
@@ -280,34 +280,15 @@ const SectionListView: React.FC<{
                                     itemType="memorization_section"
                                     getUrlsToDownload={async () => {
                                         try {
-                                            // Use the 'settings' from the component's scope, not from a new call to useApp()
-                                            const surahData = await api.getSurah(section.surahNumber, settings.memorizationReciter);
+                                            const surahData = await api.getSurah(section.surahNumber, useApp().settings.memorizationReciter);
                                             const sectionAyahs = surahData.ayahs.filter(
                                                 ayah => ayah.numberInSurah >= section.startAyah && ayah.numberInSurah <= section.endAyah
                                             );
-                                            // Create a unique set of URLs by iterating through each ayah's audio sources.
-                                            // This is a more robust way to handle potential duplicates from the API.
-                                            const urlSet = new Set<string>();
-                                            for (const ayah of sectionAyahs) {
-                                                if (ayah.audio) urlSet.add(ayah.audio);
-                                                if (ayah.audioSecondarys) {
-                                                    for (const url of ayah.audioSecondarys) {
-                                                        if (url) urlSet.add(url);
-                                                    }
-                                                }
-                                            }
-                                            const audioUrls = Array.from(urlSet);
-
-                                            if (audioUrls.length === 0) {
-                                                // Provide a more specific error when no audio files are found for the selected reciter
-                                                throw new Error("لا توجد ملفات صوتية متاحة لهذا القارئ.");
-                                            }
-
+                                            const audioUrls = sectionAyahs.flatMap(ayah => [ayah.audio, ...(ayah.audioSecondarys || [])]).filter(Boolean);
                                             return audioUrls;
                                         } catch (e) {
                                             console.error("Failed to get URLs for memorization section", e);
-                                            // Forward the error to be handled by SmartDownloadButton
-                                            throw e;
+                                            throw new Error("فشل في جلب بيانات المقطع للتحميل.");
                                         }
                                     }}
                                  />
