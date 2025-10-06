@@ -93,14 +93,4 @@ export default defineConfig({
     setupFiles: './src/setupTests.ts',
     testTimeout: 600000,
   },
-  server: {
-    proxy: {
-      // Proxy requests for cdn.islamic.network to bypass CORS issues in development
-      '/islamic-network-proxy': {
-        target: 'https://cdn.islamic.network',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/islamic-network-proxy/, ''),
-      },
-    },
-  },
 });

@@ -2,6 +2,11 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/islamic-network-proxy/*"
+  to = "https://cdn.islamic.network/:splat"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
