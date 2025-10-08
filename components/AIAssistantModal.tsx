@@ -68,21 +68,19 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         }
         const ai = new GoogleGenAI({ apiKey });
 
-        let systemInstructionText = '';
-        let modelParams: any = { model: 'gemini-1.5-flash' };
+        let systemInstruction = '';
+        let modelConfig: any = { model: 'gemini-1.5-flash' };
 
         if (content.type === 'ayah') {
-            systemInstructionText = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
         } else { // hadith
-            systemInstructionText = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Use your search tool to find reliable sources and cite them in your explanation. Frame your answers based on this context and your web search. Respond in Arabic.`;
-            modelParams.tools = [{ googleSearch: {} }];
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Please provide a detailed explanation based on your extensive knowledge, and if possible, mention or draw upon well-known sources or commentaries to support your explanation. Respond in Arabic.`;
         }
 
-        modelParams.systemInstruction = systemInstructionText;
+        modelConfig.config = { systemInstruction };
 
         try {
-            const model = ai.getGenerativeModel(modelParams);
-            const newChat = model.startChat();
+            const newChat = ai.chats.create(modelConfig);
             setChat(newChat);
         } catch(e) {
             console.error("Failed to initialize AI Chat:", e);
@@ -99,16 +97,15 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         setError(null);
         
         try {
-            const result = await chat.sendMessageStream(prompt);
+            const resultStream = await chat.sendMessageStream({ message: prompt });
             setMessages(prev => [...prev, { role: 'model', text: '' }]);
-            for await (const chunk of result.stream) {
-                const chunkText = chunk.text();
+            for await (const chunk of resultStream) {
                 setMessages(prev => {
                     const lastMsgIndex = prev.length - 1;
                     const updatedMessages = [...prev];
                     const lastMessage = updatedMessages[lastMsgIndex];
                     // Create a new object to avoid state mutation
-                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunkText };
+                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunk.text };
                     return updatedMessages;
                 });
             }
