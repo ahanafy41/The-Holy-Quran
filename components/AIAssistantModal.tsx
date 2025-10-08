@@ -109,9 +109,10 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
                     return updatedMessages;
                 });
             }
-        } catch (e) {
-            console.error("Error during AI chat:", e);
-            setError("عذراً، حدث خطأ ما. يرجى المحاولة مرة أخرى.");
+        } catch (e: any) {
+            console.error("Detailed AI Error:", e);
+            const detailedError = e.message ? `تفاصيل الخطأ: ${e.message}` : "لا توجد تفاصيل إضافية.";
+            setError(`عذراً، حدث خطأ ما. ${detailedError}`);
         } finally {
             setIsResponding(false);
         }
