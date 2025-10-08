@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Chat } from '@google/genai';
 import { Hadith } from '../types';
 import { XMarkIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +30,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
     const [explanation, setExplanation] = useState<string>('');
     const [isResponding, setIsResponding] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [ai, setAi] = useState<GoogleGenAI | null>(null);
+    const [chat, setChat] = useState<Chat | null>(null);
 
     const modalContentRef = useRef<HTMLDivElement>(null);
     const explanationRef = useRef<HTMLDivElement>(null);
@@ -40,9 +40,18 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const genAI = new GoogleGenAI({ apiKey });
-        setAi(genAI);
-    }, [apiKey]);
+        const ai = new GoogleGenAI({ apiKey });
+        const systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answer based on this context. Respond in Arabic.`;
+
+        // Correctly initialize the chat with the right model and tools
+        const newChat = ai.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            tools: [{ googleSearch: {} }],
+            systemInstruction,
+        }).startChat();
+
+        setChat(newChat);
+    }, [apiKey, hadith]);
 
     useEffect(() => {
         if (explanation) {
@@ -51,23 +60,20 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
     }, [explanation]);
 
     const handleExplain = useCallback(async () => {
-        if (isResponding || !ai) return;
+        if (isResponding || !chat) return;
 
         setIsResponding(true);
         setError(null);
         setExplanation('');
 
         try {
-            const model = ai.getGenerativeModel({
-                model: 'gemini-1.5-flash',
-                tools: [{ googleSearch: {} }],
-                systemInstruction: `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. Respond in Arabic.`
-            });
+            const prompt = `اشرح هذا الحديث`;
+            const resultStream = await chat.sendMessageStream(prompt);
 
-            const prompt = `اشرح هذا الحديث: "${hadith.arabic}"`;
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            setExplanation(response.text());
+            for await (const chunk of resultStream.stream) {
+                const chunkText = chunk.text();
+                setExplanation(prev => prev + chunkText);
+            }
 
         } catch (e) {
             console.error("Error generating explanation:", e);
@@ -75,7 +81,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
         } finally {
             setIsResponding(false);
         }
-    }, [isResponding, ai, hadith]);
+    }, [isResponding, chat]);
 
     const modalAnimationProps = {
         initial: {scale: 0.95, opacity: 0},
@@ -113,7 +119,8 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
                             <div className="text-center py-8">
                                 <button
                                     onClick={handleExplain}
-                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 mx-auto"
+                                    disabled={!chat}
+                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed"
                                 >
                                     <SparklesIcon className="w-5 h-5" />
                                     شرح الحديث بالذكاء الاصطناعي
@@ -122,7 +129,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
                         )}
                         </AnimatePresence>
 
-                        {isResponding && (
+                        {isResponding && !explanation && (
                              <div className="flex items-start justify-center gap-2.5" role="status">
                                  <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-700">
                                      <div className="flex gap-1.5 items-center" aria-hidden="true">
