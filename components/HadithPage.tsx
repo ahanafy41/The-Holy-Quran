@@ -4,8 +4,9 @@ import { hadithCollection } from '../data/hadithData';
 import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
+import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
+import { HadithAIAssistantModal } from './HadithAIAssistantModal';
 
 const MotionDiv = motion.div as any;
 
@@ -135,7 +136,7 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
  * @param {() => void} props.onBack - Callback to navigate back to the chapter list.
  * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
  */
-const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }> = ({ book, chapter, hadiths, onBack }) => {
+const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void, onHadithSelect: (hadith: Hadith) => void }> = ({ book, chapter, hadiths, onBack, onHadithSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -169,8 +170,9 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                     {rowVirtualizer.getVirtualItems().map(virtualItem => {
                         const hadith = hadiths[virtualItem.index];
                         return (
-                            <div
+                            <button
                                 key={virtualItem.key}
+                                onClick={() => onHadithSelect(hadith)}
                                 style={{
                                     position: 'absolute',
                                     top: 0,
@@ -178,13 +180,17 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                                     width: '100%',
                                     transform: `translateY(${virtualItem.start}px)`,
                                 }}
-                                className="p-4 border-b border-slate-100 dark:border-slate-700"
+                                className="p-4 border-b border-slate-100 dark:border-slate-700 text-right w-full hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group"
+                                aria-label={`الحديث رقم ${hadith.idInBook}, اضغط لشرح الحديث`}
                             >
                                 <p className="font-serif text-lg leading-loose text-slate-800 dark:text-slate-200">
                                     <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
                                     {hadith.arabic}
                                 </p>
-                            </div>
+                                <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <SparklesIcon className="w-5 h-5 text-green-500" />
+                                </div>
+                            </button>
                         );
                     })}
                 </div>
@@ -211,6 +217,7 @@ export const HadithPage: React.FC = () => {
     const [hadiths, setHadiths] = useState<Hadith[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedHadithForAI, setSelectedHadithForAI] = useState<Hadith | null>(null);
 
     const handleSelectBook = async (book: HadithBook) => {
         setSelectedBook(book);
@@ -241,6 +248,14 @@ export const HadithPage: React.FC = () => {
         setView('hadiths');
     };
 
+    const handleHadithSelectForAI = (hadith: Hadith) => {
+        setSelectedHadithForAI(hadith);
+    };
+
+    const handleCloseAIModal = () => {
+        setSelectedHadithForAI(null);
+    };
+
     const handleBackToBooks = () => {
         setSelectedBook(null);
         setSelectedBookData(null);
@@ -268,16 +283,23 @@ export const HadithPage: React.FC = () => {
     }
 
     return (
-        <AnimatePresence mode="wait">
-            {view === 'books' && (
-                <BookListView onSelect={handleSelectBook} />
-            )}
-            {view === 'chapters' && selectedBook && (
-                <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
-            )}
-            {view === 'hadiths' && selectedBook && selectedChapter && (
-                <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} />
-            )}
-        </AnimatePresence>
+        <>
+            <AnimatePresence mode="wait">
+                {view === 'books' && (
+                    <BookListView onSelect={handleSelectBook} />
+                )}
+                {view === 'chapters' && selectedBook && (
+                    <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
+                )}
+                {view === 'hadiths' && selectedBook && selectedChapter && (
+                    <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} onHadithSelect={handleHadithSelectForAI} />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {selectedHadithForAI && (
+                    <HadithAIAssistantModal hadith={selectedHadithForAI} onClose={handleCloseAIModal} />
+                )}
+            </AnimatePresence>
+        </>
     );
 };
