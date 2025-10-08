@@ -21,6 +21,7 @@
     "quran-meta": "^5.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
     "react-use-measure": "^2.1.1",
     "wavesurfer.js": "^7.7.14"
   },

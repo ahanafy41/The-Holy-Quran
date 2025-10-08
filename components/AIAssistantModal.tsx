@@ -1,45 +1,34 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { GoogleGenAI, Chat } from '@google/genai';
-import { Ayah } from '../types';
 import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
+import ReactMarkdown from 'react-markdown';
+import { Spinner } from './Spinner';
 
-
-/**
- * @interface AIAssistantModalProps
- * @description Defines the props for the AIAssistantModal component.
- */
-interface AIAssistantModalProps {
-    /** The Ayah object that is the context for the chat session. */
-    ayah: Ayah;
-    /** A callback function to be invoked when the modal should be closed. */
-    onClose: () => void;
-}
-
-/**
- * @typedef {object} Message
- * @description Represents a single message in the chat history.
- * @property {'user' | 'model'} role - The role of the message sender.
- * @property {string} text - The content of the message.
- */
 type Message = {
     role: 'user' | 'model';
     text: string;
 };
 
-/**
- * `AIAssistantModal` provides an AI-powered chat interface for users to ask questions
- * and get explanations about a specific ayah. It uses the Google Gemini API for chat functionality
- * and streams responses for a better user experience.
- *
- * @component
- * @param {AIAssistantModalProps} props - The props for the component.
- * @returns {React.ReactElement} A modal dialog for the AI Assistant chat.
- */
-export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClose }) => {
+export interface AIContent {
+    text: string;
+    title: string;
+    type: 'ayah' | 'hadith';
+}
+
+interface AIAssistantModalProps {
+    content: AIContent | null;
+    onClose: () => void;
+}
+
+export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onClose }) => {
+    // Guard clause to prevent crash on exit animation when content becomes null
+    if (!content) {
+        return null;
+    }
+
     const { apiKey } = useApp();
     const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
@@ -48,22 +37,26 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
     const [chat, setChat] = useState<Chat | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const modalContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isResponding]);
-    
+
     useEffect(() => {
         if (!apiKey) {
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const ai = new GoogleGenAI({ apiKey });
-        const systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: Surah ${ayah.surah?.englishName} (${ayah.surah?.number}:${ayah.numberInSurah}), which reads: "${ayah.text}". Frame your answers based on this context. Respond in Arabic.`;
-        const newChat = ai.chats.create({ model: 'gemini-2.5-flash', config: { systemInstruction } });
-        setChat(newChat);
-    }, [ayah, apiKey]);
+        try {
+            const ai = new GoogleGenAI({ apiKey });
+            // Use the standard and most compatible model
+            const newChat = ai.chats.create({ model: 'gemini-pro' });
+            setChat(newChat);
+        } catch (e: any) {
+            console.error("Failed to initialize AI Chat:", e);
+            setError(`فشل تهيئة مساعد الذكاء الاصطناعي. ${e.message}`);
+        }
+    }, [apiKey]);
 
     const handleSend = useCallback(async (prompt: string) => {
         if (!prompt.trim() || isResponding || !chat) return;
@@ -73,47 +66,45 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
         setIsResponding(true);
         setError(null);
         
+        let systemInstruction = '';
+        if (content.type === 'ayah') {
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
+        } else { // hadith
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Please provide a detailed explanation based on your extensive knowledge, and if possible, mention or draw upon well-known sources or commentaries to support your explanation. Respond in Arabic.`;
+        }
+
+        const fullPrompt = `${systemInstruction}\n\nUser question: ${prompt}`;
+
         try {
-            const resultStream = await chat.sendMessageStream({ message: prompt });
+            const resultStream = await chat.sendMessageStream(fullPrompt);
             setMessages(prev => [...prev, { role: 'model', text: '' }]);
             for await (const chunk of resultStream) {
+                const chunkText = chunk.text();
                 setMessages(prev => {
                     const lastMsgIndex = prev.length - 1;
                     const updatedMessages = [...prev];
                     const lastMessage = updatedMessages[lastMsgIndex];
-                    // Create a new object to avoid state mutation
-                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunk.text };
+                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunkText };
                     return updatedMessages;
                 });
             }
-        } catch (e) {
-            setError("عذراً، حدث خطأ ما. يرجى المحاولة مرة أخرى.");
+        } catch (e: any) {
+            console.error("Detailed AI Error:", e);
+            const detailedError = e.message ? `تفاصيل الخطأ: ${e.message}` : "لا توجد تفاصيل إضافية.";
+            setError(`عذراً، حدث خطأ ما. ${detailedError}`);
         } finally {
             setIsResponding(false);
         }
-    }, [isResponding, chat]);
-    
-    const suggestionPrompts = ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"];
+    }, [isResponding, chat, content]);
+
+    const suggestionPrompts = content.type === 'ayah'
+        ? ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"]
+        : ["اشرح هذا الحديث بعبارات بسيطة", "ما هو سياق هذا الحديث؟", "ما هي الدروس المستفادة من هذا الحديث؟"];
 
     const modalAnimationProps = {
         initial: {scale: 0.95, opacity: 0},
         animate: {scale: 1, opacity: 1},
         exit: {scale: 0.95, opacity: 0}
-    };
-
-    const suggestionsAnimationProps = {
-        initial: {opacity:0},
-        animate: {opacity:1}
-    };
-
-    const messageAnimationProps = {
-        initial: {opacity: 0, y: 10},
-        animate: {opacity: 1, y: 0}
-    };
-    
-    const respondingAnimationProps = {
-        initial: {opacity: 0},
-        animate: {opacity: 1}
     };
 
     return (
@@ -126,7 +117,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                     initialFocus: '#ai-assistant-input',
                 }}
             >
-                <motion.div ref={modalContentRef} {...modalAnimationProps}
+                <motion.div {...modalAnimationProps}
                   onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="ai-assistant-title">
                     <header className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-shrink-0">
                         <div className="flex items-center gap-3">
@@ -137,15 +128,15 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                     </header>
                     
                     <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
-                        <p className="text-sm text-slate-600 dark:text-slate-400">حول سورة {ayah.surah?.englishName}، الآية {ayah.numberInSurah}:</p>
-                        <p className="font-quran text-xl mt-1 text-right">{ayah.text}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">حول {content.title}:</p>
+                        <p className={`${content.type === 'ayah' ? 'font-quran' : 'font-serif'} text-xl mt-1 text-right`}>{content.text}</p>
                     </div>
 
                     <div className="flex-1 p-4 overflow-y-auto space-y-4" aria-live="polite">
                         <AnimatePresence>
                         {messages.length === 0 && !isResponding && (
-                            <motion.div {...suggestionsAnimationProps} className="text-center text-slate-500 dark:text-slate-400 py-8">
-                                <p className="mb-4">كيف يمكنني مساعدتك في فهم هذه الآية؟</p>
+                            <motion.div className="text-center text-slate-500 dark:text-slate-400 py-8">
+                                <p className="mb-4">كيف يمكنني مساعدتك في فهم هذا النص؟</p>
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {suggestionPrompts.map(prompt => (
                                         <button key={prompt} onClick={() => handleSend(prompt)}
@@ -158,16 +149,22 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                         )}
                         </AnimatePresence>
                         {messages.map((msg, index) => (
-                            <motion.div key={index} {...messageAnimationProps}
+                            <motion.div key={index}
                              className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-white"/></div>}
                                 <div className={`max-w-[85%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-lg' : 'bg-slate-100 dark:bg-slate-700 rounded-bl-lg'}`}>
-                                    <p className="whitespace-pre-wrap text-right leading-relaxed">{msg.text}</p>
+                                    {msg.role === 'model' ? (
+                                        <ReactMarkdown className="prose prose-sm dark:prose-invert prose-p:whitespace-pre-wrap prose-headings:text-right prose-p:text-right prose-li:text-right">
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap text-right leading-relaxed">{msg.text}</p>
+                                    )}
                                 </div>
                             </motion.div>
                         ))}
-                        {isResponding && messages[messages.length - 1]?.role !== 'model' && (
-                             <motion.div {...respondingAnimationProps} className="flex items-start gap-2.5 justify-start" role="status">
+                        {isResponding && messages.length > 0 && messages[messages.length - 1]?.role !== 'model' && (
+                             <motion.div className="flex items-start gap-2.5 justify-start" role="status">
                                  <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                                      <SparklesIcon className="w-5 h-5 text-white"/>
                                  </div>
