@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { GoogleGenerativeAI, Chat } from '@google/genai';
+import { GoogleGenAI, Chat } from '@google/genai';
 import { Ayah } from '../types';
 import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,7 +66,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const ai = new GoogleGenerativeAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey });
 
         let systemInstruction = '';
         let modelConfig: any = { model: 'gemini-1.5-flash' };
