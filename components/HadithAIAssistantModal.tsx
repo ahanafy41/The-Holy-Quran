@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { GoogleGenAI, Chat } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { Hadith } from '../types';
 import { XMarkIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,28 +30,9 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
     const [explanation, setExplanation] = useState<string>('');
     const [isResponding, setIsResponding] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [chat, setChat] = useState<Chat | null>(null);
 
     const modalContentRef = useRef<HTMLDivElement>(null);
     const explanationRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!apiKey) {
-            setError("مفتاح API غير متاح. هذه الميزة معطلة.");
-            return;
-        }
-        const ai = new GoogleGenAI({ apiKey });
-        const systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answer based on this context. Respond in Arabic.`;
-
-        // Correctly initialize the chat with the right model and tools
-        const newChat = ai.getGenerativeModel({
-            model: 'gemini-2.5-flash',
-            tools: [{ googleSearch: {} }],
-            systemInstruction,
-        }).startChat();
-
-        setChat(newChat);
-    }, [apiKey, hadith]);
 
     useEffect(() => {
         if (explanation) {
@@ -60,15 +41,27 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
     }, [explanation]);
 
     const handleExplain = useCallback(async () => {
-        if (isResponding || !chat) return;
+        if (isResponding || !apiKey) {
+            if (!apiKey) {
+                setError("مفتاح API غير متاح. يرجى إضافته في الإعدادات.");
+            }
+            return;
+        }
 
         setIsResponding(true);
         setError(null);
         setExplanation('');
 
         try {
-            const prompt = `اشرح هذا الحديث`;
-            const resultStream = await chat.sendMessageStream(prompt);
+            const ai = new GoogleGenAI(apiKey);
+            const model = ai.getGenerativeModel({
+                model: 'gemini-2.5-flash',
+                tools: [{ googleSearch: {} }],
+                systemInstruction: `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. Respond in Arabic.`,
+            });
+
+            const prompt = `اشرح هذا الحديث: "${hadith.arabic}"`;
+            const resultStream = await model.generateContentStream(prompt);
 
             for await (const chunk of resultStream.stream) {
                 const chunkText = chunk.text();
@@ -81,7 +74,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
         } finally {
             setIsResponding(false);
         }
-    }, [isResponding, chat]);
+    }, [isResponding, apiKey, hadith]);
 
     const modalAnimationProps = {
         initial: {scale: 0.95, opacity: 0},
@@ -119,7 +112,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
                             <div className="text-center py-8">
                                 <button
                                     onClick={handleExplain}
-                                    disabled={!chat}
+                                    disabled={isResponding || !apiKey}
                                     className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed"
                                 >
                                     <SparklesIcon className="w-5 h-5" />
