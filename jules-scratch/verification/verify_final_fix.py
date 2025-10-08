@@ -9,7 +9,7 @@ def run_verification(playwright):
     try:
         # 1. انتقل إلى التطبيق وقم بإعداد مفتاح API وهمي
         page.goto("http://localhost:5173/")
-        page.evaluate("() => localStorage.setItem('gemini_api_key', 'DUMMY_KEY_FOR_TESTING')")
+        page.evaluate("() => localStorage.setItem('gemini_api_key', 'AIzaSyDQM7_OF0wmFT-6LMwynkCYCym7DR4KXpw')")
         page.reload()
 
         # 2. انتقل إلى صفحة الحديث

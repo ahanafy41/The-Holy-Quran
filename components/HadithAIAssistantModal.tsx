@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Chat } from '@google/genai';
 import { Hadith } from '../types';
 import { XMarkIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,19 +53,21 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
         setExplanation('');
 
         try {
-            const ai = new GoogleGenAI(apiKey);
-            const model = ai.getGenerativeModel({
+            const ai = new GoogleGenAI({ apiKey });
+            const systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answer based on this context. Respond in Arabic.`;
+
+            // **الإصلاح النهائي**: استخدام `ai.chats.create` لبدء جلسة محادثة عند الطلب
+            const chat = ai.chats.create({
                 model: 'gemini-2.5-flash',
+                config: { systemInstruction },
                 tools: [{ googleSearch: {} }],
-                systemInstruction: `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. Respond in Arabic.`,
             });
 
-            const prompt = `اشرح هذا الحديث: "${hadith.arabic}"`;
-            const resultStream = await model.generateContentStream(prompt);
+            const prompt = `اشرح هذا الحديث`;
+            const resultStream = await chat.sendMessageStream({ message: prompt });
 
-            for await (const chunk of resultStream.stream) {
-                const chunkText = chunk.text();
-                setExplanation(prev => prev + chunkText);
+            for await (const chunk of resultStream) {
+                setExplanation(prev => prev + chunk.text);
             }
 
         } catch (e) {
