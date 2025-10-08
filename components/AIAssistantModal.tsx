@@ -7,6 +7,11 @@ import { useApp } from '../context/AppContext';
 import ReactMarkdown from 'react-markdown';
 import { Spinner } from './Spinner';
 
+type Message = {
+    role: 'user' | 'model';
+    text: string;
+};
+
 export interface AIContent {
     text: string;
     title: string;
@@ -128,6 +133,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
                     </div>
 
                     <div className="flex-1 p-4 overflow-y-auto space-y-4" aria-live="polite">
+                        <AnimatePresence>
                         {messages.length === 0 && !isResponding && (
                             <motion.div className="text-center text-slate-500 dark:text-slate-400 py-8">
                                 <p className="mb-4">كيف يمكنني مساعدتك في فهم هذا النص؟</p>
@@ -141,6 +147,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
                                 </div>
                             </motion.div>
                         )}
+                        </AnimatePresence>
                         {messages.map((msg, index) => (
                             <motion.div key={index}
                              className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
