@@ -57,21 +57,19 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
 
         try {
             const ai = new GoogleGenAI({ apiKey });
-            const systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answer based on this context. Respond in Arabic.`;
-
-            // **الإصلاح النهائي**: استخدام `ai.chats.create` وهي الطريقة الصحيحة والمستخدمة في التطبيق
-            const chat = ai.chats.create({
+            const model = ai.getGenerativeModel({
                 model: 'gemini-2.5-flash',
-                config: { systemInstruction },
                 tools: [{ googleSearch: {} }],
+                systemInstruction: `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide a clear, accessible explanation for the provided hadith, grounded in established Islamic scholarship and supplemented with web search for context and accuracy. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answer based on this context. Respond in Arabic.`,
             });
 
             const prompt = `اشرح هذا الحديث`;
-            const resultStream = await chat.sendMessageStream({ message: prompt });
+            const resultStream = await model.generateContentStream(prompt);
 
             let fullText = '';
-            for await (const chunk of resultStream) {
-                const chunkText = chunk.text;
+            // **الإصلاح النهائي**: استخدام `resultStream.stream` و `chunk.text()` لقراءة الاستجابة الكاملة
+            for await (const chunk of resultStream.stream) {
+                const chunkText = chunk.text();
                 fullText += chunkText;
                 setExplanation(fullText);
             }
