@@ -1,20 +1,27 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
-import { GoogleGenAI, Chat } from '@google/genai';
+import { GoogleGenerativeAI, Chat } from '@google/genai';
 import { Ayah } from '../types';
 import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from './Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
+import ReactMarkdown from 'react-markdown';
 
 
 /**
  * @interface AIAssistantModalProps
  * @description Defines the props for the AIAssistantModal component.
  */
+export interface AIContent {
+    text: string;
+    title: string;
+    type: 'ayah' | 'hadith';
+}
+
 interface AIAssistantModalProps {
-    /** The Ayah object that is the context for the chat session. */
-    ayah: Ayah;
+    /** The content (Ayah or Hadith) that is the context for the chat session. */
+    content: AIContent;
     /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
 }
@@ -39,7 +46,7 @@ type Message = {
  * @param {AIAssistantModalProps} props - The props for the component.
  * @returns {React.ReactElement} A modal dialog for the AI Assistant chat.
  */
-export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClose }) => {
+export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onClose }) => {
     const { apiKey } = useApp();
     const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
@@ -59,11 +66,27 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const ai = new GoogleGenAI({ apiKey });
-        const systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: Surah ${ayah.surah?.englishName} (${ayah.surah?.number}:${ayah.numberInSurah}), which reads: "${ayah.text}". Frame your answers based on this context. Respond in Arabic.`;
-        const newChat = ai.chats.create({ model: 'gemini-2.5-flash', config: { systemInstruction } });
-        setChat(newChat);
-    }, [ayah, apiKey]);
+        const ai = new GoogleGenerativeAI({ apiKey });
+
+        let systemInstruction = '';
+        let modelConfig: any = { model: 'gemini-1.5-flash' };
+
+        if (content.type === 'ayah') {
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
+            modelConfig.config = { systemInstruction };
+        } else { // hadith
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. You MUST search the web to find reliable sources and cite them in your explanation. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Frame your answers based on this context and your web search. Respond in Arabic.`;
+            modelConfig.config = { systemInstruction };
+        }
+
+        try {
+            const newChat = ai.chats.create(modelConfig);
+            setChat(newChat);
+        } catch(e) {
+            console.error("Failed to initialize AI Chat:", e);
+            setError("فشل تهيئة مساعد الذكاء الاصطناعي. قد يكون هناك مشكلة في الإعدادات أو مفتاح الـ API.");
+        }
+    }, [content, apiKey]);
 
     const handleSend = useCallback(async (prompt: string) => {
         if (!prompt.trim() || isResponding || !chat) return;
@@ -93,7 +116,9 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
         }
     }, [isResponding, chat]);
     
-    const suggestionPrompts = ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"];
+    const suggestionPrompts = content.type === 'ayah'
+        ? ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"]
+        : ["اشرح هذا الحديث بعبارات بسيطة", "ما هو سياق هذا الحديث؟", "ما هي الدروس المستفادة من هذا الحديث؟"];
 
     const modalAnimationProps = {
         initial: {scale: 0.95, opacity: 0},
@@ -137,15 +162,15 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                     </header>
                     
                     <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
-                        <p className="text-sm text-slate-600 dark:text-slate-400">حول سورة {ayah.surah?.englishName}، الآية {ayah.numberInSurah}:</p>
-                        <p className="font-quran text-xl mt-1 text-right">{ayah.text}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">حول {content.title}:</p>
+                        <p className={`${content.type === 'ayah' ? 'font-quran' : 'font-serif'} text-xl mt-1 text-right`}>{content.text}</p>
                     </div>
 
                     <div className="flex-1 p-4 overflow-y-auto space-y-4" aria-live="polite">
                         <AnimatePresence>
                         {messages.length === 0 && !isResponding && (
                             <motion.div {...suggestionsAnimationProps} className="text-center text-slate-500 dark:text-slate-400 py-8">
-                                <p className="mb-4">كيف يمكنني مساعدتك في فهم هذه الآية؟</p>
+                                <p className="mb-4">كيف يمكنني مساعدتك في فهم هذا النص؟</p>
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {suggestionPrompts.map(prompt => (
                                         <button key={prompt} onClick={() => handleSend(prompt)}
@@ -162,7 +187,13 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ ayah, onClos
                              className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-white"/></div>}
                                 <div className={`max-w-[85%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-lg' : 'bg-slate-100 dark:bg-slate-700 rounded-bl-lg'}`}>
-                                    <p className="whitespace-pre-wrap text-right leading-relaxed">{msg.text}</p>
+                                    {msg.role === 'model' ? (
+                                        <ReactMarkdown className="prose prose-sm dark:prose-invert prose-p:whitespace-pre-wrap prose-headings:text-right prose-p:text-right prose-li:text-right">
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap text-right leading-relaxed">{msg.text}</p>
+                                    )}
                                 </div>
                             </motion.div>
                         ))}

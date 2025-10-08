@@ -15,7 +15,7 @@ import { DivisionView } from './components/DivisionView';
 import MorePage from './components/MorePage';
 import { WordMeaningsPage } from './components/WordMeaningsPage';
 import { DownloadsPage } from './components/DownloadsPage';
-import { AIAssistantModal } from './components/AIAssistantModal';
+import { AIAssistantModal, AIContent } from './components/AIAssistantModal';
 import { SearchModal } from './components/SearchModal';
 import { ErrorToast } from './components/ErrorToast';
 import { SuccessToast } from './components/SuccessToast';
@@ -102,7 +102,7 @@ const App: React.FC = () => {
   const [isTafsirOpen, setIsTafsirOpen] = useState(false);
   const [tafsirContent, setTafsirContent] = useState<{ayah: Ayah, tafsir: Tafsir | null, surahNumber: number, surahName: string, tafsirName?: string, isLoading: boolean, error?: string} | null>(null);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
-  const [aiAssistantAyah, setAIAssistantAyah] = useState<Ayah | null>(null);
+  const [aiAssistantContent, setAIAssistantContent] = useState<AIContent | null>(null);
   
   const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(window.matchMedia('(display-mode: standalone)').matches);
@@ -465,17 +465,17 @@ const App: React.FC = () => {
   const showSettings = () => setIsSettingsOpen(true);
 
   /**
-   * Opens the AI Assistant modal for a specific ayah.
+   * Opens the AI Assistant modal for a specific content (Ayah or Hadith).
    * It first checks if an API key is available and prompts the user to add one if not.
-   * @param {Ayah} ayah - The ayah to be discussed with the AI assistant.
+   * @param {AIContent} content - The content to be discussed with the AI assistant.
    */
-  const showAIAssistant = (ayah: Ayah) => {
+  const showAIAssistant = (content: AIContent) => {
       if (!apiKey) {
           setError("مفتاح API مطلوب لاستخدام مساعد الذكاء الاصطناعي. يرجى إضافته في الإعدادات.");
           showSettings();
           return;
       }
-      setAIAssistantAyah(ayah);
+      setAIAssistantContent(content);
       setIsAIAssistantOpen(true);
   };
 
@@ -552,7 +552,7 @@ const App: React.FC = () => {
         {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
         {isSearchOpen && <SearchModal onClose={() => setIsSearchOpen(false)} />}
         {isTafsirOpen && tafsirContent && <TafsirModal content={tafsirContent} onClose={() => { setIsTafsirOpen(false); setTafsirContent(null); }} />}
-        {isAIAssistantOpen && aiAssistantAyah && <AIAssistantModal ayah={aiAssistantAyah} onClose={() => { setIsAIAssistantOpen(false); setAIAssistantAyah(null); }} />}
+        {isAIAssistantOpen && aiAssistantContent && <AIAssistantModal content={aiAssistantContent} onClose={() => { setIsAIAssistantOpen(false); setAIAssistantContent(null); }} />}
       </AnimatePresence>
 
       <div ref={mainContentRef} className="h-screen w-screen overflow-y-auto pb-20">

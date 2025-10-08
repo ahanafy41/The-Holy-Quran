@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
+import { HadithActionModal } from './HadithActionModal';
 
 const MotionDiv = motion.div as any;
 
@@ -138,58 +139,78 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
 const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }> = ({ book, chapter, hadiths, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
+    const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => { titleRef.current?.focus(); }, 100);
         return () => clearTimeout(timer);
     }, []);
 
+    const handleHadithSelect = (hadith: Hadith) => {
+        setSelectedHadith(hadith);
+    };
+
+    const handleModalClose = () => {
+        setSelectedHadith(null);
+    };
+
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 120, // Adjusted for better estimation
+        estimateSize: () => 120,
         overscan: 10,
     });
 
     return (
-        <MotionDiv key="hadith-list" initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }}>
-            <header className="mb-6 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="text-right flex-grow mx-4">
-                        <h1 ref={titleRef} tabIndex={-1} className="text-xl md:text-2xl font-bold focus:outline-none">{book.arabic}</h1>
-                        <p className="text-slate-500 dark:text-slate-400">{chapter.arabic}</p>
+        <>
+            <MotionDiv key="hadith-list" initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }}>
+                <header className="mb-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-right flex-grow mx-4">
+                            <h1 ref={titleRef} tabIndex={-1} className="text-xl md:text-2xl font-bold focus:outline-none">{book.arabic}</h1>
+                            <p className="text-slate-500 dark:text-slate-400">{chapter.arabic}</p>
+                        </div>
+                        <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="العودة إلى قائمة الأبواب">
+                            <ArrowRightIcon className="w-6 h-6" />
+                        </button>
                     </div>
-                    <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="العودة إلى قائمة الأبواب">
-                        <ArrowRightIcon className="w-6 h-6" />
-                    </button>
+                </header>
+                <div ref={parentRef} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm max-h-[calc(100vh-20rem)] overflow-y-auto">
+                    <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                        {rowVirtualizer.getVirtualItems().map(virtualItem => {
+                            const hadith = hadiths[virtualItem.index];
+                            return (
+                                <div
+                                    key={virtualItem.key}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        transform: `translateY(${virtualItem.start}px)`,
+                                    }}
+                                    className="p-4 border-b border-slate-100 dark:border-slate-700"
+                                >
+                                    <button onClick={() => handleHadithSelect(hadith)} className="w-full text-right hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors -m-4 p-4 rounded-lg">
+                                        <p className="font-serif text-lg leading-loose text-slate-800 dark:text-slate-200">
+                                            <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
+                                            {hadith.arabic}
+                                        </p>
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </header>
-            <div ref={parentRef} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm max-h-[calc(100vh-20rem)] overflow-y-auto">
-                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                    {rowVirtualizer.getVirtualItems().map(virtualItem => {
-                        const hadith = hadiths[virtualItem.index];
-                        return (
-                            <div
-                                key={virtualItem.key}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    transform: `translateY(${virtualItem.start}px)`,
-                                }}
-                                className="p-4 border-b border-slate-100 dark:border-slate-700"
-                            >
-                                <p className="font-serif text-lg leading-loose text-slate-800 dark:text-slate-200">
-                                    <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
-                                    {hadith.arabic}
-                                </p>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </MotionDiv>
+            </MotionDiv>
+            {selectedHadith && (
+                <HadithActionModal
+                    hadith={selectedHadith}
+                    bookName={book.arabic}
+                    onClose={handleModalClose}
+                />
+            )}
+        </>
     );
 };
 

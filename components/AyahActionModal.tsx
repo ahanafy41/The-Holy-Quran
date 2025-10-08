@@ -72,11 +72,21 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
     const isCurrentlyPlaying = isPlaying && activeAyah?.number === ayah.number;
     const isNestedReadingView = ['reader', 'division'].includes(view);
 
+    const handleAIAssistant = () => {
+        if (!ayah.surah) return;
+        showAIAssistant({
+            text: ayah.text,
+            title: `سورة ${ayah.surah.name} - الآية ${ayah.numberInSurah}`,
+            type: 'ayah',
+        });
+        onClose();
+    };
+
     const menuItems = [
         { label: isCurrentlyPlaying ? 'إيقاف مؤقت' : 'استماع', icon: isCurrentlyPlaying ? PauseIcon : PlayIcon, action: () => { isCurrentlyPlaying ? pauseAyah() : playAyah(ayah); onClose(); } },
         { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); onClose(); } },
         { label: 'إضافة علامة مرجعية', icon: BookmarkIcon, action: () => setIsBookmarkModalOpen(true) },
-        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
+        { label: 'اسأل مساعد AI', icon: SparklesIcon, action: handleAIAssistant },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
         { 
