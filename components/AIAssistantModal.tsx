@@ -66,27 +66,15 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
             setError("مفتاح API غير متاح. هذه الميزة معطلة.");
             return;
         }
-        const ai = new GoogleGenAI({ apiKey });
-
-        let systemInstruction = '';
-        let modelConfig: any = { model: 'gemini-1.5-flash' };
-
-        if (content.type === 'ayah') {
-            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
-        } else { // hadith
-            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Please provide a detailed explanation based on your extensive knowledge, and if possible, mention or draw upon well-known sources or commentaries to support your explanation. Respond in Arabic.`;
-        }
-
-        modelConfig.config = { systemInstruction };
-
         try {
-            const newChat = ai.chats.create(modelConfig);
+            const ai = new GoogleGenAI({ apiKey });
+            const newChat = ai.chats.create({ model: 'gemini-1.5-flash' });
             setChat(newChat);
-        } catch(e) {
+        } catch (e: any) {
             console.error("Failed to initialize AI Chat:", e);
             setError("فشل تهيئة مساعد الذكاء الاصطناعي. قد يكون هناك مشكلة في الإعدادات أو مفتاح الـ API.");
         }
-    }, [content, apiKey]);
+    }, [apiKey]);
 
     const handleSend = useCallback(async (prompt: string) => {
         if (!prompt.trim() || isResponding || !chat) return;
@@ -96,16 +84,25 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         setIsResponding(true);
         setError(null);
         
+        let systemInstruction = '';
+        if (content.type === 'ayah') {
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
+        } else { // hadith
+            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Please provide a detailed explanation based on your extensive knowledge, and if possible, mention or draw upon well-known sources or commentaries to support your explanation. Respond in Arabic.`;
+        }
+
+        const fullPrompt = `${systemInstruction}\n\nUser question: ${prompt}`;
+
         try {
-            const resultStream = await chat.sendMessageStream({ message: prompt });
+            const resultStream = await chat.sendMessageStream(fullPrompt);
             setMessages(prev => [...prev, { role: 'model', text: '' }]);
             for await (const chunk of resultStream) {
+                const chunkText = chunk.text();
                 setMessages(prev => {
                     const lastMsgIndex = prev.length - 1;
                     const updatedMessages = [...prev];
                     const lastMessage = updatedMessages[lastMsgIndex];
-                    // Create a new object to avoid state mutation
-                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunk.text };
+                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunkText };
                     return updatedMessages;
                 });
             }
@@ -116,7 +113,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         } finally {
             setIsResponding(false);
         }
-    }, [isResponding, chat]);
+    }, [isResponding, chat, content]);
     
     const suggestionPrompts = content.type === 'ayah'
         ? ["اشرح هذه الآية بعبارات بسيطة", "ما هو السياق التاريخي؟", "ما هي الدروس الرئيسية من هذه الآية؟"]
