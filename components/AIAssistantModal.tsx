@@ -68,19 +68,21 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         }
         const ai = new GoogleGenAI({ apiKey });
 
-        let systemInstruction = '';
-        let modelConfig: any = { model: 'gemini-1.5-flash' };
+        let systemInstructionText = '';
+        let modelParams: any = { model: 'gemini-1.5-flash' };
 
         if (content.type === 'ayah') {
-            systemInstruction = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
-            modelConfig.config = { systemInstruction };
+            systemInstructionText = `You are a helpful and respectful AI assistant for studying the Holy Quran. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific verse: ${content.title}, which reads: "${content.text}". Frame your answers based on this context. Respond in Arabic.`;
         } else { // hadith
-            systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. You MUST search the web to find reliable sources and cite them in your explanation. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Frame your answers based on this context and your web search. Respond in Arabic.`;
-            modelConfig.config = { systemInstruction };
+            systemInstructionText = `You are a helpful and respectful AI assistant for studying the Hadith. Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: ${content.title}, which reads: "${content.text}". Use your search tool to find reliable sources and cite them in your explanation. Frame your answers based on this context and your web search. Respond in Arabic.`;
+            modelParams.tools = [{ googleSearch: {} }];
         }
 
+        modelParams.systemInstruction = systemInstructionText;
+
         try {
-            const newChat = ai.chats.create(modelConfig);
+            const model = ai.getGenerativeModel(modelParams);
+            const newChat = model.startChat();
             setChat(newChat);
         } catch(e) {
             console.error("Failed to initialize AI Chat:", e);
@@ -97,19 +99,21 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ content, onC
         setError(null);
         
         try {
-            const resultStream = await chat.sendMessageStream({ message: prompt });
+            const result = await chat.sendMessageStream(prompt);
             setMessages(prev => [...prev, { role: 'model', text: '' }]);
-            for await (const chunk of resultStream) {
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
                 setMessages(prev => {
                     const lastMsgIndex = prev.length - 1;
                     const updatedMessages = [...prev];
                     const lastMessage = updatedMessages[lastMsgIndex];
                     // Create a new object to avoid state mutation
-                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunk.text };
+                    updatedMessages[lastMsgIndex] = { ...lastMessage, text: lastMessage.text + chunkText };
                     return updatedMessages;
                 });
             }
         } catch (e) {
+            console.error("Error during AI chat:", e);
             setError("عذراً، حدث خطأ ما. يرجى المحاولة مرة أخرى.");
         } finally {
             setIsResponding(false);
