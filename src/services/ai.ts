@@ -1,6 +1,4 @@
-import {
-  GoogleGenerativeAI,
-} from '@google/genai';
+import * as genAI from '@google/genai';
 
 // Kintell: AI-powered Hadith explanations
 // This file contains the logic for interacting with the Google Gemini API.
@@ -32,8 +30,8 @@ export async function getHadithExplanation(
   hadithText: string
 ) {
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
+    const googleAI = new genAI.GoogleGenerativeAI(apiKey);
+    const model = googleAI.getGenerativeModel({
       model: 'gemini-1.5-flash', // هستخدم flash عشان السرعة والتكلفة
       tools: [
         {
