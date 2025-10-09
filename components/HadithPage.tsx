@@ -1,11 +1,13 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import type { HadithBook, Hadith, HadithChapter } from '../types';
 import { hadithCollection } from '../data/hadithData';
 import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
+import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon, ShareIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
+import { HadithAIAssistantModal } from './HadithAIAssistantModal';
+import { useApp } from '../context/AppContext';
 
 const MotionDiv = motion.div as any;
 
@@ -133,9 +135,11 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
  * @param {HadithChapter} props.chapter - The chapter whose hadiths are being displayed.
  * @param {Hadith[]} props.hadiths - The array of hadiths to render.
  * @param {() => void} props.onBack - Callback to navigate back to the chapter list.
+ * @param {(hadith: Hadith) => void} props.onExplain - Callback to open the AI assistant for a hadith.
+ * @param {(hadith: Hadith) => void} props.onShare - Callback to share a hadith.
  * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
  */
-const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }> = ({ book, chapter, hadiths, onBack }) => {
+const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void, onExplain: (hadith: Hadith) => void, onShare: (hadith: Hadith) => void }> = ({ book, chapter, hadiths, onBack, onExplain, onShare }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -147,7 +151,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 120, // Adjusted for better estimation
+        estimateSize: () => 180, // Adjusted for better estimation to include the new button
         overscan: 10,
     });
 
@@ -184,6 +188,24 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                                     <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
                                     {hadith.arabic}
                                 </p>
+                                <div className="mt-4 flex items-center gap-2">
+                                    <button
+                                        onClick={() => onExplain(hadith)}
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
+                                        aria-label={`شرح الحديث ${hadith.idInBook}`}
+                                    >
+                                        <SparklesIcon className="w-4 h-4" />
+                                        <span>شرح بالذكاء الاصطناعي</span>
+                                    </button>
+                                    <button
+                                        onClick={() => onShare(hadith)}
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-800/50 dark:hover:bg-blue-800 transition-colors"
+                                        aria-label={`مشاركة الحديث ${hadith.idInBook}`}
+                                    >
+                                        <ShareIcon className="w-4 h-4" />
+                                        <span>مشاركة</span>
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}
@@ -203,6 +225,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
  * @returns {React.ReactElement} The Hadith feature page.
  */
 export const HadithPage: React.FC = () => {
+    const { setSuccessMessage, setError: setAppError } = useApp();
     const [view, setView] = useState<'books' | 'chapters' | 'hadiths'>('books');
     const [selectedBook, setSelectedBook] = useState<HadithBook | null>(null);
     const [selectedBookData, setSelectedBookData] = useState<any | null>(null);
@@ -211,6 +234,31 @@ export const HadithPage: React.FC = () => {
     const [hadiths, setHadiths] = useState<Hadith[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+    const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
+
+    const handleExplainHadith = (hadith: Hadith) => {
+        setSelectedHadith(hadith);
+        setIsAiAssistantOpen(true);
+    };
+
+    const handleShareHadith = useCallback(async (hadith: Hadith) => {
+        const shareData = {
+            title: `حديث شريف من كتاب ${selectedBook?.arabic}`,
+            text: `"${hadith.arabic}" - (رقم ${hadith.idInBook})`,
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareData.text);
+                setSuccessMessage('تم نسخ الحديث إلى الحافظة.');
+            }
+        } catch (err) {
+            console.error('Error sharing hadith:', err);
+            setAppError('فشلت مشاركة الحديث.');
+        }
+    }, [selectedBook, setSuccessMessage, setAppError]);
 
     const handleSelectBook = async (book: HadithBook) => {
         setSelectedBook(book);
@@ -268,16 +316,26 @@ export const HadithPage: React.FC = () => {
     }
 
     return (
-        <AnimatePresence mode="wait">
-            {view === 'books' && (
-                <BookListView onSelect={handleSelectBook} />
-            )}
-            {view === 'chapters' && selectedBook && (
-                <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
-            )}
-            {view === 'hadiths' && selectedBook && selectedChapter && (
-                <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} />
-            )}
-        </AnimatePresence>
+        <>
+            <AnimatePresence mode="wait">
+                {view === 'books' && (
+                    <BookListView onSelect={handleSelectBook} />
+                )}
+                {view === 'chapters' && selectedBook && (
+                    <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
+                )}
+                {view === 'hadiths' && selectedBook && selectedChapter && (
+                    <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} onExplain={handleExplainHadith} onShare={handleShareHadith} />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {isAiAssistantOpen && selectedHadith && (
+                    <HadithAIAssistantModal
+                        hadith={selectedHadith}
+                        onClose={() => setIsAiAssistantOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
+        </>
     );
 };
