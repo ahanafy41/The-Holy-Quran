@@ -151,7 +151,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 180, // Adjusted for better estimation to include the new button
+        estimateSize: () => 220, // Further adjusted for better estimation to include the new buttons reliably
         overscan: 10,
     });
 
