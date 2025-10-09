@@ -61,7 +61,7 @@ export const HadithAIAssistantModal: React.FC<HadithAIAssistantModalProps> = ({ 
         }
         const ai = new GoogleGenAI({ apiKey });
         const systemInstruction = `You are a helpful and respectful AI assistant for studying the Hadith (prophetic traditions). Your purpose is to provide clear, accessible explanations based on established Islamic scholarship. Always be reverent. Avoid personal opinions or controversial topics. The user is asking about this specific hadith: "${hadith.arabic}". Frame your answers based on this context. Respond in Arabic.`;
-        const newChat = ai.chats.create({ model: 'gemini-1.5-flash', config: { systemInstruction }, tools: [{ googleSearch: {} }] });
+        const newChat = ai.chats.create({ model: 'gemini-1.5-flash', config: { systemInstruction } });
         setChat(newChat);
     }, [hadith, apiKey]);
 
