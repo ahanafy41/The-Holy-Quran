@@ -4,9 +4,8 @@ import { hadithCollection } from '../data/hadithData';
 import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon } from './Icons';
+import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
-import { HadithAIAssistantModal } from './HadithAIAssistantModal';
 
 const MotionDiv = motion.div as any;
 
@@ -134,10 +133,9 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
  * @param {HadithChapter} props.chapter - The chapter whose hadiths are being displayed.
  * @param {Hadith[]} props.hadiths - The array of hadiths to render.
  * @param {() => void} props.onBack - Callback to navigate back to the chapter list.
- * @param {(hadith: Hadith) => void} props.onExplain - Callback to open the AI assistant for a hadith.
  * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
  */
-const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void, onExplain: (hadith: Hadith) => void }> = ({ book, chapter, hadiths, onBack, onExplain }) => {
+const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }> = ({ book, chapter, hadiths, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -149,7 +147,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 180, // Adjusted for better estimation to include the new button
+        estimateSize: () => 120, // Adjusted for better estimation
         overscan: 10,
     });
 
@@ -186,16 +184,6 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                                     <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
                                     {hadith.arabic}
                                 </p>
-                                <div className="mt-4">
-                                    <button
-                                        onClick={() => onExplain(hadith)}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
-                                        aria-label={`شرح الحديث ${hadith.idInBook}`}
-                                    >
-                                        <SparklesIcon className="w-4 h-4" />
-                                        <span>شرح بالذكاء الاصطناعي</span>
-                                    </button>
-                                </div>
                             </div>
                         );
                     })}
@@ -223,13 +211,6 @@ export const HadithPage: React.FC = () => {
     const [hadiths, setHadiths] = useState<Hadith[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
-    const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
-
-    const handleExplainHadith = (hadith: Hadith) => {
-        setSelectedHadith(hadith);
-        setIsAiAssistantOpen(true);
-    };
 
     const handleSelectBook = async (book: HadithBook) => {
         setSelectedBook(book);
@@ -287,26 +268,16 @@ export const HadithPage: React.FC = () => {
     }
 
     return (
-        <>
-            <AnimatePresence mode="wait">
-                {view === 'books' && (
-                    <BookListView onSelect={handleSelectBook} />
-                )}
-                {view === 'chapters' && selectedBook && (
-                    <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
-                )}
-                {view === 'hadiths' && selectedBook && selectedChapter && (
-                    <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} onExplain={handleExplainHadith} />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {isAiAssistantOpen && selectedHadith && (
-                    <HadithAIAssistantModal
-                        hadith={selectedHadith}
-                        onClose={() => setIsAiAssistantOpen(false)}
-                    />
-                )}
-            </AnimatePresence>
-        </>
+        <AnimatePresence mode="wait">
+            {view === 'books' && (
+                <BookListView onSelect={handleSelectBook} />
+            )}
+            {view === 'chapters' && selectedBook && (
+                <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
+            )}
+            {view === 'hadiths' && selectedBook && selectedChapter && (
+                <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} />
+            )}
+        </AnimatePresence>
     );
 };
