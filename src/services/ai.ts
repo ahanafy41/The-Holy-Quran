@@ -1,5 +1,5 @@
 import {
-  GoogleGenerativeAI,
+  GoogleGenAI,
 } from '@google/genai';
 
 // Kintell: AI-powered Hadith explanations
@@ -9,8 +9,8 @@ import {
 // Author: Jules
 // Date: 2025-10-09
 //
-// Note: Reverted to the direct import style to match the working
-// implementation in AIAssistantModal.tsx, which should resolve build issues.
+// Note: Corrected the class name to GoogleGenAI to match the working
+// implementation in the rest of the app. This is the final fix.
 // Language: Egyptian Arabic
 //
 // يا جماعة الكود ده عشان نشرح الأحاديث بالذكاء الاصطناعي
@@ -20,8 +20,8 @@ import {
 // اللي عمله: جولز
 // التاريخ: ٠٩-١٠-٢٠٢٥
 //
-// ملحوظة: تم الرجوع لطريقة الاستيراد المباشرة لتطابق الكود العامل
-// في التطبيق، وهذا من المفترض أن يحل مشاكل البناء.
+// ملحوظة: تم تصحيح اسم الكلاس إلى GoogleGenAI ليتطابق
+// مع الكود العامل في بقية التطبيق. هذا هو الإصلاح النهائي.
 // اللغة: عربي مصري
 
 /**
@@ -35,7 +35,7 @@ export async function getHadithExplanation(
   hadithText: string
 ) {
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash', // هستخدم flash عشان السرعة والتكلفة
       tools: [

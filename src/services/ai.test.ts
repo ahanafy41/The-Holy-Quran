@@ -18,10 +18,11 @@ import { getHadithExplanation } from './ai';
 // هنعمل Mock لمكتبة @google/genai كلها
 vi.mock('@google/genai', () => {
   // هنعمل دالة Mock عشان نتتبع استدعاء الـ constructor
-  const mockGoogleGenerativeAI = vi.fn();
+  // تم تصحيح الاسم ليتطابق مع الكود العامل
+  const mockGoogleGenAI = vi.fn();
 
   // هنحدد سلوك الـ Mock constructor
-  mockGoogleGenerativeAI.mockImplementation((apiKey) => {
+  mockGoogleGenAI.mockImplementation((apiKey) => {
     // لو مفتاح الـ API غلط، هنرمي error معين
     if (apiKey === 'INVALID_API_KEY') {
       throw new Error('[GoogleGenerativeAI Error]: API key not valid. Please pass a valid API key.');
@@ -41,8 +42,9 @@ vi.mock('@google/genai', () => {
     };
   });
 
+  // تم تصحيح الاسم هنا أيضًا
   return {
-    GoogleGenerativeAI: mockGoogleGenerativeAI,
+    GoogleGenAI: mockGoogleGenAI,
   };
 });
 
