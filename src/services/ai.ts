@@ -9,8 +9,8 @@ import {
 // Author: Jules
 // Date: 2025-10-09
 //
-// Note: Corrected the class name to GoogleGenAI to match the working
-// implementation in the rest of the app. This is the final fix.
+// Note: The web search tool has been temporarily removed to ensure
+// the feature works immediately, matching the existing AI implementation.
 // Language: Egyptian Arabic
 //
 // يا جماعة الكود ده عشان نشرح الأحاديث بالذكاء الاصطناعي
@@ -20,8 +20,8 @@ import {
 // اللي عمله: جولز
 // التاريخ: ٠٩-١٠-٢٠٢٥
 //
-// ملحوظة: تم تصحيح اسم الكلاس إلى GoogleGenAI ليتطابق
-// مع الكود العامل في بقية التطبيق. هذا هو الإصلاح النهائي.
+// ملحوظة: تم إزالة أداة البحث على الإنترنت بشكل مؤقت لضمان
+// عمل الميزة فورًا، لتتطابق مع الكود العامل في التطبيق.
 // اللغة: عربي مصري
 
 /**
@@ -38,12 +38,13 @@ export async function getHadithExplanation(
     const genAI = new GoogleGenAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash', // هستخدم flash عشان السرعة والتكلفة
-      tools: [
-        {
-          googleSearch: {}, // تفعيل البحث على الإنترنت
-        },
-      ],
-      systemInstruction: `أنت عالم دين مسلم متخصص في شرح الأحاديث النبوية. مهمتك هي شرح الحديث التالي بشكل مبسط وواضح لعامة الناس باللغة العربية الفصحى، مع ذكر الدروس المستفادة منه. يجب أن يكون الشرح دقيقًا ومستندًا إلى مصادر موثوقة. استخدم البحث على الإنترنت للتأكد من صحة المعلومات التي تقدمها. اشرح الحديث التالي:`,
+      // تم إزالة أداة البحث مؤقتًا لحل مشكلة التشغيل
+      // tools: [
+      //   {
+      //     googleSearch: {},
+      //   },
+      // ],
+      systemInstruction: `أنت عالم دين مسلم متخصص في شرح الأحاديث النبوية. مهمتك هي شرح الحديث التالي بشكل مبسط وواضح لعامة الناس باللغة العربية الفصحى، مع ذكر الدروس المستفادة منه. اشرح الحديث التالي:`,
     });
 
     const chat = model.startChat();
