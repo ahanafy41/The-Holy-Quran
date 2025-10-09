@@ -139,7 +139,16 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
  * @param {(hadith: Hadith) => void} props.onShare - Callback to share a hadith.
  * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
  */
-const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void, onExplain: (hadith: Hadith) => void, onShare: (hadith: Hadith) => void }> = ({ book, chapter, hadiths, onBack, onExplain, onShare }) => {
+const HadithListView: React.FC<{
+    book: HadithBook;
+    chapter: HadithChapter;
+    hadiths: Hadith[];
+    onBack: () => void;
+    onExplain: (hadith: Hadith) => void;
+    onShare: (hadith: Hadith) => void;
+    canShare: boolean;
+    hasApiKey: boolean;
+}> = ({ book, chapter, hadiths, onBack, onExplain, onShare, canShare, hasApiKey }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -151,7 +160,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 220, // Further adjusted for better estimation to include the new buttons reliably
+        estimateSize: () => 220,
         overscan: 10,
     });
 
@@ -188,23 +197,27 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                                     <span className="font-bold text-slate-500 dark:text-slate-400">[{hadith.idInBook}] </span>
                                     {hadith.arabic}
                                 </p>
-                                <div className="mt-4 flex items-center gap-2">
-                                    <button
-                                        onClick={() => onExplain(hadith)}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
-                                        aria-label={`شرح الحديث ${hadith.idInBook}`}
-                                    >
-                                        <SparklesIcon className="w-4 h-4" />
-                                        <span>شرح بالذكاء الاصطناعي</span>
-                                    </button>
-                                    <button
-                                        onClick={() => onShare(hadith)}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-800/50 dark:hover:bg-blue-800 transition-colors"
-                                        aria-label={`مشاركة الحديث ${hadith.idInBook}`}
-                                    >
-                                        <ShareIcon className="w-4 h-4" />
-                                        <span>مشاركة</span>
-                                    </button>
+                                <div className="mt-4 flex items-center gap-2 min-h-[30px]">
+                                    {hasApiKey && (
+                                        <button
+                                            onClick={() => onExplain(hadith)}
+                                            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
+                                            aria-label={`شرح الحديث ${hadith.idInBook}`}
+                                        >
+                                            <SparklesIcon className="w-4 h-4" />
+                                            <span>شرح بالذكاء الاصطناعي</span>
+                                        </button>
+                                    )}
+                                    {canShare && (
+                                        <button
+                                            onClick={() => onShare(hadith)}
+                                            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-800/50 dark:hover:bg-blue-800 transition-colors"
+                                            aria-label={`مشاركة الحديث ${hadith.idInBook}`}
+                                        >
+                                            <ShareIcon className="w-4 h-4" />
+                                            <span>مشاركة</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -225,7 +238,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
  * @returns {React.ReactElement} The Hadith feature page.
  */
 export const HadithPage: React.FC = () => {
-    const { setSuccessMessage, setError: setAppError } = useApp();
+    const { setSuccessMessage, setError: setAppError, apiKey } = useApp();
     const [view, setView] = useState<'books' | 'chapters' | 'hadiths'>('books');
     const [selectedBook, setSelectedBook] = useState<HadithBook | null>(null);
     const [selectedBookData, setSelectedBookData] = useState<any | null>(null);
@@ -236,8 +249,20 @@ export const HadithPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
     const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
+    const [canShare, setCanShare] = useState(false);
+
+    useEffect(() => {
+        // Check for sharing capabilities on component mount
+        if (navigator.share || navigator.clipboard) {
+            setCanShare(true);
+        }
+    }, []);
 
     const handleExplainHadith = (hadith: Hadith) => {
+        if (!apiKey) {
+            setAppError("مفتاح API مطلوب لهذه الميزة. يرجى إضافته في الإعدادات.");
+            return;
+        }
         setSelectedHadith(hadith);
         setIsAiAssistantOpen(true);
     };
@@ -250,7 +275,8 @@ export const HadithPage: React.FC = () => {
         try {
             if (navigator.share) {
                 await navigator.share(shareData);
-            } else {
+                setSuccessMessage('تمت مشاركة الحديث بنجاح.');
+            } else if (navigator.clipboard) {
                 await navigator.clipboard.writeText(shareData.text);
                 setSuccessMessage('تم نسخ الحديث إلى الحافظة.');
             }
@@ -325,7 +351,16 @@ export const HadithPage: React.FC = () => {
                     <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
                 )}
                 {view === 'hadiths' && selectedBook && selectedChapter && (
-                    <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} onExplain={handleExplainHadith} onShare={handleShareHadith} />
+                    <HadithListView
+                        book={selectedBook}
+                        chapter={selectedChapter}
+                        hadiths={hadiths}
+                        onBack={handleBackToChapters}
+                        onExplain={handleExplainHadith}
+                        onShare={handleShareHadith}
+                        canShare={canShare}
+                        hasApiKey={!!apiKey}
+                    />
                 )}
             </AnimatePresence>
             <AnimatePresence>
