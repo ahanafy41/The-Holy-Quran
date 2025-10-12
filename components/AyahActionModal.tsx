@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
-import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon, BookmarkIcon, MicIcon } from './Icons';
+import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon, BookmarkIcon, MicrophoneIcon } from './Icons';
 import { AddBookmarkModal } from './AddBookmarkModal';
 
 
@@ -79,7 +79,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose,
         { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); onClose(); } },
         { label: 'إضافة علامة مرجعية', icon: BookmarkIcon, action: () => setIsBookmarkModalOpen(true) },
         { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
-        { label: 'مساعد صوتي مباشر', icon: MicIcon, action: () => { onOpenLiveAssistant(); onClose(); } },
+        { label: 'مساعد صوتي مباشر', icon: MicrophoneIcon, action: () => { onOpenLiveAssistant(); onClose(); } },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
         { 

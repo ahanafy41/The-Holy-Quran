@@ -4,14 +4,13 @@ import { hadithCollection } from '../data/hadithData';
 import { hadithBookUrls } from '../data/hadithUrls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon, ShareIcon } from './Icons';
+import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon, ShareIcon, MicrophoneIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
 import { HadithAIAssistantModal } from './HadithAIAssistantModal';
 import LiveAssistantModal from './LiveAssistantModal';
 import { useApp } from '../context/AppContext';
 
 const MotionDiv = motion.div as any;
-const MicIcon = () => <span>🎙️</span>;
 
 /**
  * `BookListView` displays a searchable list of Hadith books.
@@ -210,7 +209,7 @@ const HadithListView: React.FC<{
                                                 className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-purple-700 bg-purple-100 hover:bg-purple-200 dark:text-purple-300 dark:bg-purple-800/50 dark:hover:bg-purple-800 transition-colors"
                                                 aria-label={`مساعد صوتي مباشر للحديث ${hadith.idInBook}`}
                                             >
-                                                <MicIcon />
+                                                <MicrophoneIcon className="w-4 h-4" />
                                                 <span>مساعد مباشر</span>
                                             </button>
                                         </>
