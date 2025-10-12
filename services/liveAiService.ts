@@ -16,13 +16,14 @@ class LiveAiService {
   }
 
   public async startSession(
+    voiceName: string,
     onMessage: (data: any) => void,
     onError: (error: Error) => void,
     onClose: () => void
   ) {
     const config = {
       responseModalities: [Modality.AUDIO, Modality.TEXT],
-      systemInstruction: "You are a helpful assistant for studying the Quran and Hadith. Be respectful and answer in Egyptian Arabic.",
+      systemInstruction: `You are a helpful assistant for studying the Quran and Hadith. Be respectful and answer in Egyptian Arabic. Your voice is ${voiceName}.`,
     };
 
     try {

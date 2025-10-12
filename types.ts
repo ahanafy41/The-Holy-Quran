@@ -82,6 +82,7 @@ export interface AppSettings {
   darkMode: boolean;
   memorizationReciter: string; // for verse-by-verse
   tafsir: string; 
+    liveAssistantVoice: string;
 }
 
 /** Represents a user-defined section of the Quran for memorization. */

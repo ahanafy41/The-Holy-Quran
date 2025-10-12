@@ -10,7 +10,7 @@ const MicIcon = () => <span>🎙️</span>;
 const StopIcon = () => <span>🛑</span>;
 
 const LiveAssistantModal = ({ onClose }: { onClose: () => void }) => {
-  const { settings } = useApp();
+  const { apiKey } = useApp();
   const [liveService, setLiveService] = useState<LiveAiService | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState('Disconnected'); // Disconnected, Connecting, Connected, Listening, Speaking
@@ -61,12 +61,13 @@ const LiveAssistantModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   useEffect(() => {
-    if (settings.quranUserApiKey) {
+    if (apiKey) {
       setStatus('Connecting...');
-      const service = new LiveAiService(settings.quranUserApiKey);
+      const service = new LiveAiService(apiKey);
       setLiveService(service);
 
       service.startSession(
+        settings.liveAssistantVoice, // Pass the voice name
         (message) => {
           if (message.serverContent?.modelTurn?.parts[0]?.text) {
             setTranscript(prev => (prev + ' ' + message.serverContent.modelTurn.parts[0].text).trim());
