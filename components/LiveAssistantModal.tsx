@@ -93,7 +93,7 @@ const LiveAssistantModal = ({ onClose }: { onClose: () => void }) => {
     return () => {
       liveService?.closeSession();
     };
-  }, [settings.quranUserApiKey]);
+  }, [apiKey, settings]);
 
   const handleMicToggle = async () => {
     if (isListening) {
