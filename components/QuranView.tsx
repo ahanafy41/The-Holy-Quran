@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
 import { AyahActionModal } from './AyahActionModal';
+import LiveAssistantModal from './LiveAssistantModal';
 import { AyahItem } from './AyahItem';
 import { Spinner } from './Spinner';
 import { ArrowRightIcon } from './Icons';
@@ -23,6 +24,7 @@ export const QuranView: React.FC = () => {
 
     /** State to hold the currently selected ayah, which triggers the action modal. */
     const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
+    const [isLiveAssistantOpen, setIsLiveAssistantOpen] = useState(false);
     /** State to temporarily highlight an ayah, e.g., when navigating from a search result. */
     const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
 
@@ -184,7 +186,16 @@ export const QuranView: React.FC = () => {
                 ))}
             </div>
 
-            {selectedAyah && <AyahActionModal ayah={selectedAyah} onClose={handleModalClose} />}
+            {selectedAyah && (
+                <AyahActionModal
+                    ayah={selectedAyah}
+                    onClose={handleModalClose}
+                    onOpenLiveAssistant={() => setIsLiveAssistantOpen(true)}
+                />
+            )}
+            {isLiveAssistantOpen && (
+                <LiveAssistantModal onClose={() => setIsLiveAssistantOpen(false)} />
+            )}
             <QuranReaderControls />
         </div>
     );

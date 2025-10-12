@@ -7,9 +7,11 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, SparklesIcon, ShareIcon } from './Icons';
 import SmartDownloadButton from './SmartDownloadButton';
 import { HadithAIAssistantModal } from './HadithAIAssistantModal';
+import LiveAssistantModal from './LiveAssistantModal';
 import { useApp } from '../context/AppContext';
 
 const MotionDiv = motion.div as any;
+const MicIcon = () => <span>🎙️</span>;
 
 /**
  * `BookListView` displays a searchable list of Hadith books.
@@ -130,14 +132,8 @@ const ChapterListView: React.FC<{ book: HadithBook, chapters: HadithChapter[], o
  * It uses `@tanstack/react-virtual` for efficient rendering of potentially long lists.
  *
  * @component
- * @param {{ book: HadithBook, chapter: HadithChapter, hadiths: Hadith[], onBack: () => void }} props - The component props.
- * @param {HadithBook} props.book - The parent book of the chapter.
- * @param {HadithChapter} props.chapter - The chapter whose hadiths are being displayed.
- * @param {Hadith[]} props.hadiths - The array of hadiths to render.
- * @param {() => void} props.onBack - Callback to navigate back to the chapter list.
- * @param {(hadith: Hadith) => void} props.onExplain - Callback to open the AI assistant for a hadith.
- * @param {(hadith: Hadith) => void} props.onShare - Callback to share a hadith.
- * @returns {React.ReactElement} A component that renders a virtualized list of hadiths.
+ * @param props The component props.
+ * @returns A component that renders a virtualized list of hadiths.
  */
 const HadithListView: React.FC<{
     book: HadithBook;
@@ -146,9 +142,10 @@ const HadithListView: React.FC<{
     onBack: () => void;
     onExplain: (hadith: Hadith) => void;
     onShare: (hadith: Hadith) => void;
+    onOpenLiveAssistant: (hadith: Hadith) => void;
     canShare: boolean;
     hasApiKey: boolean;
-}> = ({ book, chapter, hadiths, onBack, onExplain, onShare, canShare, hasApiKey }) => {
+}> = ({ book, chapter, hadiths, onBack, onExplain, onShare, onOpenLiveAssistant, canShare, hasApiKey }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -199,14 +196,24 @@ const HadithListView: React.FC<{
                                 </p>
                                 <div className="mt-4 flex items-center gap-2 min-h-[30px]">
                                     {hasApiKey && (
-                                        <button
-                                            onClick={() => onExplain(hadith)}
-                                            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
-                                            aria-label={`شرح الحديث ${hadith.idInBook}`}
-                                        >
-                                            <SparklesIcon className="w-4 h-4" />
-                                            <span>شرح بالذكاء الاصطناعي</span>
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => onExplain(hadith)}
+                                                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-300 dark:bg-green-800/50 dark:hover:bg-green-800 transition-colors"
+                                                aria-label={`شرح الحديث ${hadith.idInBook}`}
+                                            >
+                                                <SparklesIcon className="w-4 h-4" />
+                                                <span>شرح بالذكاء الاصطناعي</span>
+                                            </button>
+                                            <button
+                                                onClick={() => onOpenLiveAssistant(hadith)}
+                                                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full text-purple-700 bg-purple-100 hover:bg-purple-200 dark:text-purple-300 dark:bg-purple-800/50 dark:hover:bg-purple-800 transition-colors"
+                                                aria-label={`مساعد صوتي مباشر للحديث ${hadith.idInBook}`}
+                                            >
+                                                <MicIcon />
+                                                <span>مساعد مباشر</span>
+                                            </button>
+                                        </>
                                     )}
                                     {canShare && (
                                         <button
@@ -248,6 +255,7 @@ export const HadithPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+    const [isLiveAssistantOpen, setIsLiveAssistantOpen] = useState(false);
     const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
     const [canShare, setCanShare] = useState(false);
 
@@ -265,6 +273,15 @@ export const HadithPage: React.FC = () => {
         }
         setSelectedHadith(hadith);
         setIsAiAssistantOpen(true);
+    };
+
+    const handleOpenLiveAssistant = (hadith: Hadith) => {
+        if (!apiKey) {
+            setAppError("مفتاح API مطلوب لهذه الميزة. يرجى إضافته في الإعدادات.");
+            return;
+        }
+        setSelectedHadith(hadith);
+        setIsLiveAssistantOpen(true);
     };
 
     const handleShareHadith = useCallback(async (hadith: Hadith) => {
@@ -358,6 +375,7 @@ export const HadithPage: React.FC = () => {
                         onBack={handleBackToChapters}
                         onExplain={handleExplainHadith}
                         onShare={handleShareHadith}
+                        onOpenLiveAssistant={handleOpenLiveAssistant}
                         canShare={canShare}
                         hasApiKey={!!apiKey}
                     />
@@ -368,6 +386,13 @@ export const HadithPage: React.FC = () => {
                     <HadithAIAssistantModal
                         hadith={selectedHadith}
                         onClose={() => setIsAiAssistantOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {isLiveAssistantOpen && (
+                    <LiveAssistantModal
+                        onClose={() => setIsLiveAssistantOpen(false)}
                     />
                 )}
             </AnimatePresence>
