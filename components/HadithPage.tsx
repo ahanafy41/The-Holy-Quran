@@ -4,11 +4,15 @@ import { hadithCollection } from '../data/hadithData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon } from './Icons';
+import { Spinner } from './Spinner';
+import { ErrorToast } from './ErrorToast';
 
 const MotionDiv = motion.div as any;
+const BASE_URL = "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data";
+
 
 // --- Component to display the list of Hadith books ---
-const BookListView: React.FC<{ onSelect: (book: HadithBook) => void }> = ({ onSelect }) => {
+const BookListView: React.FC<{ books: HadithBook[], onSelect: (book: HadithBook) => void }> = ({ books, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -18,9 +22,9 @@ const BookListView: React.FC<{ onSelect: (book: HadithBook) => void }> = ({ onSe
     }, []);
 
     const filteredBooks = useMemo(() => {
-        if (!searchQuery.trim()) return hadithCollection.chapters;
-        return hadithCollection.chapters.filter(book => book.arabic.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [searchQuery]);
+        if (!searchQuery.trim()) return books;
+        return books.filter(book => book.arabic.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchQuery, books]);
 
     return (
         <MotionDiv key="book-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -100 }}>
@@ -101,7 +105,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     const rowVirtualizer = useVirtualizer({
         count: hadiths.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 120, // Adjusted for better estimation
+        estimateSize: () => 120,
         overscan: 10,
     });
 
@@ -125,13 +129,7 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
                         return (
                             <div
                                 key={virtualItem.key}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    transform: `translateY(${virtualItem.start}px)`,
-                                }}
+                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
                                 className="p-4 border-b border-slate-100 dark:border-slate-700"
                             >
                                 <p className="font-serif text-lg leading-loose text-slate-800 dark:text-slate-200">
@@ -147,7 +145,6 @@ const HadithListView: React.FC<{ book: HadithBook, chapter: HadithChapter, hadit
     );
 };
 
-
 // --- Main page component that manages state ---
 export const HadithPage: React.FC = () => {
     const [view, setView] = useState<'books' | 'chapters' | 'hadiths'>('books');
@@ -158,19 +155,22 @@ export const HadithPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const books = hadithCollection.chapters;
+
     const handleSelectBook = async (book: HadithBook) => {
         setSelectedBook(book);
         setIsLoading(true);
         setError(null);
+        setView('chapters');
         try {
-            const response = await fetch(`/hadith-data/${book.id}/chapters.json`);
-            if (!response.ok) throw new Error('Network response was not ok');
+            const response = await fetch(`${BASE_URL}/hadith-data/${book.id}/chapters.json`);
+            if (!response.ok) throw new Error('فشل تحميل الأبواب');
             const data = await response.json();
             setChapters(data);
-            setView('chapters');
-        } catch (err) {
-            setError('فشل تحميل الأبواب. يرجى المحاولة مرة أخرى.');
+        } catch (err: any) {
+            setError(err.message || 'فشل تحميل الأبواب. يرجى المحاولة مرة أخرى.');
             console.error("Failed to load hadith chapters:", err);
+            setView('books'); // Go back on error
         } finally {
             setIsLoading(false);
         }
@@ -181,15 +181,16 @@ export const HadithPage: React.FC = () => {
         setSelectedChapter(chapter);
         setIsLoading(true);
         setError(null);
+        setView('hadiths');
         try {
-            const response = await fetch(`/hadith-data/${selectedBook.id}/${chapter.id}.json`);
-            if (!response.ok) throw new Error('Network response was not ok');
+            const response = await fetch(`${BASE_URL}/hadith-data/${selectedBook.id}/${chapter.id}.json`);
+            if (!response.ok) throw new Error('فشل تحميل الأحاديث');
             const data = await response.json();
             setHadiths(data);
-            setView('hadiths');
-        } catch (err) {
-            setError('فشل تحميل الأحاديث. يرجى المحاولة مرة أخرى.');
+        } catch (err: any) {
+            setError(err.message || 'فشل تحميل الأحاديث. يرجى المحاولة مرة أخرى.');
             console.error("Failed to load hadiths:", err);
+            setView('chapters'); // Go back on error
         } finally {
             setIsLoading(false);
         }
@@ -207,30 +208,30 @@ export const HadithPage: React.FC = () => {
         setView('chapters');
     };
 
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-full"><p>جاري التحميل...</p></div>;
-    }
-
-    if (error) {
-         return <div className="flex flex-col justify-center items-center h-full text-center">
-            <p className="text-red-500 mb-4">{error}</p>
-            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                إعادة تحميل الصفحة
-            </button>
-        </div>;
-    }
+    const CurrentView = () => {
+        if (isLoading) {
+            return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+        }
+        switch (view) {
+            case 'books':
+                return <BookListView books={books} onSelect={handleSelectBook} />;
+            case 'chapters':
+                return selectedBook && <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />;
+            case 'hadiths':
+                return selectedBook && selectedChapter && <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} />;
+            default:
+                return <BookListView books={books} onSelect={handleSelectBook} />;
+        }
+    };
 
     return (
-        <AnimatePresence mode="wait">
-            {view === 'books' && (
-                <BookListView onSelect={handleSelectBook} />
-            )}
-            {view === 'chapters' && selectedBook && (
-                <ChapterListView book={selectedBook} chapters={chapters} onSelect={handleSelectChapter} onBack={handleBackToBooks} />
-            )}
-            {view === 'hadiths' && selectedBook && selectedChapter && (
-                <HadithListView book={selectedBook} chapter={selectedChapter} hadiths={hadiths} onBack={handleBackToChapters} />
-            )}
-        </AnimatePresence>
+        <>
+            <AnimatePresence mode="wait">
+                <MotionDiv key={view} initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }}>
+                    <CurrentView />
+                </MotionDiv>
+            </AnimatePresence>
+            {error && <ErrorToast message={error} onDismiss={() => setError(null)} />}
+        </>
     );
 };

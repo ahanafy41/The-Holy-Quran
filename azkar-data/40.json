@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "text": "((يَسْتَعِيذُ بِاللَّهِ و يَنْتَهِي عَمَّا شك فِيهِ)).",
+    "count": 1,
+    "audio": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data/audio/133.mp3",
+    "filename": "133"
+  },
+  {
+    "id": 2,
+    "text": "((يَقُولُ: ((آمَنْتُ بِاللَّهِ وَرُسُلِهِ)).",
+    "count": 1,
+    "audio": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data/audio/134.mp3",
+    "filename": "134"
+  },
+  {
+    "id": 3,
+    "text": "((يَقْرَأُ قَوْلَهُ تَعَالَى: ﴿هُوَ الْأوَّلُ وَالْآخِرُ وَالظّاهِرُ وَالْباطِنُ وَهُوَ بِكُلِّ شَيْءٍ عَلِيمٌ﴾)).",
+    "count": 1,
+    "audio": "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data/audio/135.mp3",
+    "filename": "135"
+  }
+]

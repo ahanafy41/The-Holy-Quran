@@ -1,12 +1,20 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { HisnCategory, HisnDhikr } from '../types';
-import hisnAlMuslimCategories from '../azkar-data/azkar.json';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchIcon, ChevronLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, CheckCircleIcon } from './Icons';
+import { Spinner } from './Spinner';
+import { ErrorToast } from './ErrorToast';
 
 const MotionDiv = motion.div as any;
+const BASE_URL = "https://raw.githubusercontent.com/ahanafy41/The-Holy-Quran/data/azkar-data";
 
+// --- Types for fetched data ---
+type CategorySummary = {
+    id: number;
+    category: string;
+};
+
+// --- Reusable Dhikr Card Component (no changes needed) ---
 const DhikrCard: React.FC<{
     dhikr: HisnDhikr;
     progress: number;
@@ -15,19 +23,12 @@ const DhikrCard: React.FC<{
     onPlayClick: () => void;
 }> = ({ dhikr, progress, isPlaying, onCounterClick, onPlayClick }) => {
     const isCompleted = progress === 0;
-
     const counterAriaLabel = isCompleted 
         ? `اكتمل الذكر: ${dhikr.text}` 
         : `الذكر: ${dhikr.text}. التكرار المتبقي: ${progress} من ${dhikr.count}. اضغط لإنقاص العداد.`;
-
     const playButtonAriaLabel = isPlaying ? 'إيقاف الصوت' : 'تشغيل الصوت';
-
-    // The root is a non-interactive div.
-    // Inside, we have two distinct buttons for the two actions.
     return (
         <div className={`relative group bg-white dark:bg-slate-800 rounded-2xl shadow-sm transition-all duration-300 overflow-hidden ${isCompleted ? 'opacity-60' : ''}`}>
-            
-            {/* The main content area, which also acts as the counter button. */}
             <button
                 onClick={!isCompleted ? onCounterClick : undefined}
                 disabled={isCompleted}
@@ -36,8 +37,6 @@ const DhikrCard: React.FC<{
             >
                 <p className="font-quran text-2xl leading-loose text-slate-800 dark:text-slate-200">{dhikr.text}</p>
             </button>
-            
-            {/* Footer with visual count and the separate play button. */}
             <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700">
                 <button
                     onClick={onPlayClick}
@@ -46,31 +45,16 @@ const DhikrCard: React.FC<{
                 >
                     {isPlaying ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
                 </button>
-                
                 <div className="px-4 py-2 rounded-full font-bold text-lg flex items-center gap-2" aria-hidden="true">
-                    <span className="transition-colors text-slate-700 dark:text-slate-200">
-                        {progress} / {dhikr.count}
-                    </span>
+                    <span className="transition-colors text-slate-700 dark:text-slate-200">{progress} / {dhikr.count}</span>
                 </div>
             </div>
-
-            {/* Progress bar is positioned relative to the root div */}
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-green-200/50 dark:bg-green-800/50 pointer-events-none">
-                <MotionDiv
-                    className="h-full bg-green-500"
-                    initial={{ width: '100%' }}
-                    animate={{ width: `${(progress / dhikr.count) * 100}%` }}
-                    transition={{ duration: 0.5, ease: 'easeInOut' }}
-                />
+                <MotionDiv className="h-full bg-green-500" initial={{ width: '100%' }} animate={{ width: `${(progress / dhikr.count) * 100}%` }} transition={{ duration: 0.5, ease: 'easeInOut' }} />
             </div>
-
             <AnimatePresence>
                 {isCompleted && (
-                    <MotionDiv
-                        initial={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="absolute top-3 left-3 text-green-500 bg-white/80 dark:bg-slate-800/80 rounded-full p-1 pointer-events-none z-20"
-                    >
+                    <MotionDiv initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute top-3 left-3 text-green-500 bg-white/80 dark:bg-slate-800/80 rounded-full p-1 pointer-events-none z-20">
                         <CheckCircleIcon className="w-8 h-8" />
                     </MotionDiv>
                 )}
@@ -79,28 +63,21 @@ const DhikrCard: React.FC<{
     );
 };
 
-
-const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void }> = ({ category, onBack }) => {
+// --- Category Detail View ---
+const CategoryDetailView: React.FC<{ category: CategorySummary, dhikrArray: HisnDhikr[], onBack: () => void }> = ({ category, dhikrArray, onBack }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [counts, setCounts] = useState<Record<number, number>>(() =>
-        category.array.reduce((acc, dhikr) => {
-            acc[dhikr.id] = dhikr.count;
-            return acc;
-        }, {} as Record<number, number>)
+        dhikrArray.reduce((acc, dhikr) => ({ ...acc, [dhikr.id]: dhikr.count }), {})
     );
     const [playingDhikrId, setPlayingDhikrId] = useState<number | null>(null);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            titleRef.current?.focus();
-        }, 100);
-
+        const timer = setTimeout(() => { titleRef.current?.focus(); }, 100);
         const audioEl = audioRef.current;
         const handleAudioEnd = () => setPlayingDhikrId(null);
         audioEl?.addEventListener('ended', handleAudioEnd);
         audioEl?.addEventListener('pause', handleAudioEnd);
-
         return () => {
             clearTimeout(timer);
             audioEl?.removeEventListener('ended', handleAudioEnd);
@@ -110,21 +87,16 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
     }, [category]);
 
     const handleCounterClick = (dhikrId: number) => {
-        setCounts(prev => {
-            const current = prev[dhikrId];
-            return current > 0 ? { ...prev, [dhikrId]: current - 1 } : prev;
-        });
+        setCounts(prev => ({ ...prev, [dhikrId]: Math.max(0, prev[dhikrId] - 1) }));
     };
 
     const handlePlayClick = (dhikr: HisnDhikr) => {
         if (playingDhikrId === dhikr.id) {
             audioRef.current?.pause();
-        } else {
-            if (audioRef.current) {
-                audioRef.current.src = dhikr.audio;
-                audioRef.current.play().catch(e => console.error("Audio play failed:", e));
-                setPlayingDhikrId(dhikr.id);
-            }
+        } else if (audioRef.current) {
+            audioRef.current.src = dhikr.audio;
+            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+            setPlayingDhikrId(dhikr.id);
         }
     };
 
@@ -137,39 +109,29 @@ const CategoryDetailView: React.FC<{ category: HisnCategory, onBack: () => void 
                 </button>
                 <h1 ref={titleRef} tabIndex={-1} className="text-2xl md:text-3xl font-bold focus:outline-none">{category.category}</h1>
             </header>
-
             <div className="space-y-4">
-                {category.array.map(dhikr => (
-                    <DhikrCard
-                        key={dhikr.id}
-                        dhikr={dhikr}
-                        progress={counts[dhikr.id]}
-                        isPlaying={playingDhikrId === dhikr.id}
-                        onCounterClick={() => handleCounterClick(dhikr.id)}
-                        onPlayClick={() => handlePlayClick(dhikr)}
-                    />
+                {dhikrArray.map(dhikr => (
+                    <DhikrCard key={dhikr.id} dhikr={dhikr} progress={counts[dhikr.id]} isPlaying={playingDhikrId === dhikr.id} onCounterClick={() => handleCounterClick(dhikr.id)} onPlayClick={() => handlePlayClick(dhikr)} />
                 ))}
             </div>
         </div>
     );
 };
 
-
-const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }> = ({ onSelect }) => {
+// --- Category List View ---
+const CategoryListView: React.FC<{ categories: CategorySummary[], onSelect: (category: CategorySummary) => void }> = ({ categories, onSelect }) => {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            titleRef.current?.focus();
-        }, 100);
+        const timer = setTimeout(() => { titleRef.current?.focus(); }, 100);
         return () => clearTimeout(timer);
     }, []);
 
     const filteredCategories = useMemo(() => {
-        if (!searchQuery.trim()) return hisnAlMuslimCategories;
-        return hisnAlMuslimCategories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [searchQuery]);
+        if (!searchQuery.trim()) return categories;
+        return categories.filter(cat => cat.category.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchQuery, categories]);
 
     return (
         <div>
@@ -193,9 +155,7 @@ const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }>
                 <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[calc(100vh-20rem)] overflow-y-auto">
                     {filteredCategories.map(category => (
                         <button key={category.id} onClick={() => onSelect(category)} className="w-full flex items-center justify-between text-right p-4 hover:bg-green-50 dark:hover:bg-slate-700/50 transition-colors group">
-                            <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">
-                                {category.category}
-                            </p>
+                            <p className="font-semibold text-lg text-slate-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400">{category.category}</p>
                             <ChevronLeftIcon className="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" />
                         </button>
                     ))}
@@ -205,9 +165,59 @@ const CategoryListView: React.FC<{ onSelect: (category: HisnCategory) => void }>
     );
 };
 
-
+// --- Main Page Component ---
 export const HisnAlMuslimPage: React.FC = () => {
-    const [selectedCategory, setSelectedCategory] = useState<HisnCategory | null>(null);
+    const [view, setView] = useState<'list' | 'detail'>('list');
+    const [categories, setCategories] = useState<CategorySummary[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<CategorySummary | null>(null);
+    const [dhikrArray, setDhikrArray] = useState<HisnDhikr[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(`${BASE_URL}/azkar-categories.json`);
+                if (!response.ok) throw new Error('فشل تحميل قائمة الأذكار');
+                const data: CategorySummary[] = await response.json();
+                setCategories(data);
+            } catch (err: any) {
+                setError(err.message || 'حدث خطأ ما');
+                console.error("Failed to load categories:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const handleSelectCategory = async (category: CategorySummary) => {
+        setSelectedCategory(category);
+        setView('detail');
+        setIsLoading(true);
+        setError(null);
+        setDhikrArray([]);
+        try {
+            const response = await fetch(`${BASE_URL}/${category.id}.json`);
+            if (!response.ok) throw new Error('فشل تحميل الأذكار لهذا القسم');
+            const data: HisnDhikr[] = await response.json();
+            setDhikrArray(data);
+        } catch (err: any) {
+            setError(err.message || 'حدث خطأ ما');
+            console.error(`Failed to load dhikr for category ${category.id}:`, err);
+            setView('list'); // Go back to list on error
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleBackToList = () => {
+        setSelectedCategory(null);
+        setDhikrArray([]);
+        setView('list');
+    };
 
     const viewAnimation = {
         initial: { opacity: 0, x: 20 },
@@ -216,18 +226,26 @@ export const HisnAlMuslimPage: React.FC = () => {
         transition: { duration: 0.25 }
     };
 
+    if (isLoading && view === 'list') {
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
+
     return (
-        <AnimatePresence mode="wait">
-            <MotionDiv
-                key={selectedCategory ? selectedCategory.id : 'list'}
-                {...viewAnimation}
-            >
-                {selectedCategory ? (
-                    <CategoryDetailView category={selectedCategory} onBack={() => setSelectedCategory(null)} />
-                ) : (
-                    <CategoryListView onSelect={setSelectedCategory} />
-                )}
-            </MotionDiv>
-        </AnimatePresence>
+        <>
+            <AnimatePresence mode="wait">
+                <MotionDiv key={view} {...viewAnimation}>
+                    {view === 'list' ? (
+                        <CategoryListView categories={categories} onSelect={handleSelectCategory} />
+                    ) : (
+                        selectedCategory && (
+                            isLoading
+                                ? <div className="flex justify-center items-center h-full"><Spinner /></div>
+                                : <CategoryDetailView category={selectedCategory} dhikrArray={dhikrArray} onBack={handleBackToList} />
+                        )
+                    )}
+                </MotionDiv>
+            </AnimatePresence>
+            {error && <ErrorToast message={error} onDismiss={() => setError(null)} />}
+        </>
     );
 };
