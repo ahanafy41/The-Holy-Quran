@@ -198,6 +198,8 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
         'saoodshuraym': 'Saood_ash-Shuraym_128kbps',
         'abdullahbasfar': 'Abdullah_Basfar_128kbps',
         'faresabbad': 'Fares_Abbad_64kbps',
+        'minshawi': 'Minshawy_Murattal_128kbps',
+        'minshawimujawwad': 'Minshawy_Mujawwad_192kbps',
         // Note: some reciters from alquran.cloud might not be on everyayah.com
     };
 
@@ -284,11 +286,10 @@ export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Pr
  */
 export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
     const reciters = await fetchAPI<Reciter[]>('edition/format/audio');
-    const filteredReciters = reciters.filter(r => r.type === 'versebyverse');
+    let filteredReciters = reciters.filter(r => r.type === 'versebyverse');
     
     const faresAbbadIdentifier = 'ar.faresabbad';
     const faresAbbadExists = filteredReciters.some(r => r.identifier === faresAbbadIdentifier);
-
     if (!faresAbbadExists) {
         const faresAbbadReciter: Reciter = {
             identifier: faresAbbadIdentifier,
@@ -298,8 +299,35 @@ export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
             format: 'audio/mpeg',
             type: 'versebyverse',
         };
-        // Prepend him to the list to make him easy to find and select by default
-        return [faresAbbadReciter, ...filteredReciters];
+        filteredReciters.unshift(faresAbbadReciter);
+    }
+
+    const minshawiTartilIdentifier = 'ar.minshawi';
+    const minshawiTartilExists = filteredReciters.some(r => r.identifier === minshawiTartilIdentifier);
+    if (!minshawiTartilExists) {
+        const minshawiTartilReciter: Reciter = {
+            identifier: minshawiTartilIdentifier,
+            language: 'ar',
+            name: 'محمد صديق المنشاوي (ترتيل)',
+            englishName: 'Muhammad Siddiq al-Minshawi (Tartil)',
+            format: 'audio/mpeg',
+            type: 'versebyverse',
+        };
+        filteredReciters.unshift(minshawiTartilReciter);
+    }
+
+    const minshawiMujawwadIdentifier = 'ar.minshawimujawwad';
+    const minshawiMujawwadExists = filteredReciters.some(r => r.identifier === minshawiMujawwadIdentifier);
+    if (!minshawiMujawwadExists) {
+        const minshawiMujawwadReciter: Reciter = {
+            identifier: minshawiMujawwadIdentifier,
+            language: 'ar',
+            name: 'محمد صديق المنشاوي (تجويد)',
+            englishName: 'Muhammad Siddiq al-Minshawi (Mujawwad)',
+            format: 'audio/mpeg',
+            type: 'versebyverse',
+        };
+        filteredReciters.unshift(minshawiMujawwadReciter);
     }
     
     return filteredReciters;
