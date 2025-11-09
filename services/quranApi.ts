@@ -284,11 +284,10 @@ export const getAyah = async (ayahNumber: number, reciterIdentifier: string): Pr
  */
 export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
     const reciters = await fetchAPI<Reciter[]>('edition/format/audio');
-    const filteredReciters = reciters.filter(r => r.type === 'versebyverse');
+    let filteredReciters = reciters.filter(r => r.type === 'versebyverse');
     
     const faresAbbadIdentifier = 'ar.faresabbad';
     const faresAbbadExists = filteredReciters.some(r => r.identifier === faresAbbadIdentifier);
-
     if (!faresAbbadExists) {
         const faresAbbadReciter: Reciter = {
             identifier: faresAbbadIdentifier,
@@ -298,8 +297,21 @@ export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
             format: 'audio/mpeg',
             type: 'versebyverse',
         };
-        // Prepend him to the list to make him easy to find and select by default
-        return [faresAbbadReciter, ...filteredReciters];
+        filteredReciters.unshift(faresAbbadReciter);
+    }
+
+    const minshawiIdentifier = 'ar.minshawi';
+    const minshawiExists = filteredReciters.some(r => r.identifier === minshawiIdentifier);
+    if (!minshawiExists) {
+        const minshawiReciter: Reciter = {
+            identifier: minshawiIdentifier,
+            language: 'ar',
+            name: 'محمد صديق المنشاوي (ترتيل)',
+            englishName: 'Muhammad Siddiq al-Minshawi (Tartil)',
+            format: 'audio/mpeg',
+            type: 'versebyverse',
+        };
+        filteredReciters.unshift(minshawiReciter);
     }
     
     return filteredReciters;
