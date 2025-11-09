@@ -176,13 +176,12 @@ export const getRadioStations = async (): Promise<RadioStation[]> => {
 
 
 /**
- * A helper function to augment an Ayah object with a fallback audio URL.
- * The primary audio source from alquran.cloud can sometimes be unreliable. This function adds a secondary URL
- * from everyayah.com, which is a more stable CDN for verse-by-verse audio.
+ * A helper function to prioritize audio from everyayah.com and use alquran.cloud as a fallback.
+ * everyayah.com is a more stable CDN for verse-by-verse audio.
  * @param {Ayah} ayah The original Ayah object.
  * @param {number} surahNumber The number of the surah the ayah belongs to.
  * @param {string} reciterIdentifier The identifier for the reciter (e.g., 'ar.alafasy').
- * @returns {Ayah} The Ayah object augmented with a fallback audio URL in the `audioSecondarys` array.
+ * @returns {Ayah} The Ayah object with prioritized audio URLs.
  */
 const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifier: string): Ayah => {
     // Maps API reciter identifier to the folder name on everyayah.com
@@ -194,10 +193,20 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
         'mahermuaiqly': 'Maher_AlMuaiqly_64kbps',
         'husary': 'Husary_128kbps',
         'abdulbasitmurattal': 'Abdul_Basit_Murattal_128kbps',
-        'sudais': 'Abdurrahmaan_As-Sudais_128kbps',
+        'sudais': 'Abdurrahmaan_As-Sudais_192kbps',
         'saoodshuraym': 'Saood_ash-Shuraym_128kbps',
-        'abdullahbasfar': 'Abdullah_Basfar_128kbps',
+        'abdullahbasfar': 'Abdullah_Basfar_192kbps',
         'faresabbad': 'Fares_Abbad_64kbps',
+        'ghamadi': 'Ghamadi_40kbps',
+        'juhaynee': 'Abdullaah_3awwaad_Al-Juhaynee_128kbps',
+        'jibreel': 'Muhammad_Jibreel_128kbps',
+        'shatri': 'Abu_Bakr_Ash-Shaatree_128kbps',
+        'ajamy': 'ahmed_ibn_ali_al_ajamy_128kbps',
+        'rifai': 'Hani_Rifai_192kbps',
+        'tablaway': 'Mohammad_al_Tablaway_128kbps',
+        'minshawy': 'Minshawy_Murattal_128kbps',
+        'minshawymujawwad': 'Minshawy_Mujawwad_192kbps',
+        'husarymujawwad': 'Husary_128kbps_Mujawwad',
         // Note: some reciters from alquran.cloud might not be on everyayah.com
     };
 
@@ -206,16 +215,22 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
     if (reciterFolder) {
         const surahPad = String(surahNumber).padStart(3, '0');
         const ayahPad = String(ayah.numberInSurah).padStart(3, '0');
-        // This is a known reliable verse-by-verse source
-        const fallbackUrl = `https://everyayah.com/data/${reciterFolder}/${surahPad}${ayahPad}.mp3`;
+        // This is a known reliable verse-by-verse source, now our primary.
+        const everyAyahUrl = `https://everyayah.com/data/${reciterFolder}/${surahPad}${ayahPad}.mp3`;
 
+        const originalAudio = ayah.audio; // Keep the original URL from alquran.cloud
+
+        // Set everyayah.com as the new primary audio source
+        ayah.audio = everyAyahUrl;
+
+        // Initialize secondary audio array if it doesn't exist
         if (!ayah.audioSecondarys) {
             ayah.audioSecondarys = [];
         }
-        // Add the new fallback if it's not already in the list.
-        // Prepending ensures it's tried first after the primary URL fails.
-        if (!ayah.audioSecondarys.includes(fallbackUrl)) {
-            ayah.audioSecondarys.unshift(fallbackUrl);
+
+        // Add the original URL as a fallback if it exists and isn't already there.
+        if (originalAudio && !ayah.audioSecondarys.includes(originalAudio)) {
+            ayah.audioSecondarys.push(originalAudio);
         }
     }
     return ayah;
