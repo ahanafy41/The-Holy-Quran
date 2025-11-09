@@ -198,6 +198,8 @@ const addFallbackAudioSource = (ayah: Ayah, surahNumber: number, reciterIdentifi
         'saoodshuraym': 'Saood_ash-Shuraym_128kbps',
         'abdullahbasfar': 'Abdullah_Basfar_128kbps',
         'faresabbad': 'Fares_Abbad_64kbps',
+        'minshawi': 'Minshawy_Murattal_128kbps',
+        'minshawimujawwad': 'Minshawy_Mujawwad_192kbps',
         // Note: some reciters from alquran.cloud might not be on everyayah.com
     };
 
@@ -300,18 +302,32 @@ export const getVerseByVerseReciters = async (): Promise<Reciter[]> => {
         filteredReciters.unshift(faresAbbadReciter);
     }
 
-    const minshawiIdentifier = 'ar.minshawi';
-    const minshawiExists = filteredReciters.some(r => r.identifier === minshawiIdentifier);
-    if (!minshawiExists) {
-        const minshawiReciter: Reciter = {
-            identifier: minshawiIdentifier,
+    const minshawiTartilIdentifier = 'ar.minshawi';
+    const minshawiTartilExists = filteredReciters.some(r => r.identifier === minshawiTartilIdentifier);
+    if (!minshawiTartilExists) {
+        const minshawiTartilReciter: Reciter = {
+            identifier: minshawiTartilIdentifier,
             language: 'ar',
             name: 'محمد صديق المنشاوي (ترتيل)',
             englishName: 'Muhammad Siddiq al-Minshawi (Tartil)',
             format: 'audio/mpeg',
             type: 'versebyverse',
         };
-        filteredReciters.unshift(minshawiReciter);
+        filteredReciters.unshift(minshawiTartilReciter);
+    }
+
+    const minshawiMujawwadIdentifier = 'ar.minshawimujawwad';
+    const minshawiMujawwadExists = filteredReciters.some(r => r.identifier === minshawiMujawwadIdentifier);
+    if (!minshawiMujawwadExists) {
+        const minshawiMujawwadReciter: Reciter = {
+            identifier: minshawiMujawwadIdentifier,
+            language: 'ar',
+            name: 'محمد صديق المنشاوي (تجويد)',
+            englishName: 'Muhammad Siddiq al-Minshawi (Mujawwad)',
+            format: 'audio/mpeg',
+            type: 'versebyverse',
+        };
+        filteredReciters.unshift(minshawiMujawwadReciter);
     }
     
     return filteredReciters;
