@@ -1,7 +1,6 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useFocusTrap } from '../hooks/useFocusTrap';
 import { XMarkIcon } from './Icons';
 import { Spinner } from './Spinner';
 import { Ayah, Tafsir } from '../types';
@@ -44,7 +43,37 @@ interface TafsirModalProps {
  */
 export const TafsirModal: React.FC<TafsirModalProps> = ({ content, onClose }) => {
     const modalRef = useRef<HTMLDivElement>(null);
-    useFocusTrap(modalRef, onClose);
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    const triggerRef = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) {
+            mainContent.setAttribute('aria-hidden', 'true');
+        }
+        triggerRef.current = document.activeElement as HTMLElement;
+
+        const timer = setTimeout(() => {
+            titleRef.current?.focus();
+        }, 100);
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('keydown', handleKeyDown);
+            if (mainContent) {
+                mainContent.removeAttribute('aria-hidden');
+            }
+            triggerRef.current?.focus();
+        };
+    }, [onClose]);
 
     const modalAnimation = {
         initial: {scale: 0.95, opacity: 0},
@@ -57,7 +86,7 @@ export const TafsirModal: React.FC<TafsirModalProps> = ({ content, onClose }) =>
             <motion.div ref={modalRef} {...modalAnimation}
               onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="tafsir-title">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h3 id="tafsir-title" className="font-bold text-lg">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>
+                    <h3 id="tafsir-title" ref={titleRef} tabIndex={-1} className="font-bold text-lg focus:outline-none">{content.tafsirName || 'التفسير'} - الآية {content.surahNumber}:{content.ayah.numberInSurah}</h3>
                     <button onClick={onClose} aria-label="Close Tafsir" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><XMarkIcon className="w-5 h-5" /></button>
                 </div>
                 <div className="p-6 overflow-y-auto space-y-4 text-right">

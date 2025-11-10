@@ -152,7 +152,7 @@ export const QuranView: React.FC = () => {
     }
     
     return (
-        <div className="max-w-4xl mx-auto pb-24">
+        <div id="main-content" className="max-w-4xl mx-auto pb-24">
              <header className="mb-6 text-center sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md pt-4">
                 <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
                     <button
