@@ -371,25 +371,46 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [sList, vReciters, lReciters, tList, rStations] = await Promise.all([
-        api.getSurahList(), 
-        api.getVerseByVerseReciters(),
-        api.getListeningReciters(),
-        api.getTafsirInfo(),
-        api.getRadioStations(),
-      ]);
-      setSurahList(sList);
-      setMemorizationReciters(vReciters);
-      setListeningReciters(lReciters);
-      setRadioStations(rStations);
-      setTafsirInfoList(tList.filter(t => t.language === 'ar'));
-      
+        const [sList, lReciters, tList, rStations] = await Promise.all([
+            api.getSurahList(),
+            api.getListeningReciters(),
+            api.getTafsirInfo(),
+            api.getRadioStations(),
+        ]);
+
+        const customReciters: Reciter[] = [
+            { identifier: 'ar.alafasy', language: 'ar', name: 'مشاري راشد العفاسي', englishName: 'Mishary Rashid Alafasy', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.mahermuaiqly', language: 'ar', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.husary', language: 'ar', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.abdulbasitmurattal', language: 'ar', name: 'عبد الباسط عبد الصمد (مرتل)', englishName: 'Abdul Basit Abdul Samad (Murattal)', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.sudais', language: 'ar', name: 'عبد الرحمن السديس', englishName: 'Abdul Rahman Al-Sudais', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.saoodshuraym', language: 'ar', name: 'سعود الشريم', englishName: 'Saood Al-Shuraim', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.abdullahbasfar', language: 'ar', name: 'عبدالله بصفر', englishName: 'Abdullah Basfar', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.faresabbad', language: 'ar', name: 'فارس عباد', englishName: 'Fares Abbad', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.ghamadi', language: 'ar', name: 'سعد الغامدي', englishName: 'Saad Al-Ghamdi', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.juhaynee', language: 'ar', name: 'عبدالله عواد الجهني', englishName: 'Abdullah Awad Al-Juhany', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.jibreel', language: 'ar', name: 'محمد جبريل', englishName: 'Muhammad Jibreel', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.shatri', language: 'ar', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Al-Shatri', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.ajamy', language: 'ar', name: 'أحمد بن علي العجمي', englishName: 'Ahmed Al-Ajmi', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.rifai', language: 'ar', name: 'هاني الرفاعي', englishName: 'Hani Al-Rifai', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.tablaway', language: 'ar', name: 'محمد الطبلاوي', englishName: 'Mohammad Al-Tablaway', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.minshawy', language: 'ar', name: 'محمد صديق المنشاوي (مرتل)', englishName: 'Muhammad Siddiq Al-Minshawi (Murattal)', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.minshawymujawwad', language: 'ar', name: 'محمد صديق المنشاوي (مجود)', englishName: 'Muhammad Siddiq Al-Minshawi (Mujawwad)', format: 'audio', type: 'versebyverse' },
+            { identifier: 'ar.husarymujawwad', language: 'ar', name: 'محمود خليل الحصري (مجود)', englishName: 'Mahmoud Khalil Al-Husary (Mujawwad)', format: 'audio', type: 'versebyverse' },
+        ];
+
+        setSurahList(sList);
+        setMemorizationReciters(customReciters);
+        setListeningReciters(lReciters);
+        setRadioStations(rStations);
+        setTafsirInfoList(tList.filter(t => t.language === 'ar'));
+
     } catch (e) {
-      setError('فشل تحميل البيانات الأولية. يرجى التحقق من اتصالك بالإنترنت.');
+        setError('فشل تحميل البيانات الأولية. يرجى التحقق من اتصالك بالإنترنت.');
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  }, []);
+}, []);
 
   useEffect(() => {
     initApp();
