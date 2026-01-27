@@ -46,6 +46,7 @@ const App: React.FC = () => {
       darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
       memorizationReciter: 'ar.faresabbad',
       tafsir: 'ar.muyassar',
+      liveAssistantVoice: 'Kore', // Default voice
     };
      if (saved) {
         const parsed = JSON.parse(saved);

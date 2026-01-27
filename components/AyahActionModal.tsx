@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Ayah } from '../types';
 import { useApp } from '../context/AppContext';
-import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon, BookmarkIcon } from './Icons';
+import { PlayIcon, PauseIcon, BookOpenIcon, ClipboardIcon, ShareIcon, SparklesIcon, XMarkIcon, HomeIcon, ArrowRightIcon, SearchIcon, BookmarkIcon, MicrophoneIcon } from './Icons';
 import { AddBookmarkModal } from './AddBookmarkModal';
 
 
@@ -16,6 +16,8 @@ interface AyahActionModalProps {
     ayah: Ayah;
     /** A callback function to be invoked when the modal should be closed. */
     onClose: () => void;
+    /** A callback function to open the live assistant. */
+    onOpenLiveAssistant: () => void;
 }
 
 /**
@@ -27,7 +29,7 @@ interface AyahActionModalProps {
  * @param {AyahActionModalProps} props - The props for the component.
  * @returns {React.ReactElement} A modal dialog with actions for a specific ayah.
  */
-export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose }) => {
+export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose, onOpenLiveAssistant }) => {
     const { playAyah, pauseAyah, isPlaying, activeAyah, showTafsir, showAIAssistant, setSuccessMessage, setError, view, navigateTo, showSearch } = useApp();
     const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
     const [isFocusTrapActive, setIsFocusTrapActive] = useState(false);
@@ -77,6 +79,7 @@ export const AyahActionModal: React.FC<AyahActionModalProps> = ({ ayah, onClose 
         { label: 'عرض التفسير', icon: BookOpenIcon, action: () => { showTafsir(ayah); onClose(); } },
         { label: 'إضافة علامة مرجعية', icon: BookmarkIcon, action: () => setIsBookmarkModalOpen(true) },
         { label: 'اسأل مساعد AI', icon: SparklesIcon, action: () => { showAIAssistant(ayah); onClose(); } },
+        { label: 'مساعد صوتي مباشر', icon: MicrophoneIcon, action: () => { onOpenLiveAssistant(); onClose(); } },
         { label: 'نسخ الآية', icon: ClipboardIcon, action: handleCopy },
         { label: 'مشاركة الآية', icon: ShareIcon, action: handleShare },
         { 

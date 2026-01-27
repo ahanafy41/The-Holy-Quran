@@ -78,7 +78,44 @@ export const SettingsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
 
                      <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                         <h4 className="font-medium mb-3">إعدادات الذكاء الاصطناعي</h4>
-                        <div className="space-y-2">
+                        <SettingSelect
+                            id="liveAssistantVoice"
+                            label="صوت المساعد المباشر"
+                            value={settings.liveAssistantVoice}
+                            onChange={(e) => updateSettings({ liveAssistantVoice: e.target.value })}
+                        >
+                            <option value="Zephyr">Zephyr</option>
+                            <option value="Puck">Puck</option>
+                            <option value="Charon">Charon</option>
+                            <option value="Kore">Kore</option>
+                            <option value="Fenrir">Fenrir</option>
+                            <option value="Leda">Leda</option>
+                            <option value="Orus">Orus</option>
+                            <option value="Aoede">Aoede</option>
+                            <option value="Callirrhoe">Callirrhoe</option>
+                            <option value="Autonoe">Autonoe</option>
+                            <option value="Enceladus">Enceladus</option>
+                            <option value="Iapetus">Iapetus</option>
+                            <option value="Umbriel">Umbriel</option>
+                            <option value="Algieba">Algieba</option>
+                            <option value="Despina">Despina</option>
+                            <option value="Erinome">Erinome</option>
+                            <option value="Algenib">Algenib</option>
+                            <option value="Rasalgethi">Rasalgethi</option>
+                            <option value="Laomedeia">Laomedeia</option>
+                            <option value="Achernar">Achernar</option>
+                            <option value="Alnilam">Alnilam</option>
+                            <option value="Schedar">Schedar</option>
+                            <option value="Gacrux">Gacrux</option>
+                            <option value="Pulcherrima">Pulcherrima</option>
+                            <option value="Achird">Achird</option>
+                            <option value="Zubenelgenubi">Zubenelgenubi</option>
+                            <option value="Vindemiatrix">Vindemiatrix</option>
+                            <option value="Sadachbia">Sadachbia</option>
+                            <option value="Sadaltager">Sadaltager</option>
+                            <option value="Sulafat">Sulafat</option>
+                        </SettingSelect>
+                        <div className="space-y-2 pt-4">
                             <label htmlFor="apiKey" className="block text-sm font-medium">مفتاح Gemini API</label>
                             <input
                                 type="password"
